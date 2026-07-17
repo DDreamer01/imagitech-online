@@ -21,7 +21,7 @@ const GEAR = [
       { name: "Operating System", desc: "Kali Linux (Desktop)." },
       { name: "Terminal Emulator", desc: "GNOME Terminal with Tmux for session management." },
       { name: "Shell & Prompt", desc: "Zsh" },
-      { name: "Text Editor", desc: "VS Code with Vim keybindings." },
+      { name: "Text Editor", desc: "VS Code with Vim keybindings. Many time I just use Vim on my terminal" },
     ],
   },
   {
