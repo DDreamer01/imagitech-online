@@ -1,0 +1,97 @@
+---
+title: "Tools I Use for Pentesting"
+date: "2026-04-30"
+category: "Cybersecurity"
+published: true
+---
+
+A curated reference guide of penetration testing tools categorized by their usage during security assessments.
+
+---
+
+## 1. Reconnaissance & Scanning
+
+### Web Fuzzers
+Used for directory and file brute-forcing:
+- `ffuf` — Fast web fuzzer written in Go (highly recommended).
+- `gobuster` — Directory/file, DNS and VHost busting tool.
+- `feroxbuster` — Fast recursive content discovery tool.
+- `dirsearch` — Advanced command-line tool designed to brute force directories and files.
+- `dirb` — Classic web content scanner.
+- `wfuzz` — Flexible web application fuzzer.
+
+### Subdomain Enumeration
+Used to find subdomains of target networks:
+- `subfinder` — Fast passive subdomain discovery tool.
+- `amass` — In-depth network mapping and external asset discovery.
+
+### Web Reconnaissance
+General OSINT and web analysis:
+- `httpx` — Fast and multi-purpose HTTP toolkit.
+- `whatweb` — Next-generation web scanner (identifies web technologies).
+- `finalrecon` — All-in-one web reconnaissance tool.
+- `theHarvester` — Gather emails, subdomains, hosts, employee names, open ports and banners.
+- `aquatone` — Visual inspection tool for websites on a large number of hosts.
+
+#### URL Gathering & JS Analysis
+- `waybackurls` — Fetch URLs known to the Wayback Machine.
+- `gau` (GetAllUrls) — Fetch URLs from AlienVault, Wayback, and Common Crawl.
+- `SecretFinder` — Python script to discover sensitive data like API keys, tokens, etc., in JS files.
+
+### DNS Reconnaissance
+- `dig` — Flexible DNS lookup utility.
+- `dnsenum` — Multithreaded script to enumerate DNS information and discover non-contiguous blocks.
+- `massdns` — High-performance DNS stub resolver for bulk lookups.
+- `nslookup` — Classic query tool for DNS.
+- `whois` — Lookup domain registration and network ownership records.
+
+### Port Scanning & Network Recon
+- `nmap` — The industry standard port scanner and network security auditor.
+- `masscan` — TCP port scanner, sends packets asynchronously (extremely fast).
+
+---
+
+## 2. Vulnerability & Traffic Analysis
+
+### Interception Proxies
+Used to intercept, modify, and replay web traffic:
+- `burpsuite` — Standard proxy tool for web app security testing.
+- `zaproxy` — OWASP Zed Attack Proxy (free and open-source alternative).
+
+### Vulnerability Scanners
+- `nuclei` — Fast, template-based vulnerability scanner (extremely powerful).
+- `nikto` — Web server vulnerability scanner.
+
+---
+
+## 3. Post-Exploitation & Wordlists
+
+### Wordlists & Payloads
+- `seclists` — The security tester's companion (wordlists, usernames, default credentials, payloads).
+- `assetnote` — Wordlists updated automatically by the Assetnote team.
+
+### Windows Systems & Active Directory
+
+#### evil-winrm
+An exploit shell for WinRM services (often port 5985/5986):
+```bash
+# Connect using username and password
+evil-winrm -i <target_ip> -u <username> -p <password>
+
+# Connect using pass-the-hash (NTLM hash)
+evil-winrm -i <target_ip> -u <username> -H <ntlm_hash>
+```
+
+#### smbclient
+A command-line tool to interact with SMB/CIFS servers:
+```bash
+# List shares on a server
+smbclient -L //<target_ip> -U <username>
+
+# Connect to a specific share
+smbclient //<target_ip>/<share> -U <username>
+
+# Download a file from an active SMB session
+# (Inside the smbclient interactive prompt)
+get file.txt
+```
