@@ -222,15 +222,15 @@ export default function Header() {
           {/* Footer at bottom left with secondary utility links */}
           <div className="mt-auto pt-6 border-t border-slate-800/60">
             <div className="flex items-center space-x-6 text-sm font-mono text-slate-400">
-              <a href="https://x.com" target="_blank" rel="noopener noreferrer" className="hover:text-sky-400 transition-colors">
+              <a href="https://x.com/This_is_Dreamer" target="_blank" rel="noopener noreferrer" className="hover:text-sky-400 transition-colors">
                 X
               </a>
               <span className="text-slate-800">/</span>
-              <a href="https://t.me" target="_blank" rel="noopener noreferrer" className="hover:text-sky-400 transition-colors">
+              <a href="https://t.me/DR34_M3R" target="_blank" rel="noopener noreferrer" className="hover:text-sky-400 transition-colors">
                 Telegram
               </a>
               <span className="text-slate-800">/</span>
-              <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="hover:text-sky-400 transition-colors">
+              <a href="https://www.youtube.com/@ddreamer1" target="_blank" rel="noopener noreferrer" className="hover:text-sky-400 transition-colors">
                 YouTube
               </a>
             </div>
