@@ -39,3 +39,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# personal/guides
+/upskilling-roadmap.md
+
+# IDEs and editors
+/.vscode/
+/.idea/
+*.swp
+*.swo
