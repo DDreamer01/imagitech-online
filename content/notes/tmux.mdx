@@ -1,0 +1,62 @@
+---
+title: "Useful Tmux Commands"
+date: "2026-07-17"
+category: "Linux"
+published: true
+---
+
+Tmux is a terminal multiplexer, that it makes it easier to work with several tabs on your terminal
+
+I sometimes forget the key combinations for certain features on Tmux, I'm doing this to save them here
+
+### 1. Attach Session
+To continue from a detached session
+
+```bash
+tmux a
+```
+
+### 2. Detach Session
+To detach from an active session
+
+**Key combination:** <kbd>Ctrl</kbd> + <kbd>b</kbd>, then <kbd>d</kbd>
+
+### 3. Create New Window
+To create a new windows
+
+**Key combination:** <kbd>Ctrl</kbd> + <kbd>b</kbd>, then <kbd>c</kbd>
+
+### 4. Switch Windows
+To switch between multiple windows
+
+**Key combination:** <kbd>Ctrl</kbd> + <kbd>b</kbd>, then the window number e.g <kbd>0</kbd>, <kbd>3</kbd>
+
+### 5. Split Panes Horizontally
+To split the panes, having them sit on each other
+
+**Key combination:** <kbd>Ctrl</kbd> + <kbd>b</kbd>, then<kbd>"</kbd>
+
+### 6. Split Panes Vertically
+To split the panes, them them side by side
+
+**Key combination:** <kbd>Ctrl</kbd> + <kbd>b</kbd>, then <kbd>%</kbd>
+
+### 7. Switch Between Panes
+To switch between multiple panes
+
+**Key combination:** <kbd>Ctrl</kbd> + <kbd>b</kbd>, then arrow keys
+
+### 8. Kill Present Session
+To kill an active session
+
+**Key combination:** <kbd>Ctrl</kbd> + <kbd>b</kbd>, then enter:
+```text
+:kill-session
+```
+
+### 9. Enable Scrolling
+To enable scrolling, instead of your terminal running through your commands
+
+```bash
+echo "set -g mouse on" > ~/.tmux.conf
+```

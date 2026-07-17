@@ -1,0 +1,48 @@
+---
+title: "Useful Linux Networking Commands"
+date: "2026-06-20"
+category: "Linux"
+published: true
+---
+
+A collection of quick commands for diagnosing networking issues on Linux servers.
+
+### 1. Check Listening Ports
+To see which processes are listening on which ports, use `ss`:
+
+```bash
+# -t: TCP, -u: UDP, -l: Listening, -p: Process, -n: Numeric port numbers
+sudo ss -tulpn
+```
+
+### 2. Trace Route with Network Paths
+Rather than traditional `traceroute`, `mtr` combines ping and traceroute to give real-time latency statistics:
+
+```bash
+mtr -c 10 -r 8.8.8.8
+```
+
+### 3. Check Domain Name Resolution (DNS)
+Check if local DNS servers are resolving names correctly, using `dig`:
+
+```bash
+# Query specific DNS server
+dig @1.1.1.1 google.com
+
+# Trace DNS resolution path
+dig +trace google.com
+```
+
+### 4. Capture Network Packets
+To analyze raw network traffic on a specific interface:
+
+```bash
+sudo tcpdump -i eth0 -n -c 100
+```
+
+### 5. Generate SSH Key Pair
+To generate a new SSH key pair in Linux
+
+```bash
+ssh-keygen -t ed25519
+```

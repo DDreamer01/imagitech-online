@@ -1,0 +1,72 @@
+import React from "react";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Uses",
+  description: "†hε drεαmεr's setup: hardware, servers, home lab, software tools, terminal configuration, and self-hosted apps.",
+};
+
+const GEAR = [
+  {
+    category: "Hardware & Home Lab",
+    items: [
+      { name: "Primary Workstation", desc: "ThinkPad T14s, AMD Ryzen 7, 32GB RAM. Running Fedora Workstation." },
+      { name: "Server Node 01", desc: "Intel NUC (i5-1135G7, 64GB RAM, 2TB NVMe). Virtualization host running Proxmox VE." },
+      { name: "Server Node 02", desc: "Custom Mini-ITX build (AMD Ryzen 5 5600G, 32GB RAM, 8TB HDD pool). Running TrueNAS Scale." },
+      { name: "Network Gateway", desc: "Protectli Vault (4 Port Intel LAN, 8GB RAM). Running pfSense for edge firewall routing." },
+    ],
+  },
+  {
+    category: "Software & Terminal",
+    items: [
+      { name: "Operating System", desc: "Fedora Workstation (Desktop), AlmaLinux / Debian (Servers)." },
+      { name: "Terminal Emulator", desc: "Alacritty paired with Tmux for session management." },
+      { name: "Shell & Prompt", desc: "Zsh with the Starship prompt (minimal configuration)." },
+      { name: "Text Editor", desc: "VS Code with Vim keybindings & Neovim for quick SSH edits. Font: JetBrains Mono." },
+    ],
+  },
+  {
+    category: "Self-Hosted Infrastructure",
+    items: [
+      { name: "WireGuard VPN", desc: "Secure encrypted remote access tunnel back to LAN network resources." },
+      { name: "Pi-hole", desc: "Local recursive DNS cache and network-wide ad blocker." },
+      { name: "Vaultwarden", desc: "Self-hosted Bitwarden API implementation for secure password management." },
+      { name: "Uptime Kuma", desc: "Status monitor for tracking service availability and latency." },
+    ],
+  },
+];
+
+export default function UsesPage() {
+  return (
+    <div className="max-w-3xl">
+      <header className="mb-8">
+        <h1 className="text-3xl font-extrabold tracking-tight text-slate-100 sm:text-4xl">Uses</h1>
+        <p className="mt-2 text-sm text-slate-400 font-mono">system.list_hardware_and_software()</p>
+      </header>
+
+      <div className="space-y-8 text-slate-300">
+        <p className="text-base text-slate-200">
+          This is a detailed list of the hardware, servers, operating systems, self-hosted configurations, and development tools I use daily.
+        </p>
+
+        {GEAR.map((group) => (
+          <section key={group.category} className="mt-8">
+            <h2 className="text-lg font-bold text-slate-100 border-b border-slate-800 pb-2 mb-4 font-mono">
+              {"//"} {group.category}
+            </h2>
+            <ul className="space-y-4">
+              {group.items.map((item) => (
+                <li key={item.name} className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-4">
+                  <span className="font-mono text-sm font-semibold text-emerald-400 sm:w-48 shrink-0">
+                    {item.name}
+                  </span>
+                  <span className="text-sm text-slate-300">{item.desc}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+      </div>
+    </div>
+  );
+}

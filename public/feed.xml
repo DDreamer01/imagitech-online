@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>†hε drεαmεr's Notebook</title>
+    <link>https://imagitech.online/blog</link>
+    <description>Technical articles, guides, and tutorials written by †hε drεαmεr covering Linux, networking, self-hosting, and systems security.</description>
+    <language>en-us</language>
+    <lastBuildDate>Fri, 17 Jul 2026 21:19:09 GMT</lastBuildDate>
+    <atom:link href="https://imagitech.online/feed.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Building a Stealth VPN Gateway: A Deep Dive into VLESS Reality &amp; SNI Multiplexing</title>
+      <link>https://imagitech.online/blog/self-hosted-vpn-guide</link>
+      <guid>https://imagitech.online/blog/self-hosted-vpn-guide</guid>
+      <pubDate>Thu, 02 Jul 2026 00:00:00 GMT</pubDate>
+      <description>A comprehensive developer guide on manually constructing a DPI-resistant stealth VPN using Xray-core, generating Reality cryptography keys, and configuring HAProxy SNI multiplexing.</description>
+    </item>
+    <item>
+      <title>Self-Hosting a VPN Server on AlmaLinux</title>
+      <link>https://imagitech.online/blog/self-hosting-wireguard</link>
+      <guid>https://imagitech.online/blog/self-hosting-wireguard</guid>
+      <pubDate>Tue, 30 Jun 2026 00:00:00 GMT</pubDate>
+      <description>A comprehensive guide on deploying a secure WireGuard VPN server with containerization and automated firewall rules.</description>
+    </item>
+  </channel>
+</rss>

@@ -1,26 +1,226 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* High-Contrast Warm Charcoal & Clay Palette */
+  --background: #181818;
+  --foreground: #F2F2F2;
+  
+  --card: #222222;
+  --card-foreground: #F2F2F2;
+  
+  --popover: #2A2A2A;
+  --popover-foreground: #F2F2F2;
+  
+  --primary: #CF7253; /* Primary Accent Clay */
+  --primary-foreground: #181818;
+  
+  --secondary: #2A2A2A;
+  --secondary-foreground: #F2F2F2;
+  
+  --muted: #222222;
+  --muted-foreground: #A5A5A5;
+  
+  --accent: #CF7253;
+  --accent-foreground: #181818;
+  
+  --destructive: #E05D5D;
+  --destructive-foreground: #F2F2F2;
+  
+  --border: #353535;
+  --input: #353535;
+  --ring: #CF7253;
+  
+  --radius: 0.375rem;
+}
+
+/* Light mode fallback (styled identically for consistent dark-first theme) */
+.light {
+  --background: #181818;
+  --foreground: #F2F2F2;
+  
+  --card: #222222;
+  --card-foreground: #F2F2F2;
+  
+  --popover: #2A2A2A;
+  --popover-foreground: #F2F2F2;
+  
+  --primary: #CF7253;
+  --primary-foreground: #181818;
+  
+  --secondary: #2A2A2A;
+  --secondary-foreground: #F2F2F2;
+  
+  --muted: #222222;
+  --muted-foreground: #A5A5A5;
+  
+  --accent: #CF7253;
+  --accent-foreground: #181818;
+  
+  --destructive: #E05D5D;
+  --destructive-foreground: #F2F2F2;
+  
+  --border: #353535;
+  --input: #353535;
+  --ring: #CF7253;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-md: var(--radius);
+  
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Override Tailwind slate and sky values to map our clay design system */
+  --color-slate-50: #F2F2F2;
+  --color-slate-100: #F2F2F2;
+  --color-slate-200: #F2F2F2;
+  --color-slate-300: #F2F2F2;
+  --color-slate-400: #A5A5A5;
+  --color-slate-500: #A5A5A5;
+  --color-slate-600: #A5A5A5;
+  --color-slate-700: #353535;
+  --color-slate-800: #353535;
+  --color-slate-900: #222222;
+  --color-slate-950: #181818;
+
+  --color-sky-300: #D98469; /* Accent Hover */
+  --color-sky-400: #CF7253; /* Primary Accent */
+  --color-sky-500: #CF7253;
+  --color-sky-950: #2A2A2A; /* Elevated Surface */
+
+  --color-emerald-400: #4CAF50; /* Success */
+  --color-emerald-500: #4CAF50;
+  
+  --color-amber-500: #F0B44C; /* Warning */
+  --color-amber-600: #F0B44C;
+  
+  --color-rose-500: #E05D5D; /* Error */
+  --color-rose-600: #E05D5D;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Custom global styles for documentation-like aesthetic */
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Strict keyboard focus ring system for accessibility */
+*:focus {
+  outline: none;
+}
+*:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 4px;
+}
+
+/* Smooth selection color */
+::selection {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+/* Custom scrollbars for professional DX */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: var(--radius);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+}
+
+/* Header hover anchor styling like Stripe / Tailwind Docs */
+.subtle-anchor {
+  position: relative;
+  text-decoration: none !important;
+}
+.subtle-anchor::after {
+  content: " #";
+  color: var(--primary);
+  opacity: 0;
+  font-weight: normal;
+  font-size: 0.85em;
+  transition: opacity 0.15s ease;
+}
+.subtle-anchor:hover::after {
+  opacity: 0.7;
+}
+
+/* Shiki Code Block line highlighting styles with Clay theme overlay */
+[data-highlighted-line] {
+  background-color: rgba(207, 114, 83, 0.08); /* 8% Primary Accent #CF7253 opacity */
+  border-left: 2px solid var(--primary);
+  padding-left: 14px !important;
+  margin-left: -16px;
+  margin-right: -16px;
+  display: block;
+}
+
+/* Highlighted characters inside lines */
+[data-highlighted-chars] {
+  background-color: rgba(207, 114, 83, 0.2); /* 20% Primary Accent opacity */
+  padding: 1px 3px;
+  border-radius: 3px;
+}
+
+/* Remove underlines from link anchors nested inside headings */
+h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
+  text-decoration: none !important;
+}
+
+/* Explicitly disable browser focus-visible outline on text inputs */
+input[type="text"]:focus,
+input[type="text"]:focus-visible {
+  outline: none !important;
+  outline-offset: 0 !important;
+  box-shadow: none !important;
+}
+
+/* Fix heading scroll margin to prevent overlapping with sticky header */
+h1, h2, h3, h4 {
+  scroll-margin-top: 5.5rem;
+}
+
+@keyframes mobile-menu-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+.animate-mobile-menu {
+  animation: mobile-menu-fade-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+
