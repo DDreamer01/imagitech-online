@@ -10,28 +10,25 @@ const GEAR = [
   {
     category: "Hardware & Home Lab",
     items: [
-      { name: "Primary Workstation", desc: "ThinkPad T14s, AMD Ryzen 7, 32GB RAM. Running Fedora Workstation." },
-      { name: "Server Node 01", desc: "Intel NUC (i5-1135G7, 64GB RAM, 2TB NVMe). Virtualization host running Proxmox VE." },
-      { name: "Server Node 02", desc: "Custom Mini-ITX build (AMD Ryzen 5 5600G, 32GB RAM, 8TB HDD pool). Running TrueNAS Scale." },
-      { name: "Network Gateway", desc: "Protectli Vault (4 Port Intel LAN, 8GB RAM). Running pfSense for edge firewall routing." },
+      { name: "Primary Workstation", desc: "Dell Precision 5540, Intel Core i9, 32GB RAM." },
+      // { name: "Server Node 01", desc: "Intel NUC (i5-1135G7, 64GB RAM, 2TB NVMe). Virtualization host running Proxmox VE." },
+      // { name: "Server Node 02", desc: "Custom Mini-ITX build (AMD Ryzen 5 5600G, 32GB RAM, 8TB HDD pool). Running TrueNAS Scale." },
     ],
   },
   {
     category: "Software & Terminal",
     items: [
-      { name: "Operating System", desc: "Fedora Workstation (Desktop), AlmaLinux / Debian (Servers)." },
-      { name: "Terminal Emulator", desc: "Alacritty paired with Tmux for session management." },
-      { name: "Shell & Prompt", desc: "Zsh with the Starship prompt (minimal configuration)." },
-      { name: "Text Editor", desc: "VS Code with Vim keybindings & Neovim for quick SSH edits. Font: JetBrains Mono." },
+      { name: "Operating System", desc: "Kali Linux (Desktop)." },
+      { name: "Terminal Emulator", desc: "GNOME Terminal with Tmux for session management." },
+      { name: "Shell & Prompt", desc: "Zsh" },
+      { name: "Text Editor", desc: "VS Code with Vim keybindings." },
     ],
   },
   {
     category: "Self-Hosted Infrastructure",
     items: [
-      { name: "WireGuard VPN", desc: "Secure encrypted remote access tunnel back to LAN network resources." },
-      { name: "Pi-hole", desc: "Local recursive DNS cache and network-wide ad blocker." },
-      { name: "Vaultwarden", desc: "Self-hosted Bitwarden API implementation for secure password management." },
-      { name: "Uptime Kuma", desc: "Status monitor for tracking service availability and latency." },
+      { name: "Nextcloud", desc: "Self hosted cloud storage platform." },
+      { name: "FileStation", desc: "Python server for uploading and moving files around." },
     ],
   },
 ];
