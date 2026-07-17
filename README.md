@@ -1,8 +1,8 @@
-# imagitech.online Operations and Content Manual
+# imagitech.online — Operations and Content Manual
 
-Welcome to the operations manual and developer handbook for [imagitech.online](https://imagitech.online). 
+Welcome to the operations manual and developer handbook for [imagitech.online](https://imagitech.online).
 
-This project functions as a high-density technical notebook, professional engineering portfolio, and documentation portal. It houses architectural diagrams, systems engineering guides, virtualization checklists, networking configurations, and post-mortems. The system is designed for maximum reading density, speed, accessibility, and zero-javascript-overhead content loading where possible.
+This project functions as a high-density technical notebook, professional engineering portfolio, and documentation portal. It houses architectural diagrams, systems engineering guides, networking configurations, penetration testing references, and post-mortems. The system is designed for maximum reading density, speed, accessibility, and zero-javascript-overhead content loading where possible.
 
 ---
 
@@ -19,42 +19,58 @@ imagitech-online/
 ├── .github/
 │   └── workflows/
 │       └── cloudflare-pages.yml  # CI/CD deployment pipeline to Cloudflare Pages
-├── content/                     # MDX Content Repository (separated by type)
-│   ├── blog/                    # Long-form engineering articles and logs
-│   ├── notes/                   # High-density code cheatsheets and command lists
-│   └── projects/                # Production infrastructure case studies
-├── public/                      # Static assets served at the root (favicons, feeds)
+├── content/                      # MDX Content Repository (separated by type)
+│   ├── blog/                     # Long-form engineering articles and logs
+│   │   ├── self-hosted-vpn-guide.mdx
+│   │   └── self-hosting-wireguard.mdx
+│   ├── notes/                    # High-density code cheatsheets and command lists
+│   │   ├── linux-networking.mdx
+│   │   ├── penetration-testing-tools.mdx
+│   │   └── tmux.mdx
+│   └── projects/                 # Production infrastructure case studies
+│       ├── autoscript-pro.mdx
+│       └── filestation.mdx
+├── public/                       # Static assets served at the root (favicons, feeds)
+│   └── feed.xml                  # Auto-generated RSS feed
+├── scripts/
+│   └── test-server.js            # Local static file server for E2E test runs
 ├── src/
-│   ├── app/                     # App Router static pages and layout configurations
-│   │   ├── about/               # Static "About" page
-│   │   ├── blog/                # Blog lists and dynamic post parser page
-│   │   ├── contact/             # Contact information page
-│   │   ├── notes/               # Notes indexing and rendering sub-routes
-│   │   ├── now/                 # Status log ("Now" page)
-│   │   ├── projects/            # Project showcase routes
-│   │   ├── uses/                # Hardware/software tooling index ("Uses")
-│   │   ├── globals.css          # Design system variables, animations, scrollbars
-│   │   ├── layout.tsx           # Global RootLayout, font loading, HTML shell
-│   │   ├── page.tsx             # Main dashboard landing page
-│   │   ├── robots.ts            # Dynamic robots.txt generation
-│   │   └── sitemap.ts           # Dynamic sitemap.xml generation
-│   ├── components/              # Reusable React components
-│   │   ├── Callout.tsx          # Styled markdown notice containers (tip/warning/etc.)
-│   │   ├── CodeBlock.tsx        # Copyable syntax-highlighted code container with copy button
-│   │   ├── Footer.tsx           # Footer with system uptime indicators and spacers
-│   │   ├── Header.tsx           # Sticky navigation header navbar
-│   │   ├── Mdx.tsx              # Core MDX engine renderer mapping HTML to components
-│   │   ├── Mermaid.tsx          # Client-side renderer for flowcharts and diagrams
-│   │   ├── Search.tsx           # Keyboard-navigable search portal overlay (React Portal)
-│   │   └── TableOfContents.tsx  # Dynamic side-menu outlining headings
-│   ├── lib/                     # Technical helper libraries and scripts
-│   │   ├── mdx.ts               # File system parser, slug resolver, and TOC extractor
-│   │   └── rss.ts               # Automated RSS xml compilation generator
-│   └── types.ts                 # Main TypeScript definitions for articles/projects/notes
-├── next.config.ts               # Next.js compiler settings (static export, unoptimized images)
-├── server.js                    # Node.js production server for local previews and MIME mapping
-├── tsconfig.json                # TypeScript configurations
-└── package.json                 # Project dependencies, scripts, and build tasks
+│   ├── app/                      # App Router static pages and layout configurations
+│   │   ├── about/                # Static "About" page
+│   │   ├── blog/                 # Blog list and dynamic [slug] post renderer
+│   │   ├── contact/              # Contact information page
+│   │   ├── notes/                # Notes indexing and rendering sub-routes
+│   │   ├── now/                  # Status log ("Now" page)
+│   │   ├── projects/             # Project showcase routes
+│   │   ├── uses/                 # Hardware/software tooling index ("Uses")
+│   │   ├── globals.css           # Design system variables, animations, scrollbars
+│   │   ├── layout.tsx            # Global RootLayout, font loading, HTML shell
+│   │   ├── page.tsx              # Main dashboard landing page
+│   │   ├── robots.ts             # Dynamic robots.txt generation
+│   │   └── sitemap.ts            # Dynamic sitemap.xml generation
+│   ├── components/               # Reusable React components
+│   │   ├── Callout.tsx           # Styled markdown notice containers (tip/warning/etc.)
+│   │   ├── CodeBlock.tsx         # Copyable syntax-highlighted code block with copy button
+│   │   ├── Footer.tsx            # Footer with uptime indicator and copyright
+│   │   ├── Header.tsx            # Sticky navigation header with mobile overlay menu
+│   │   ├── Mdx.tsx               # Core MDX renderer mapping HTML tags to custom components
+│   │   ├── Mermaid.tsx           # Client-side renderer for flowcharts and diagrams
+│   │   ├── NotesClient.tsx       # Client-side notes filtering and search component
+│   │   ├── Search.tsx            # Keyboard-navigable search portal overlay (React Portal)
+│   │   └── TableOfContents.tsx   # Dynamic side-menu outlining headings
+│   ├── lib/                      # Technical helper libraries and scripts
+│   │   ├── mdx.ts                # File system parser, slug resolver, and TOC extractor
+│   │   └── rss.ts                # Automated RSS XML compilation generator
+│   └── types/
+│       └── index.ts              # TypeScript definitions for articles, projects, and notes
+├── tests/
+│   └── e2e/
+│       └── site.spec.ts          # Playwright end-to-end test suite
+├── next.config.ts                # Next.js compiler settings (static export, unoptimized images)
+├── playwright.config.ts          # Playwright configuration for E2E testing
+├── server.js                     # Node.js production server for local previews and MIME mapping
+├── tsconfig.json                 # TypeScript configuration
+└── package.json                  # Project dependencies, scripts, and build tasks
 ```
 
 ### 1.2 Routing Logic
@@ -63,10 +79,10 @@ imagitech-online/
 graph TD
     Request[HTTP Request] --> Router{Next.js App Router}
     Router -->|Static Route /about| Static[src/app/about/page.tsx]
-    Router -->|Dynamic Route /blog/:slug| DynamicBlog[src/app/blog/[slug]/page.tsx]
-    Router -->|Dynamic Route /projects/:slug| DynamicProj[src/app/projects/[slug]/page.tsx]
-    Router -->|Dynamic Route /notes/:slug| DynamicNote[src/app/notes/[slug]/page.tsx]
-    
+    Router -->|Dynamic Route /blog/:slug| DynamicBlog[src/app/blog/slug/page.tsx]
+    Router -->|Dynamic Route /projects/:slug| DynamicProj[src/app/projects/slug/page.tsx]
+    Router -->|Dynamic Route /notes/:slug| DynamicNote[src/app/notes/slug/page.tsx]
+
     DynamicBlog -->|Extract params| Slug[getBlogPostBySlug slug]
     Slug -->|FS Read| File[content/blog/slug.mdx]
     File -->|Parse Frontmatter| Matter[gray-matter]
@@ -74,54 +90,52 @@ graph TD
 ```
 
 *   **App Router Static Routes**: Simple static routes are defined directly as page folders in `src/app/`. These include directories like `about/`, `contact/`, `now/`, and `uses/`.
-*   **Dynamic MDX Routes**: Dynamic folders (`blog/[slug]`, `projects/[slug]`, `notes/[slug]`) catch path requests and parse corresponding files from `content/`. During compile time, the framework invokes `generateStaticParams()` to fetch lists of all available Markdown slugs, pre-rendering every file as a standalone static HTML file.
-*   **Zero Server-Side Dependency**: Because `next.config.ts` enforces `output: "export"`, routing does not rely on a Node.js server. Instead, routes map directly to physical HTML files on the file system (e.g., `/blog/my-post` matches `/blog/my-post.html`).
+*   **Dynamic MDX Routes**: Dynamic folders (`blog/[slug]`, `projects/[slug]`, `notes/[slug]`) catch path requests and parse corresponding files from `content/`. During compile time, `generateStaticParams()` pre-renders every MDX file as a standalone static HTML file.
+*   **Zero Server-Side Dependency**: Because `next.config.ts` enforces `output: "export"`, routing does not rely on a Node.js server. Instead, routes map directly to physical HTML files on the filesystem (e.g., `/blog/my-post` matches `/blog/my-post.html`).
 
 ### 1.3 The MDX Processing System
 
-All content in `content/` is parsed and compiled using a modular processing engine in [Mdx.tsx](file:///home/azureuser/imagitech-online/src/components/Mdx.tsx):
+All content in `content/` is parsed and compiled using a modular processing engine in [Mdx.tsx](file:///home/dreamer/imagitech-online/src/components/Mdx.tsx):
 
-1.  **Metadata Extraction**: [mdx.ts](file:///home/azureuser/imagitech-online/src/lib/mdx.ts) reads files via Node's `fs` module, using **gray-matter** to separate frontmatter key-value pairs (like `title`, `date`, `tags`) from the main body.
+1.  **Metadata Extraction**: [mdx.ts](file:///home/dreamer/imagitech-online/src/lib/mdx.ts) reads files via Node's `fs` module, using **gray-matter** to separate frontmatter key-value pairs (like `title`, `date`, `tags`) from the main body.
 2.  **Compilation**: The compiler uses `MDXRemote` from **next-mdx-remote/rsc** to transform markdown content into dynamic React nodes.
 3.  **AST Transformation Plugins**:
-    *   `remark-gfm`: Injects support for GitHub Flavored Markdown (including tables, checkboxes, strikethroughs, and raw links).
-    *   `remarkMermaid` (Custom Plugin): An AST-walker that detects code blocks written with the `mermaid` language identifier and converts them to `<Mermaid chart="..." />` JSX flow elements.
-    *   `rehype-slug`: Generates unique kebab-case IDs automatically from heading text (`h1`, `h2`, `h3`, etc.) to provide page-level section anchoring.
-    *   `rehype-autolink-headings`: Wraps headings in links pointing to their generated IDs. Uses the `subtle-anchor` CSS class to display a `#` symbol on hover.
-    *   `rehype-pretty-code` & **Shiki**: Inspects code fences to support syntax highlighting. It utilizes a custom Clay-Copper theme, disables default code background overrides (`keepBackground: false`), and handles specific line highlights (e.g. `{3-5}`) and title tags.
-4.  **Tag-to-Component Mapping**: HTML tags inside MDX are mapped directly to custom styled React components:
-    *   `a` maps to custom links that handle internal Next.js transitions or enforce target `_blank` for external destinations.
-    *   `pre` maps to [CodeBlock.tsx](file:///home/azureuser/imagitech-online/src/components/CodeBlock.tsx), wrapping Shiki output in a container that renders code titles, language tags, and a fallback clipboard copy button.
-    *   `Callout` and `Mermaid` are registered globally within the MDX component context to allow authors to invoke them directly.
+    *   `remark-gfm`: Injects support for GitHub Flavored Markdown (tables, checkboxes, strikethroughs, raw links).
+    *   `remarkMermaid` (Custom Plugin): An AST-walker that detects code blocks with the `mermaid` language identifier and converts them to `<Mermaid chart="..." />` JSX elements.
+    *   `rehype-slug`: Generates unique kebab-case IDs from heading text for page-level section anchoring.
+    *   `rehype-autolink-headings`: Wraps headings in anchor links pointing to their generated IDs with a `#` symbol on hover.
+    *   `rehype-pretty-code` & **Shiki**: Syntax highlighting with a custom Clay-Copper theme. Handles line highlights (e.g. `{3-5}`) and code block titles.
+4.  **Tag-to-Component Mapping**: HTML tags inside MDX are mapped to custom styled React components:
+    *   `a` — handles internal Next.js transitions or enforces `target="_blank"` for external links.
+    *   `pre` — maps to [CodeBlock.tsx](file:///home/dreamer/imagitech-online/src/components/CodeBlock.tsx), wrapping Shiki output with code titles, language tags, and a clipboard copy button.
+    *   `Callout` and `Mermaid` — registered globally in the MDX component context.
 
 ### 1.4 Component Layout Boundaries
 
-*   **HTML Outer Boundary**: Managed in [layout.tsx](file:///home/azureuser/imagitech-online/src/app/layout.tsx), which loads the Geist web fonts, defines global variables `--font-geist-sans` and `--font-geist-mono`, and structures the skip-to-content accessibility link.
-*   **Sticky Navbar & Navigation Portal**: Managed by [Header.tsx](file:///home/azureuser/imagitech-online/src/components/Header.tsx). It includes navigation links, mobile responsive menu transitions, and mounts the search triggers.
-*   **Keyboard Portal Search Overlay**: Defined in [Search.tsx](file:///home/azureuser/imagitech-online/src/components/Search.tsx). To prevent parent flex constraints from cropping overlays, the search modal uses a **React Portal** that mounts directly at `document.body` when active.
-*   **Uptime Footer**: Configured in [Footer.tsx](file:///home/azureuser/imagitech-online/src/components/Footer.tsx), which renders site copyright metadata, automated year calculations, and a pulse status dot indicator signifying server operational integrity.
+*   **HTML Outer Boundary**: Managed in [layout.tsx](file:///home/dreamer/imagitech-online/src/app/layout.tsx), which loads the Geist web fonts and structures the skip-to-content accessibility link.
+*   **Sticky Navbar**: Managed by [Header.tsx](file:///home/dreamer/imagitech-online/src/components/Header.tsx). Includes nav links, mobile menu overlay with focus trap, and search trigger.
+*   **Search Overlay**: Defined in [Search.tsx](file:///home/dreamer/imagitech-online/src/components/Search.tsx). Uses a **React Portal** that mounts directly at `document.body` to prevent parent flex constraints from cropping the modal.
+*   **Footer**: Configured in [Footer.tsx](file:///home/dreamer/imagitech-online/src/components/Footer.tsx), which renders copyright metadata, automated year calculation, and a pulse dot status indicator.
 
 ### 1.5 Static Export & Pagefind Search Indexing
-
-Unlike traditional apps that search via server-side databases (like PostgreSQL or Elasticsearch), `imagitech.online` employs an offline client-side search engine.
 
 ```mermaid
 flowchart TD
     Build[1. next build] --> Export[2. output to out/]
     Export --> Pagefind[3. npx pagefind --site out]
     Pagefind --> Index[4. out/pagefind/ index created]
-    
-    User[User CMD+K] --> SearchComp[Search.tsx Loader]
+
+    User[User CMD+K or /] --> SearchComp[Search.tsx Loader]
     SearchComp -->|Lazy Load| JS[import /pagefind/pagefind.js]
     JS -->|Fetch Indexes| WASM[Local WASM Engine]
     WASM -->|Search Queries| Results[Display Results]
 ```
 
 1.  **Compilation Output**: The Next.js pipeline outputs statically generated files to the `out/` directory.
-2.  **Indexing Pipeline**: Post-compilation, `npx pagefind --site out` parses all HTML output in the `out/` directory, extracts textual content, builds custom indices, and generates WebAssembly search binaries under `out/pagefind/`.
-3.  **Lazy Loading Strategy**: To keep page load times fast, search resources are not loaded on page load. When a user presses `CMD+K`, `CTRL+K`, or `/`, the [Search.tsx](file:///home/azureuser/imagitech-online/src/components/Search.tsx) component uses a dynamic import (marked with a `/* webpackIgnore: true */` comment to bypass compile-time bundler checks) to fetch `/pagefind/pagefind.js`.
-4.  **Local Execution**: The search engine runs directly on the user's browser thread using WebAssembly. This approach keeps queries fast and avoids network latency.
-5.  **MIME Type Constraint**: Web servers hosting this application must serve `.wasm` assets using the header `Content-Type: application/wasm`. Without this header, browser engines will block the WebAssembly code from compiling, which disables search functionality.
+2.  **Indexing Pipeline**: Post-compilation, `npx pagefind --site out` crawls all HTML in `out/`, builds custom indices, and generates WebAssembly search binaries under `out/pagefind/`.
+3.  **Lazy Loading Strategy**: Search resources are not loaded on page load. When a user presses `CMD+K`, `CTRL+K`, or `/`, [Search.tsx](file:///home/dreamer/imagitech-online/src/components/Search.tsx) dynamically imports `/pagefind/pagefind.js`.
+4.  **Local Execution**: The search engine runs on the user's browser thread via WebAssembly — no server roundtrip.
+5.  **MIME Type Constraint**: The web server must serve `.wasm` assets with `Content-Type: application/wasm`. Without this, browsers block WebAssembly compilation and search is disabled.
 
 ---
 
@@ -135,15 +149,13 @@ The project requires **Node.js v18.0.0 or higher** and uses npm.
 
 ```bash
 # Clone the repository and navigate to the directory
-cd /home/azureuser/imagitech-online
+cd /home/dreamer/imagitech-online
 
 # Perform clean dependency installation using the lockfile
 npm ci
 ```
 
 ### 2.2 Running Development Server
-
-Start the Next.js development server:
 
 ```bash
 npm run dev
@@ -164,9 +176,9 @@ npm run build
 
 This script:
 1. Compiles the Next.js code.
-2. Exports the raw static files to the `out/` folder.
+2. Exports raw static files to the `out/` folder.
 3. Automatically triggers RSS feed compilation.
-4. Crawls the `out/` directory with `pagefind` to build the WebAssembly search index.
+4. Crawls the `out/` directory with Pagefind to build the WebAssembly search index.
 
 ### 2.4 Code Verification (Linting & Typechecking)
 
@@ -176,27 +188,20 @@ Ensure all files pass standard rules before committing changes:
 # Run ESLint validation checks
 npm run lint
 
-# Run TypeScript compiler verification (Strict Typecheck)
+# Run TypeScript compiler verification (strict typecheck)
 npx tsc --noEmit
 ```
 
 ### 2.5 End-to-End (E2E) Testing
 
-To run End-to-End tests, the site must be compiled and served on a local port. You can configure E2E testing framework packages (like **Playwright** or **Cypress**) to validate routing, accessibility, and search functionality.
-
 ```bash
-# 1. First, compile the application
+# 1. Build the application first
 npm run build
 
-# 2. Spin up the production-grade static preview server (runs on port 80)
-# (Needs root privileges to bind to port 80. Alternatively, edit server.js to use another port)
-sudo node server.js
+# 2. Start the local preview server (configured in scripts/test-server.js)
+node scripts/test-server.js
 
-# 3. In a separate terminal, install Playwright (if not already installed)
-npm install -D @playwright/test
-npx playwright install
-
-# 4. Execute E2E tests against the running server
+# 3. In a separate terminal, run the Playwright E2E tests
 npx playwright test
 ```
 
@@ -210,95 +215,47 @@ Content is organized in the `content/` folder. The system parses and renders MDX
 | :--- | :--- | :--- | :--- |
 | **Blog Posts** | `content/blog/` | Long-form technical logs, post-mortems, system guides | `title`, `description`, `date`, `published`, `tags` |
 | **Projects** | `content/projects/` | Structural project specs, case studies, open-source work | `title`, `description`, `github`, `url`, `technologies`, `featured` |
-| **Notes** | `content/notes/` | High-density cheatsheets, CLI manuals, commands | `title`, `date`, `category`, `published` |
+| **Notes** | `content/notes/` | High-density cheatsheets, CLI references, command lists | `title`, `date`, `category`, `published` |
 
 ### 3.1 Writing a New Blog Post
 
-Create your post at `content/blog/your-post-slug.mdx`. The file name must match the URL slug.
+Create your post at `content/blog/your-post-slug.mdx`. The filename must match the URL slug exactly.
 
 #### Required Frontmatter Fields
 
-*   `title` (string): The title of your post. Keep it concise.
-*   `description` (string): A short summary displayed in the feed and used for SEO meta tags.
-*   `date` (string): Publication date formatted as `YYYY-MM-DD`. Used for feed sorting.
-*   `published` (boolean): Set to `false` to save the post as a draft and prevent it from rendering.
-*   `tags` (array of strings): Technical categories used for metadata sorting.
+*   `title` (string): The title of your post.
+*   `description` (string): A short summary for the feed and SEO meta tags.
+*   `date` (string): Publication date formatted as `YYYY-MM-DD`.
+*   `published` (boolean): Set to `false` to save as a draft.
+*   `tags` (array of strings): Technical categories for metadata.
 
-#### Complete Copy-Pasteable Blog Post Example
+#### Blog Post Template
 
 ```markdown
 ---
-title: "Self-Hosting a VPN Server on AlmaLinux"
-description: "A comprehensive guide on deploying a secure WireGuard VPN server with containerization and automated firewall rules."
-date: "2026-06-30"
+title: "Your Post Title Here"
+description: "A short one-sentence summary of what this post covers."
+date: "2026-07-17"
 published: true
-tags: ["AlmaLinux", "WireGuard", "VPN", "Docker", "Networking"]
+tags: ["Linux", "Networking", "VPN"]
 ---
 
-Setting up a VPN server is essential for securing remote access to home servers and private networks. In this post, I document how I self-host a WireGuard VPN server inside a Docker container on AlmaLinux 9, with automated configuration and routing.
+Opening paragraph explaining the problem or context.
 
-## Why WireGuard?
+## Section Heading
 
-WireGuard is a fast, simple, and modern VPN that uses secure cryptography. Compared to OpenVPN, it is lightweight, runs in kernel space, and connects quickly.
-
-Here is the system architecture:
-
-```mermaid
-graph LR
-    Client[Client Device] -->|WireGuard Encrypted Tunnel| Gateway[AlmaLinux Gateway]
-    Gateway -->|Forward Traffic| LAN[Private Home LAN]
-    Gateway -->|NAT WAN| WAN[Public Internet]
-```
-
-## Docker Compose Setup
-
-I run WireGuard using the Linuxserver Docker image, which simplifies the setup.
-
-```yaml title="docker-compose.yml" {8-12}
-services:
-  wireguard:
-    image: lscr.io/linuxserver/wireguard:latest
-    container_name: wireguard
-    cap_add:
-      - NET_ADMIN
-      - SYS_MODULE
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Etc/UTC
-      - SERVERURL=vpn.imagitech.online
-      - SERVERPORT=51820
-      - PEERS=laptop,phone,tablet
-      - PEERDNS=1.1.1.1
-      - INTERNAL_SUBNET=10.13.13.0
-    ports:
-      - 51820:51820/udp
-    volumes:
-      - ./config:/config
-      - /lib/modules:/lib/modules
-    sysctls:
-      - net.ipv4.conf.all.src_valid_mark=1
-    restart: unless-stopped
-```
-
-### Scripted Configuration
-
-To enable network address translation (NAT) and forward traffic, configure IPv4 packet forwarding on the host system:
+Your content here. Use code blocks with language identifiers:
 
 ```bash
-# Enable IPv4 forwarding temporarily
-sudo sysctl -w net.ipv4.ip_forward=1
-
-# Make the configuration permanent
-echo "net.ipv4.ip_forward=1" | sudo tee -a /etc/sysctl.d/99-sysctl.conf
-sudo sysctl --system
+# Example bash command
+sudo systemctl status nginx
 ```
 
-<Callout type="warning" title="Security Notice">
-Ensure your firewall (firewalld or UFW) allows incoming UDP traffic on port 51820, and configure masquerading on your external network interface to prevent IP leaks.
-</Callout>
+Use `<Callout>` components for important notices:
 
-To learn more about setting up Linux gateways, refer to [Useful Linux Networking Commands](file:///home/azureuser/imagitech-online/content/notes/linux-networking.mdx).
+<Callout type="warning" title="Important">
+Your warning message here.
+</Callout>
 ```
 
 ### 3.2 Writing a New Project Case Study
@@ -308,263 +265,308 @@ Projects are placed under `content/projects/your-project-slug.mdx`.
 #### Required Frontmatter Fields
 
 *   `title` (string): Project name.
-*   `description` (string): A short overview of the project's purpose.
+*   `description` (string): Short overview of the project's purpose.
 *   `date` (string): Project release date (`YYYY-MM-DD`).
 *   `github` (string): URL to the GitHub repository.
 *   `url` (string, optional): Live demo URL.
 *   `technologies` (array of strings): Technologies used.
-*   `featured` (boolean): Set to `true` to showcase the project on the home page dashboard.
-*   `published` (boolean): Set to `true` to publish the project.
+*   `featured` (boolean): Set to `true` to showcase on the home page dashboard.
+*   `published` (boolean): Set to `true` to publish.
 
-#### Complete Project Template
+#### Project Template
 
 ```markdown
 ---
-title: "FileStation"
-description: "A production-ready, ultra-lightweight single-file Python web file manager with chunked uploads."
-date: "2026-06-15"
-github: "https://github.com/DDreamer01/filestation"
-url: "https://filestation.imagitech.online"
-technologies: ["Python", "HTML5", "Vanilla JS", "Tailwind CSS", "Systemd"]
+title: "Your Project Name"
+description: "One sentence describing what this project does."
+date: "2026-07-17"
+github: "https://github.com/DDreamer01/your-repo"
+url: "https://project.imagitech.online"
+technologies: ["Python", "Bash", "Linux", "Nginx"]
 featured: true
 published: true
 ---
 
 ## Overview
 
-FileStation is a lightweight, single-file Python web server that provides a web interface for file storage and management on server directories.
+What the project is and why it exists.
 
 ## Problem
 
-When managing remote Linux systems, configuring tools like FTP can be tedious and requires specialized clients, while heavy services like Nextcloud can be resource-intensive for simple storage nodes. I needed a tool that was:
-1. Instantly deployable with no external Python dependencies.
-2. Capable of handling large files (5GB+ ISOs) over unstable connections.
-3. Accessible via standard web browsers on both mobile and desktop.
+What problem it solves.
 
 ## Architecture
 
-FileStation is contained in a single `server.py` file to simplify deployment. The backend uses Python's standard `http.server` library running on multi-threaded sockets.
-
 ```mermaid
 graph TD
-    Client[Browser Client] -->|HTTP Requests| Server[FileStation server.py]
-    Server -->|Read/Write File System| Disk[(Local Disk Storage)]
+    Client[Browser] --> Server[Your Server]
+    Server --> Disk[(Storage)]
 ```
 
 ## Features
 
-- **Single-File Architecture**: Deploy and run `server.py` in any directory.
-- **Resumable Chunked Uploads**: Resume file uploads after network failures without losing progress.
-- **Folder Drag-and-Drop**: Upload directory structures recursively using browser APIs.
-- **SSL Integration**: Natively handles HTTPS redirects and certificate renewals.
+- Feature one
+- Feature two
 
 ## Usage
 
-Run the automated installer script:
-
 ```bash
-chmod +x install.sh
-sudo ./install.sh
-```
-
-Or start the server manually:
-
-```bash
-python3 server.py -d /home/user/files -u admin --password secret
+# How to install or run it
+./install.sh
 ```
 ```
 
 ### 3.3 Writing a New Technical Note
 
-Notes are short-form developer cheatsheets, command logs, or diagnostic checklists. They are stored in `content/notes/your-note-slug.mdx`. 
+Notes are short-form developer cheatsheets, command logs, or diagnostic references stored in `content/notes/your-note-slug.mdx`.
 
-Unlike blog posts or project case studies, notes do not require narrative summaries. They focus on providing reference commands and configurations.
+Unlike blog posts, notes do not require narrative summaries — they focus on providing reference commands and configurations.
 
 #### Required Frontmatter Fields
 
 *   `title` (string): Cheatsheet title.
 *   `date` (string): Last update date (`YYYY-MM-DD`).
-*   `category` (string): The category of the note (e.g., `Linux`, `Docker`, `SQL`, `Nginx`).
+*   `category` (string): One of `Linux`, `Cybersecurity`, `Docker`, `Networking`, `Git`, etc.
 *   `published` (boolean): Set to `true` to publish.
 
-#### Complete Technical Note Example
+#### Note Template
 
 ```markdown
 ---
-title: "Useful Linux Networking Commands"
-date: "2026-06-20"
+title: "Your Note Title"
+date: "2026-07-17"
 category: "Linux"
 published: true
 ---
 
-A collection of quick commands for diagnosing networking issues on Linux servers.
+Brief one-line description of what this note covers.
 
-### 1. Check Listening Ports
-To see which processes are listening on which ports, use `ss`:
+---
 
-```bash
-# -t: TCP, -u: UDP, -l: Listening, -p: Process, -n: Numeric port numbers
-sudo ss -tulpn
-```
+## 1. Section Title
 
-### 2. Trace Route with Network Paths
-Use `mtr` to view real-time latency statistics along a network path:
+Context sentence explaining what the commands below do:
 
 ```bash
-mtr -c 10 -r 8.8.8.8
+# Annotated command with explanation
+sudo command --flag value
 ```
 
-### 3. Check Domain Name Resolution (DNS)
-Check if local DNS servers are resolving names correctly using `dig`:
+## 2. Next Section
 
-```bash
-# Query a specific DNS server
-dig @1.1.1.1 google.com
+For keyboard shortcuts, use `<kbd>` tags:
 
-# Trace the DNS resolution path
-dig +trace google.com
+Press <kbd>Ctrl</kbd> + <kbd>b</kbd>, then <kbd>d</kbd> to detach.
 ```
 
-### 4. Capture Network Packets
-Analyze raw network traffic on a specific interface:
+### 3.4 Current Content Index
 
-```bash
-sudo tcpdump -i eth0 -n -c 100
-```
-```
+#### Blog Posts (`content/blog/`)
+| File | Title |
+| :--- | :--- |
+| `self-hosted-vpn-guide.mdx` | Building a Stealth VPN Gateway: VLESS Reality & SNI Multiplexing |
+| `self-hosting-wireguard.mdx` | Self-Hosting a VPN Server on AlmaLinux |
 
-### 3.4 Writing Guidelines
+#### Projects (`content/projects/`)
+| File | Title | Featured |
+| :--- | :--- | :--- |
+| `autoscript-pro.mdx` | Imagitech Autoscript Pro | ✅ |
+| `filestation.mdx` | FileStation | ✅ |
 
-To maintain content quality, adhere to the following writing guidelines:
+#### Notes (`content/notes/`)
+| File | Title | Category |
+| :--- | :--- | :--- |
+| `linux-networking.mdx` | Useful Linux Networking Commands | Linux |
+| `penetration-testing-tools.mdx` | Tools I Use for Pentesting | Cybersecurity |
+| `tmux.mdx` | Useful tmux Commands | Linux |
+
+### 3.5 Writing Guidelines
 
 *   **Experience-Driven Content**: Document actual engineering problems, real configuration settings, and verified CLI outputs. Avoid generic tutorials.
 *   **Technical Accuracy**: Verify commands, configurations, and scripts locally before publishing.
-*   **Conciseness and Clarity**: Get straight to the point. Provide a system architecture diagram (using Mermaid) for complex setups.
-*   **No AI Filler**: Avoid generic introductions or AI-generated transition phrases. Ensure the content remains technical, detailed, and direct.
-*   **Highlight Failure Modes**: Document the errors you encountered, how you diagnosed them, and the steps taken to resolve them.
+*   **Conciseness and Clarity**: Get straight to the point. Use Mermaid diagrams for complex architectures.
+*   **No AI Filler**: Avoid generic introductions or AI-generated transition phrases. Keep content technical, detailed, and in your own words.
+*   **Document Failure Modes**: Include the errors you encountered, how you diagnosed them, and the steps taken to resolve them.
+*   **Keyboard Shortcuts**: Use `<kbd>` HTML tags for key combinations (e.g., `<kbd>Ctrl</kbd> + <kbd>b</kbd>`).
 
 ---
 
-## 4. Deployment Pipeline
+## 4. Deployment
 
-The website is hosted on Cloudflare Pages. The build and deployment pipeline is automated using GitHub Actions.
+The website is self-hosted on an Azure Linux VM. Cloudflare manages the domain (`imagitech.online`) for DNS resolution only — the grey cloud (DNS-only, no Cloudflare proxy or CDN). There is no CI/CD pipeline; deployment is a manual `git pull` on the server.
 
-### 4.1 GitHub Actions CI/CD Pipeline
+### 4.1 Infrastructure Overview
 
-The deployment workflow is defined in [cloudflare-pages.yml](file:///home/azureuser/imagitech-online/.github/workflows/cloudflare-pages.yml) and triggers automatically on pushes to the `main` branch:
-
-```yaml
-name: Deploy to Cloudflare Pages
-
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    name: Build & Deploy
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build Next.js & Index Pagefind
-        run: npm run build
-
-      - name: Deploy to Cloudflare Pages
-        uses: cloudflare/pages-action@v1
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: imagitech-online
-          directory: out
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+```text
+Local Machine ──git push──▶ GitHub (public repo, SSH key auth)
+                                      │
+                                      ▼ (manual: ssh into server → git pull)
+                         Azure Linux VM (self-hosted)
+                                      │
+                              Nginx reverse proxy
+                                      │
+                              Next.js static output (out/)
+                                      │
+                         imagitech.online ◀── Cloudflare
 ```
 
-### 4.2 Configuration Parameters
+- **Domain**: `imagitech.online` — registered and DNS-managed via Cloudflare (grey cloud = DNS resolution only, no Cloudflare proxy).
+- **Hosting**: Azure Linux VM running Nginx to serve the static `out/` directory.
+- **Version Control**: Public GitHub repository, authenticated locally via SSH keys. No deploy tokens required.
 
-*   **GitHub Secrets**:
-    *   `CLOUDFLARE_API_TOKEN`: API Token generated in the Cloudflare Dashboard with permission to edit Pages projects.
-    *   `CLOUDFLARE_ACCOUNT_ID`: Cloudflare Account ID.
-    *   `GITHUB_TOKEN`: Built-in GitHub Action execution token used to publish commit status updates.
-*   **Build Settings**:
-    *   Framework Preset: `None` (handled by GitHub Actions outputting directly to the `out/` directory).
-    *   Production Branch: `main`.
+### 4.2 First-Time Server Setup
 
-### 4.3 Custom Domains & DNS Configuration
+On a fresh Azure Linux VM:
 
-1. In the Cloudflare Dashboard, navigate to **Workers & Pages** > **imagitech-online** > **Custom Domains**.
-2. Click **Set up a custom domain** and enter `imagitech.online` (or your subdomain, e.g. `filestation.imagitech.online`).
-3. Cloudflare will automatically configure the CNAME records in your DNS zone pointing to the Pages canonical URL (`imagitech-online.pages.dev`).
+```bash
+# Install Node.js (via NodeSource for a current version)
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt-get install -y nodejs
 
-### 4.4 Rollbacks
+# Install Nginx
+sudo apt-get install -y nginx
 
-If a bad deployment is pushed to production:
-1. Open the Cloudflare Dashboard and navigate to **Workers & Pages** > **imagitech-online**.
-2. Under the **Deployments** tab, locate the last known working deployment.
-3. Click the three dots icon next to the deployment, and select **Rollback to this deployment**.
-4. To fix the issue in the repository, revert the bad commit locally and push the clean history to the `main` branch on GitHub:
-   ```bash
-   # Revert the most recent commit on main
-   git revert HEAD
-   git push origin main
-   ```
+# Clone the repository (public repo — no auth needed)
+git clone git@github.com:DDreamer01/imagitech-online.git /var/www/imagitech-online
+cd /var/www/imagitech-online
+
+# Install dependencies and build
+npm ci
+npm run build
+# The static site is now in out/
+```
+
+Configure Nginx to serve the `out/` directory (see Section 4.3).
+
+### 4.3 Nginx Configuration
+
+Create a config file at `/etc/nginx/sites-available/imagitech.online`:
+
+```nginx
+server {
+    listen 80;
+    server_name imagitech.online www.imagitech.online;
+
+    root /var/www/imagitech-online/out;
+    index index.html;
+
+    # Serve static files; fall back to index.html for client-side routing
+    location / {
+        try_files $uri $uri.html $uri/ =404;
+    }
+
+    # Required: serve .wasm files with the correct MIME type for Pagefind search
+    location ~* \.wasm$ {
+        types { application/wasm wasm; }
+    }
+
+    # Cache static assets aggressively
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff2)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+}
+```
+
+Enable the site and reload Nginx:
+
+```bash
+sudo ln -s /etc/nginx/sites-available/imagitech.online /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+> [!NOTE]
+> To add HTTPS, use Certbot: `sudo apt install certbot python3-certbot-nginx && sudo certbot --nginx -d imagitech.online`. Since Cloudflare is grey cloud (DNS-only), you can obtain a certificate directly from Let's Encrypt.
+
+### 4.4 Deploying Updates
+
+The standard update workflow after pushing changes from your local machine:
+
+```bash
+# On your local machine — commit and push as usual
+git add -A
+git commit -m "add: new blog post on XYZ"
+git push origin main
+
+# SSH into the Azure server
+ssh user@your-azure-server-ip
+
+# Pull the latest changes and rebuild
+cd /var/www/imagitech-online
+git pull origin main
+npm ci          # only needed if package.json changed
+npm run build   # rebuilds the static output into out/
+```
+
+Nginx serves from the `out/` directory directly — no server restart needed after a build.
+
+
+### 4.5 Rollbacks
+
+If a bad build is deployed:
+
+```bash
+# On the server — revert to the previous commit and rebuild
+cd /var/www/imagitech-online
+git log --oneline -5        # find the last good commit hash
+git checkout <commit-hash>  # check out that version
+npm run build               # rebuild from that version
+```
+
+To fix properly in the repository (from your local machine):
+
+```bash
+git revert HEAD
+git push origin main
+# Then pull and rebuild on the server as usual
+```
+
 
 ---
+
+
 
 ## 5. Maintenance and Code Preservation
 
-To maintain the design layout and prevent regressions, adhere to the following maintenance rules:
-
 ### 5.1 CSS Custom Properties Protection
 
-All colors are controlled by CSS variables defined in [globals.css](file:///home/azureuser/imagitech-online/src/app/globals.css). Do not replace these variables with hardcoded Tailwind color utilities (such as `bg-zinc-800` or `text-amber-500`).
+All colors are controlled by CSS variables in [globals.css](file:///home/dreamer/imagitech-online/src/app/globals.css). Do not replace these with hardcoded Tailwind color utilities.
 
 ```css
-/* Maintain these main theme tokens inside globals.css */
+/* Core theme tokens — do not replace with raw Tailwind utilities */
 --background: #181818;
 --foreground: #F2F2F2;
 --card: #222222;
 --border: #353535;
---primary: #CF7253; /* Primary Accent Clay */
+--primary: #CF7253; /* Primary Accent: Clay */
 ```
 
-If you modify theme components, use semantic class wrappers (`bg-card`, `border-border`, `text-primary`) to ensure color consistency across the site.
+> [!WARNING]
+> The site remaps Tailwind's built-in `sky-*` and `slate-*` colors to match the Clay-Copper theme. When you see `text-sky-400` in JSX it renders as clay orange (`#CF7253`), **not** blue. Do not add standard Tailwind color classes expecting their default colors.
+
+Use semantic class wrappers (`bg-card`, `border-border`, `text-primary`) to ensure color consistency.
 
 ### 5.2 Layout Integrity
 
-Keep component margins, paddings, and flex structures clean.
-*   Do not add custom margins inside page templates that could break the global max-width layout wrapper (`max-w-5xl px-4 sm:px-6 lg:px-8`).
-*   Ensure that page components are responsive and adapt properly to mobile layouts.
-*   When editing the header or footer, test the layout locally to prevent header occlusion issues (`scroll-margin-top: 5.5rem` is configured to prevent heading elements from being hidden behind the sticky header).
+*   Do not add custom margins inside page templates that break the global max-width wrapper (`max-w-5xl px-4 sm:px-6 lg:px-8`).
+*   Ensure all page components are responsive and adapt to mobile layouts.
+*   When editing the header or footer, test the layout locally to prevent heading occlusion issues (`scroll-margin-top: 5.5rem` prevents heading elements from being hidden behind the sticky header).
 
-### 5.3 Zero-Regression Verifications
+### 5.3 Zero-Regression Verification Checklist
 
-Before committing any layout changes, script edits, or dependency updates, run the following verification checklist:
+Before committing any layout changes, script edits, or dependency updates:
 
 ```bash
-# 1. Clean build cache
+# 1. Clean build artifacts
 rm -rf .next out
 
-# 2. Run strictly typed compilation checks
+# 2. Run strict TypeScript type checking
 npx tsc --noEmit
 
-# 3. Run style and syntax linting
+# 3. Run ESLint
 npm run lint
 
-# 4. Perform compilation and search indexing verification
+# 4. Full production build + search index
 npm run build
 ```
