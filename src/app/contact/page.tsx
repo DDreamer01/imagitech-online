@@ -43,17 +43,6 @@ export default function ContactPage() {
               github.com/DDreamer01
             </a>
           </div>
-
-          <div className="mt-10 p-4 rounded-lg border border-slate-800 bg-slate-950/40">
-            <h3 className="font-mono text-sm font-semibold text-slate-200 mb-2">Secure Communications</h3>
-            <p className="text-sm text-slate-400 mb-3 leading-relaxed">
-              For encrypted or sensitive inquiries, feel free to use my PGP public key.
-            </p>
-            <div className="font-mono text-xs text-sky-400 bg-slate-950 p-3 rounded border border-slate-900 overflow-x-auto select-all">
-              <span className="text-slate-500 mr-2">Fingerprint:</span>
-              {pgpFingerprint}
-            </div>
-          </div>
         </div>
       </div>
     </div>
