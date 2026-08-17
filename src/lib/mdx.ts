@@ -1,9 +1,48 @@
 import fs from "fs";
 import path from "path";
 import matter from "gray-matter";
+import { z } from "zod";
 import { BlogPost, Project, Note } from "../types";
 
 const CONTENT_PATH = path.join(process.cwd(), "content");
+
+// --- ZOD SCHEMAS FOR STRICT RUNTIME VALIDATION ---
+
+export const BlogPostFrontmatterSchema = z.object({
+  title: z.string().min(1, "Post title is required"),
+  description: z.string().default(""),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must follow YYYY-MM-DD format"),
+  published: z.boolean().default(true),
+  tags: z.preprocess((val) => {
+    if (typeof val === "string") {
+      return val.split(",").map((s) => s.trim()).filter(Boolean);
+    }
+    return val;
+  }, z.array(z.string()).default([])),
+});
+
+export const ProjectFrontmatterSchema = z.object({
+  title: z.string().min(1, "Project title is required"),
+  description: z.string().default(""),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must follow YYYY-MM-DD format"),
+  github: z.string().default(""),
+  url: z.string().optional(),
+  technologies: z.preprocess((val) => {
+    if (typeof val === "string") {
+      return val.split(",").map((s) => s.trim()).filter(Boolean);
+    }
+    return val;
+  }, z.array(z.string()).default([])),
+  featured: z.boolean().default(false),
+  published: z.boolean().default(true),
+});
+
+export const NoteFrontmatterSchema = z.object({
+  title: z.string().min(1, "Note title is required"),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must follow YYYY-MM-DD format"),
+  category: z.string().default("General"),
+  published: z.boolean().default(true),
+});
 
 // Helper to calculate reading time
 function getReadingTime(text: string): string {
@@ -42,20 +81,30 @@ export function getBlogPosts(): BlogPost[] {
       const { data, content } = matter(fileContent);
       const slug = file.replace(/\.mdx?$/, "");
 
-      return {
-        slug,
-        title: data.title || "Untitled Post",
-        description: data.description || "",
-        date: data.date || new Date().toISOString().split("T")[0],
-        published: data.published !== false,
-        tags: data.tags || [],
-        readingTime: getReadingTime(content),
-        content,
-      } as BlogPost;
+      try {
+        const validated = BlogPostFrontmatterSchema.parse(data);
+        return {
+          slug,
+          ...validated,
+          readingTime: getReadingTime(content),
+          content,
+        } as BlogPost;
+      } catch (err) {
+        console.error(`\x1b[31m[Zod Error] Invalid frontmatter in ${file}:\x1b[0m`, err);
+        return {
+          slug,
+          title: (data.title as string) || "Untitled Post",
+          description: (data.description as string) || "",
+          date: (data.date as string) || new Date().toISOString().split("T")[0],
+          published: data.published !== false,
+          tags: Array.isArray(data.tags) ? data.tags : [],
+          readingTime: getReadingTime(content),
+          content,
+        } as BlogPost;
+      }
     })
     .filter((post) => post.published);
 
-  // Sort by date descending
   return posts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
@@ -71,16 +120,27 @@ export function getBlogPostBySlug(slug: string): BlogPost | null {
   const fileContent = fs.readFileSync(filePath, "utf-8");
   const { data, content } = matter(fileContent);
 
-  return {
-    slug,
-    title: data.title || "Untitled Post",
-    description: data.description || "",
-    date: data.date || new Date().toISOString().split("T")[0],
-    published: data.published !== false,
-    tags: data.tags || [],
-    readingTime: getReadingTime(content),
-    content,
-  } as BlogPost;
+  try {
+    const validated = BlogPostFrontmatterSchema.parse(data);
+    return {
+      slug,
+      ...validated,
+      readingTime: getReadingTime(content),
+      content,
+    } as BlogPost;
+  } catch (err) {
+    console.error(`\x1b[31m[Zod Error] Invalid frontmatter in ${slug}:\x1b[0m`, err);
+    return {
+      slug,
+      title: (data.title as string) || "Untitled Post",
+      description: (data.description as string) || "",
+      date: (data.date as string) || new Date().toISOString().split("T")[0],
+      published: data.published !== false,
+      tags: Array.isArray(data.tags) ? data.tags : [],
+      readingTime: getReadingTime(content),
+      content,
+    } as BlogPost;
+  }
 }
 
 // --- PROJECTS ---
@@ -98,18 +158,28 @@ export function getProjects(): Project[] {
       const { data, content } = matter(fileContent);
       const slug = file.replace(/\.mdx?$/, "");
 
-      return {
-        slug,
-        title: data.title || "Untitled Project",
-        description: data.description || "",
-        date: data.date || new Date().toISOString().split("T")[0],
-        github: data.github || "",
-        url: data.url,
-        technologies: data.technologies || [],
-        featured: data.featured === true,
-        published: data.published !== false,
-        content,
-      } as Project;
+      try {
+        const validated = ProjectFrontmatterSchema.parse(data);
+        return {
+          slug,
+          ...validated,
+          content,
+        } as Project;
+      } catch (err) {
+        console.error(`\x1b[31m[Zod Error] Invalid project frontmatter in ${file}:\x1b[0m`, err);
+        return {
+          slug,
+          title: (data.title as string) || "Untitled Project",
+          description: (data.description as string) || "",
+          date: (data.date as string) || new Date().toISOString().split("T")[0],
+          github: (data.github as string) || "",
+          url: data.url as string | undefined,
+          technologies: Array.isArray(data.technologies) ? data.technologies : [],
+          featured: data.featured === true,
+          published: data.published !== false,
+          content,
+        } as Project;
+      }
     })
     .filter((project) => project.published);
 
@@ -128,18 +198,28 @@ export function getProjectBySlug(slug: string): Project | null {
   const fileContent = fs.readFileSync(filePath, "utf-8");
   const { data, content } = matter(fileContent);
 
-  return {
-    slug,
-    title: data.title || "Untitled Project",
-    description: data.description || "",
-    date: data.date || new Date().toISOString().split("T")[0],
-    github: data.github || "",
-    url: data.url,
-    technologies: data.technologies || [],
-    featured: data.featured === true,
-    published: data.published !== false,
-    content,
-  } as Project;
+  try {
+    const validated = ProjectFrontmatterSchema.parse(data);
+    return {
+      slug,
+      ...validated,
+      content,
+    } as Project;
+  } catch (err) {
+    console.error(`\x1b[31m[Zod Error] Invalid project frontmatter in ${slug}:\x1b[0m`, err);
+    return {
+      slug,
+      title: (data.title as string) || "Untitled Project",
+      description: (data.description as string) || "",
+      date: (data.date as string) || new Date().toISOString().split("T")[0],
+      github: (data.github as string) || "",
+      url: data.url as string | undefined,
+      technologies: Array.isArray(data.technologies) ? data.technologies : [],
+      featured: data.featured === true,
+      published: data.published !== false,
+      content,
+    } as Project;
+  }
 }
 
 // --- NOTES ---
@@ -157,14 +237,24 @@ export function getNotes(): Note[] {
       const { data, content } = matter(fileContent);
       const slug = file.replace(/\.mdx?$/, "");
 
-      return {
-        slug,
-        title: data.title || "Untitled Note",
-        date: data.date || new Date().toISOString().split("T")[0],
-        category: data.category || "General",
-        published: data.published !== false,
-        content,
-      } as Note;
+      try {
+        const validated = NoteFrontmatterSchema.parse(data);
+        return {
+          slug,
+          ...validated,
+          content,
+        } as Note;
+      } catch (err) {
+        console.error(`\x1b[31m[Zod Error] Invalid note frontmatter in ${file}:\x1b[0m`, err);
+        return {
+          slug,
+          title: (data.title as string) || "Untitled Note",
+          date: (data.date as string) || new Date().toISOString().split("T")[0],
+          category: (data.category as string) || "General",
+          published: data.published !== false,
+          content,
+        } as Note;
+      }
     })
     .filter((note) => note.published);
 
@@ -183,14 +273,58 @@ export function getNoteBySlug(slug: string): Note | null {
   const fileContent = fs.readFileSync(filePath, "utf-8");
   const { data, content } = matter(fileContent);
 
-  return {
-    slug,
-    title: data.title || "Untitled Note",
-    date: data.date || new Date().toISOString().split("T")[0],
-    category: data.category || "General",
-    published: data.published !== false,
-    content,
-  } as Note;
+  try {
+    const validated = NoteFrontmatterSchema.parse(data);
+    return {
+      slug,
+      ...validated,
+      content,
+    } as Note;
+  } catch (err) {
+    console.error(`\x1b[31m[Zod Error] Invalid note frontmatter in ${slug}:\x1b[0m`, err);
+    return {
+      slug,
+      title: (data.title as string) || "Untitled Note",
+      date: (data.date as string) || new Date().toISOString().split("T")[0],
+      category: (data.category as string) || "General",
+      published: data.published !== false,
+      content,
+    } as Note;
+  }
+}
+
+// --- TAGS MATRIX HELPER ---
+
+export interface TagCount {
+  name: string;
+  count: number;
+}
+
+export function getAllTags(): TagCount[] {
+  const posts = getBlogPosts();
+  const tagMap: Record<string, number> = {};
+
+  posts.forEach((post) => {
+    post.tags.forEach((tag) => {
+      const normalized = tag.trim();
+      if (normalized) {
+        tagMap[normalized] = (tagMap[normalized] || 0) + 1;
+      }
+    });
+  });
+
+  return Object.entries(tagMap)
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+}
+
+export function getPostsByTag(tagName: string): BlogPost[] {
+  const posts = getBlogPosts();
+  const normalizedTarget = decodeURIComponent(tagName).toLowerCase().trim();
+
+  return posts.filter((post) =>
+    post.tags.some((tag) => tag.toLowerCase().trim() === normalizedTarget)
+  );
 }
 
 // --- TABLE OF CONTENTS UTILITIES ---
@@ -219,7 +353,7 @@ export function extractHeadings(markdownText: string): TocItem[] {
     const text = match[2].trim();
     const cleanText = text.replace(/\[([^\]]+)\]\([^)]+\)/g, "$1").replace(/`([^`]+)`/g, "$1");
     const id = textToSlug(cleanText);
-    
+
     headings.push({ id, text: cleanText, depth });
   }
 

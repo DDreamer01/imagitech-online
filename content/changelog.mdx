@@ -1,0 +1,44 @@
+---
+title: "Changelog"
+description: "A reverse-chronological log of changes, improvements, and new content added to imagitech.online."
+---
+
+## August 2026
+
+### 2026-08-17 — Feature Expansion & Production Hardening
+- Added **Topic Matrix / Tags** system with clickable tag navigation across all blog posts
+- Added **Dynamic OpenGraph** image generation for blog posts and projects (1200×630 branded cards)
+- Added **Mermaid diagram zoom** lightbox modal for architecture flowcharts
+- Added **Zod schema validation** for all MDX frontmatter (blog, projects, notes)
+- Added **Giscus comments** (GitHub Discussions) on blog posts
+- Added **Security headers** (CSP, HSTS, X-Frame-Options, Referrer-Policy)
+- Added **Prev/Next post navigation** at the bottom of articles
+- Added **Custom favicon** (SVG) and web manifest for PWA bookmarking
+- Added **Changelog page** (this page)
+- Fixed `npx pagefind` to run non-interactively with `-y` flag
+
+### 2026-08-14 — Refactoring & Workflow Accelerators
+- Synced with latest GitHub repo (new notes: Tmux, Penetration Testing Tools)
+- Created `npm run new` interactive content scaffolder CLI
+- Created VS Code MDX snippets for Callouts, Mermaid, and code blocks
+- Created GitHub Actions deploy workflow (`.github/workflows/deploy-azure.yml`)
+- Rewrote `README.md` into a comprehensive operations manual
+
+## July 2026
+
+### 2026-07-17 — Content Updates
+- Added Tmux keybindings cheatsheet note
+- Updated About, Uses, and Now pages with real data
+- Replaced placeholder social links with actual profiles
+
+## June 2026
+
+### 2026-06-30 — Initial Launch
+- Deployed imagitech.online as a Next.js 16 static site
+- Built custom dark theme with warm charcoal and terracotta accent palette
+- Implemented MDX blog with Shiki syntax highlighting, Mermaid diagrams, and Callout components
+- Added Pagefind search with keyboard shortcuts (⌘K, /)
+- Added mobile navigation drawer with focus trapping and scroll lock
+- Created Playwright E2E test suite (105 tests across 5 browser engines)
+- Published first blog posts: Self-Hosted VPN Guide, WireGuard Setup
+- Published first project writeups: AutoScript Pro, FileStation

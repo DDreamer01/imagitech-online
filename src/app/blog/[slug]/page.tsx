@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { getBlogPostBySlug, getBlogPosts, extractHeadings } from "@/lib/mdx";
 import Mdx from "@/components/Mdx";
 import TableOfContents from "@/components/TableOfContents";
+import Giscus from "@/components/Giscus";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -47,6 +48,11 @@ export default async function BlogPostDetailPage({ params }: PageProps) {
   if (!post) {
     notFound();
   }
+
+  const allPosts = getBlogPosts();
+  const currentIndex = allPosts.findIndex((p) => p.slug === slug);
+  const prevPost = currentIndex < allPosts.length - 1 ? allPosts[currentIndex + 1] : null;
+  const nextPost = currentIndex > 0 ? allPosts[currentIndex - 1] : null;
 
   const headings = extractHeadings(post.content);
 
@@ -105,6 +111,33 @@ export default async function BlogPostDetailPage({ params }: PageProps) {
         <div className="prose prose-slate prose-invert max-w-none">
           <Mdx source={post.content} />
         </div>
+
+        {/* Prev / Next Navigation */}
+        <nav className="mt-12 pt-8 border-t border-slate-800/80" aria-label="Post navigation">
+          <div className="flex flex-col sm:flex-row justify-between gap-4">
+            {prevPost ? (
+              <Link
+                href={`/blog/${prevPost.slug}`}
+                className="group flex-1 p-4 rounded-lg border border-slate-800 hover:border-slate-700 transition-colors"
+              >
+                <span className="font-mono text-xs text-slate-500 block mb-1">← Previous</span>
+                <span className="text-sm font-semibold text-slate-300 group-hover:text-sky-400 transition-colors">{prevPost.title}</span>
+              </Link>
+            ) : <div className="flex-1" />}
+            {nextPost ? (
+              <Link
+                href={`/blog/${nextPost.slug}`}
+                className="group flex-1 p-4 rounded-lg border border-slate-800 hover:border-slate-700 transition-colors text-right"
+              >
+                <span className="font-mono text-xs text-slate-500 block mb-1">Next →</span>
+                <span className="text-sm font-semibold text-slate-300 group-hover:text-sky-400 transition-colors">{nextPost.title}</span>
+              </Link>
+            ) : <div className="flex-1" />}
+          </div>
+        </nav>
+
+        {/* Comments */}
+        <Giscus slug={slug} />
       </div>
 
       {/* Sticky Table of Contents Sidebar */}

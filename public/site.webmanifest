@@ -1,0 +1,16 @@
+{
+  "name": "†hε drεαmεr's Notebook",
+  "short_name": "imagitech",
+  "description": "Technical blog and documentation library covering Linux, networking, and systems engineering.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#181818",
+  "theme_color": "#CF7253",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

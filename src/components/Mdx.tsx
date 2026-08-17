@@ -8,6 +8,7 @@ import Link from "next/link";
 import CodeBlock from "./CodeBlock";
 import Callout from "./Callout";
 import Mermaid from "./Mermaid";
+import MdxImage from "./MdxImage";
 
 // Custom Link Component
 interface CustomLinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
@@ -121,6 +122,8 @@ const components = {
   pre: CodeBlock,
   Callout,
   Mermaid,
+  img: MdxImage,
+  Image: MdxImage,
 };
 
 // Custom MDX Tree Node interface for the remark plugin

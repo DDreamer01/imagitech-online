@@ -12,7 +12,12 @@ const MIME_TYPES = {
   ".txt": "text/plain",
   ".ico": "image/x-icon",
   ".svg": "image/svg+xml",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".webp": "image/webp",
   ".wasm": "application/wasm",
+  ".webmanifest": "application/manifest+json",
 };
 
 const server = http.createServer((req, res) => {
@@ -49,6 +54,14 @@ const server = http.createServer((req, res) => {
     res.writeHead(res.statusCode || 200, {
       "Content-Type": contentType,
       "Cache-Control": "public, max-age=3600",
+      "X-Content-Type-Options": "nosniff",
+      "X-Frame-Options": "DENY",
+      "X-XSS-Protection": "1; mode=block",
+      "Referrer-Policy": "strict-origin-when-cross-origin",
+      "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+      "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+      "Content-Security-Policy":
+        "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://giscus.app; style-src 'self' 'unsafe-inline' https://giscus.app; frame-src https://giscus.app; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://giscus.app",
     });
     res.end(data);
   });

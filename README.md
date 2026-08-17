@@ -6,6 +6,22 @@ This project functions as a high-density technical notebook, professional engine
 
 ---
 
+## Features
+
+- **Custom SVG Favicon + PWA Web Manifest**: Branded vector favicon ([`/public/favicon.svg`](public/favicon.svg)) and web manifest ([`/public/site.webmanifest`](public/site.webmanifest)) for mobile and desktop PWA installation.
+- **Giscus Comments**: GitHub Discussions-backed commenting on blog post detail pages via the [`Giscus`](src/components/Giscus.tsx) component (requires repo-id setup at [giscus.app](https://giscus.app)).
+- **Prev/Next Post Navigation**: Bidirectional article navigation links at the bottom of blog post detail pages.
+- **Changelog Page**: Dedicated [`/changelog`](src/app/changelog/page.tsx) page tracking reverse-chronological site history and updates log.
+- **MDX Image Optimization**: Lazy loading (`loading="lazy"`, `decoding="async"`) and responsive styling with automated figcaptions via the [`MdxImage`](src/components/MdxImage.tsx) component.
+- **Hardened Security Headers**: Production-grade HTTP security headers (CSP, HSTS, X-Frame-Options, Referrer-Policy, Permissions-Policy) configured on the static server ([`server.js`](server.js)).
+- **Static Export & Zero-Server Overhead**: Built with Next.js 16 App Router using `output: "export"` and unoptimized images for ultra-fast static hosting.
+- **Fast Client-Side Search**: WebAssembly-powered local search via Pagefind (`⌘K` or `/` shortcut) with zero runtime server dependency.
+- **MDX Content Pipeline**: Native MDX with custom Callouts, Mermaid diagram rendering (with zoom lightbox), Shiki syntax highlighting (Clay-Copper theme), and Zod frontmatter schema validation.
+- **Topic Matrix & Tag Taxonomy**: Dynamic tag filtering across posts and dedicated [`/tags`](src/app/tags/page.tsx) directory.
+- **Dynamic OpenGraph Cards**: Automated 1200×630 branded OG images generated dynamically for articles and project case studies.
+
+---
+
 ## 1. System Architecture
 
 The site is built as a statically exported [Next.js](https://nextjs.org/) application leveraging React, TypeScript, Tailwind CSS v4, and dynamic MDX processing. It features keyboard-navigable client-side search via [Pagefind](https://pagefind.app/) and uses a custom Clay-Copper design system.
@@ -18,7 +34,8 @@ Below is the directory structure layout, showing where configuration, code, and 
 imagitech-online/
 ├── .github/
 │   └── workflows/
-│       └── cloudflare-pages.yml  # CI/CD deployment pipeline to Cloudflare Pages
+│       ├── cloudflare-pages.yml  # CI/CD deployment pipeline to Cloudflare Pages
+│       └── deploy-azure.yml      # Azure VM deployment workflow
 ├── content/                      # MDX Content Repository (separated by type)
 │   ├── blog/                     # Long-form engineering articles and logs
 │   │   ├── self-hosted-vpn-guide.mdx
@@ -27,21 +44,26 @@ imagitech-online/
 │   │   ├── linux-networking.mdx
 │   │   ├── penetration-testing-tools.mdx
 │   │   └── tmux.mdx
-│   └── projects/                 # Production infrastructure case studies
-│       ├── autoscript-pro.mdx
-│       └── filestation.mdx
-├── public/                       # Static assets served at the root (favicons, feeds)
-│   └── feed.xml                  # Auto-generated RSS feed
+│   ├── projects/                 # Production infrastructure case studies
+│   │   ├── autoscript-pro.mdx
+│   │   └── filestation.mdx
+│   └── changelog.mdx             # Reverse-chronological site history and updates log
+├── public/                       # Static assets served at the root (favicons, feeds, manifests)
+│   ├── favicon.svg               # Custom SVG favicon
+│   ├── feed.xml                  # Auto-generated RSS feed
+│   └── site.webmanifest          # PWA web manifest
 ├── scripts/
 │   └── test-server.js            # Local static file server for E2E test runs
 ├── src/
 │   ├── app/                      # App Router static pages and layout configurations
 │   │   ├── about/                # Static "About" page
-│   │   ├── blog/                 # Blog list and dynamic [slug] post renderer
+│   │   ├── blog/                 # Blog list and dynamic [slug] post renderer (with OG image)
+│   │   ├── changelog/            # Changelog timeline page
 │   │   ├── contact/              # Contact information page
 │   │   ├── notes/                # Notes indexing and rendering sub-routes
 │   │   ├── now/                  # Status log ("Now" page)
-│   │   ├── projects/             # Project showcase routes
+│   │   ├── projects/             # Project showcase routes (with OG image)
+│   │   ├── tags/                 # Topic matrix and tag-filtered post lists
 │   │   ├── uses/                 # Hardware/software tooling index ("Uses")
 │   │   ├── globals.css           # Design system variables, animations, scrollbars
 │   │   ├── layout.tsx            # Global RootLayout, font loading, HTML shell
@@ -52,9 +74,11 @@ imagitech-online/
 │   │   ├── Callout.tsx           # Styled markdown notice containers (tip/warning/etc.)
 │   │   ├── CodeBlock.tsx         # Copyable syntax-highlighted code block with copy button
 │   │   ├── Footer.tsx            # Footer with uptime indicator and copyright
+│   │   ├── Giscus.tsx            # GitHub Discussions comments integration
 │   │   ├── Header.tsx            # Sticky navigation header with mobile overlay menu
 │   │   ├── Mdx.tsx               # Core MDX renderer mapping HTML tags to custom components
-│   │   ├── Mermaid.tsx           # Client-side renderer for flowcharts and diagrams
+│   │   ├── MdxImage.tsx          # Responsive lazy-loaded image component with figcaptions
+│   │   ├── Mermaid.tsx           # Client-side renderer for flowcharts and diagrams with zoom
 │   │   ├── NotesClient.tsx       # Client-side notes filtering and search component
 │   │   ├── Search.tsx            # Keyboard-navigable search portal overlay (React Portal)
 │   │   └── TableOfContents.tsx   # Dynamic side-menu outlining headings
@@ -68,7 +92,7 @@ imagitech-online/
 │       └── site.spec.ts          # Playwright end-to-end test suite
 ├── next.config.ts                # Next.js compiler settings (static export, unoptimized images)
 ├── playwright.config.ts          # Playwright configuration for E2E testing
-├── server.js                     # Node.js production server for local previews and MIME mapping
+├── server.js                     # Node.js production server with security headers and MIME mapping
 ├── tsconfig.json                 # TypeScript configuration
 └── package.json                  # Project dependencies, scripts, and build tasks
 ```
@@ -82,40 +106,44 @@ graph TD
     Router -->|Dynamic Route /blog/:slug| DynamicBlog[src/app/blog/slug/page.tsx]
     Router -->|Dynamic Route /projects/:slug| DynamicProj[src/app/projects/slug/page.tsx]
     Router -->|Dynamic Route /notes/:slug| DynamicNote[src/app/notes/slug/page.tsx]
+    Router -->|Static Route /changelog| Changelog[src/app/changelog/page.tsx]
+    Router -->|Dynamic Route /tags/:tag| DynamicTag[src/app/tags/tag/page.tsx]
 
     DynamicBlog -->|Extract params| Slug[getBlogPostBySlug slug]
     Slug -->|FS Read| File[content/blog/slug.mdx]
-    File -->|Parse Frontmatter| Matter[gray-matter]
+    File -->|Parse Frontmatter| Matter[gray-matter / Zod]
     Matter -->|Render Body| Engine[next-mdx-remote/rsc]
 ```
 
-*   **App Router Static Routes**: Simple static routes are defined directly as page folders in `src/app/`. These include directories like `about/`, `contact/`, `now/`, and `uses/`.
-*   **Dynamic MDX Routes**: Dynamic folders (`blog/[slug]`, `projects/[slug]`, `notes/[slug]`) catch path requests and parse corresponding files from `content/`. During compile time, `generateStaticParams()` pre-renders every MDX file as a standalone static HTML file.
+*   **App Router Static Routes**: Simple static routes are defined directly as page folders in `src/app/`. These include directories like `about/`, `changelog/`, `contact/`, `now/`, `tags/`, and `uses/`.
+*   **Dynamic MDX Routes**: Dynamic folders (`blog/[slug]`, `projects/[slug]`, `notes/[slug]`, `tags/[tag]`) catch path requests and parse corresponding files from `content/`. During compile time, `generateStaticParams()` pre-renders every MDX file as a standalone static HTML file.
 *   **Zero Server-Side Dependency**: Because `next.config.ts` enforces `output: "export"`, routing does not rely on a Node.js server. Instead, routes map directly to physical HTML files on the filesystem (e.g., `/blog/my-post` matches `/blog/my-post.html`).
 
 ### 1.3 The MDX Processing System
 
-All content in `content/` is parsed and compiled using a modular processing engine in [Mdx.tsx](file:///home/dreamer/imagitech-online/src/components/Mdx.tsx):
+All content in `content/` is parsed and compiled using a modular processing engine in [`Mdx.tsx`](src/components/Mdx.tsx):
 
-1.  **Metadata Extraction**: [mdx.ts](file:///home/dreamer/imagitech-online/src/lib/mdx.ts) reads files via Node's `fs` module, using **gray-matter** to separate frontmatter key-value pairs (like `title`, `date`, `tags`) from the main body.
+1.  **Metadata Extraction & Validation**: [`mdx.ts`](src/lib/mdx.ts) reads files via Node's `fs` module, using **gray-matter** to separate frontmatter and **Zod** schemas to validate types.
 2.  **Compilation**: The compiler uses `MDXRemote` from **next-mdx-remote/rsc** to transform markdown content into dynamic React nodes.
 3.  **AST Transformation Plugins**:
     *   `remark-gfm`: Injects support for GitHub Flavored Markdown (tables, checkboxes, strikethroughs, raw links).
-    *   `remarkMermaid` (Custom Plugin): An AST-walker that detects code blocks with the `mermaid` language identifier and converts them to `<Mermaid chart="..." />` JSX elements.
+    *   `remarkMermaid` (Custom Plugin): An AST-walker that detects code blocks with the `mermaid` language identifier and converts them to `<Mermaid chart="..." />` JSX elements with modal zoom support.
     *   `rehype-slug`: Generates unique kebab-case IDs from heading text for page-level section anchoring.
     *   `rehype-autolink-headings`: Wraps headings in anchor links pointing to their generated IDs with a `#` symbol on hover.
     *   `rehype-pretty-code` & **Shiki**: Syntax highlighting with a custom Clay-Copper theme. Handles line highlights (e.g. `{3-5}`) and code block titles.
 4.  **Tag-to-Component Mapping**: HTML tags inside MDX are mapped to custom styled React components:
     *   `a` — handles internal Next.js transitions or enforces `target="_blank"` for external links.
-    *   `pre` — maps to [CodeBlock.tsx](file:///home/dreamer/imagitech-online/src/components/CodeBlock.tsx), wrapping Shiki output with code titles, language tags, and a clipboard copy button.
+    *   `pre` — maps to [`CodeBlock.tsx`](src/components/CodeBlock.tsx), wrapping Shiki output with code titles, language tags, and a clipboard copy button.
+    *   `img` — maps to [`MdxImage.tsx`](src/components/MdxImage.tsx), providing lazy loading (`loading="lazy"`, `decoding="async"`) and figcaption rendering.
     *   `Callout` and `Mermaid` — registered globally in the MDX component context.
 
 ### 1.4 Component Layout Boundaries
 
-*   **HTML Outer Boundary**: Managed in [layout.tsx](file:///home/dreamer/imagitech-online/src/app/layout.tsx), which loads the Geist web fonts and structures the skip-to-content accessibility link.
-*   **Sticky Navbar**: Managed by [Header.tsx](file:///home/dreamer/imagitech-online/src/components/Header.tsx). Includes nav links, mobile menu overlay with focus trap, and search trigger.
-*   **Search Overlay**: Defined in [Search.tsx](file:///home/dreamer/imagitech-online/src/components/Search.tsx). Uses a **React Portal** that mounts directly at `document.body` to prevent parent flex constraints from cropping the modal.
-*   **Footer**: Configured in [Footer.tsx](file:///home/dreamer/imagitech-online/src/components/Footer.tsx), which renders copyright metadata, automated year calculation, and a pulse dot status indicator.
+*   **HTML Outer Boundary**: Managed in [`layout.tsx`](src/app/layout.tsx), which loads the Geist web fonts and structures the skip-to-content accessibility link.
+*   **Sticky Navbar**: Managed by [`Header.tsx`](src/components/Header.tsx). Includes nav links, mobile menu overlay with focus trap, and search trigger.
+*   **Search Overlay**: Defined in [`Search.tsx`](src/components/Search.tsx). Uses a **React Portal** that mounts directly at `document.body` to prevent parent flex constraints from cropping the modal.
+*   **Footer**: Configured in [`Footer.tsx`](src/components/Footer.tsx), which renders copyright metadata, automated year calculation, and a pulse dot status indicator.
+*   **Comments Section**: Managed by [`Giscus.tsx`](src/components/Giscus.tsx) at the bottom of blog articles.
 
 ### 1.5 Static Export & Pagefind Search Indexing
 
@@ -133,7 +161,7 @@ flowchart TD
 
 1.  **Compilation Output**: The Next.js pipeline outputs statically generated files to the `out/` directory.
 2.  **Indexing Pipeline**: Post-compilation, `npx pagefind --site out` crawls all HTML in `out/`, builds custom indices, and generates WebAssembly search binaries under `out/pagefind/`.
-3.  **Lazy Loading Strategy**: Search resources are not loaded on page load. When a user presses `CMD+K`, `CTRL+K`, or `/`, [Search.tsx](file:///home/dreamer/imagitech-online/src/components/Search.tsx) dynamically imports `/pagefind/pagefind.js`.
+3.  **Lazy Loading Strategy**: Search resources are not loaded on page load. When a user presses `CMD+K`, `CTRL+K`, or `/`, [`Search.tsx`](src/components/Search.tsx) dynamically imports `/pagefind/pagefind.js`.
 4.  **Local Execution**: The search engine runs on the user's browser thread via WebAssembly — no server roundtrip.
 5.  **MIME Type Constraint**: The web server must serve `.wasm` assets with `Content-Type: application/wasm`. Without this, browsers block WebAssembly compilation and search is disabled.
 
@@ -149,7 +177,7 @@ The project requires **Node.js v18.0.0 or higher** and uses npm.
 
 ```bash
 # Clone the repository and navigate to the directory
-cd /home/dreamer/imagitech-online
+cd imagitech-online
 
 # Perform clean dependency installation using the lockfile
 npm ci
@@ -207,6 +235,15 @@ npx playwright test
 
 ---
 
+## Giscus Comments Setup
+
+1. Enable GitHub Discussions on your repo
+2. Visit https://giscus.app and enter your repo name
+3. Copy the `data-repo-id` and `data-category-id` values
+4. Update `src/components/Giscus.tsx` lines 18-20 with those values
+
+---
+
 ## 3. Writing and Formatting Content
 
 Content is organized in the `content/` folder. The system parses and renders MDX files according to their frontmatter metadata and location.
@@ -216,6 +253,7 @@ Content is organized in the `content/` folder. The system parses and renders MDX
 | **Blog Posts** | `content/blog/` | Long-form technical logs, post-mortems, system guides | `title`, `description`, `date`, `published`, `tags` |
 | **Projects** | `content/projects/` | Structural project specs, case studies, open-source work | `title`, `description`, `github`, `url`, `technologies`, `featured` |
 | **Notes** | `content/notes/` | High-density cheatsheets, CLI references, command lists | `title`, `date`, `category`, `published` |
+| **Changelog** | `content/changelog.mdx` | Reverse-chronological platform updates log | `title`, `description` |
 
 ### 3.1 Writing a New Blog Post
 
@@ -403,9 +441,9 @@ Local Machine ──git push──▶ GitHub (public repo, SSH key auth)
                                       ▼ (manual: ssh into server → git pull)
                          Azure Linux VM (self-hosted)
                                       │
-                              Nginx reverse proxy
+                               Nginx reverse proxy
                                       │
-                              Next.js static output (out/)
+                               Next.js static output (out/)
                                       │
                          imagitech.online ◀── Cloudflare
 ```
@@ -449,6 +487,13 @@ server {
 
     root /var/www/imagitech-online/out;
     index index.html;
+
+    # Security Headers
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
 
     # Serve static files; fall back to index.html for client-side routing
     location / {
@@ -501,7 +546,6 @@ npm run build   # rebuilds the static output into out/
 
 Nginx serves from the `out/` directory directly — no server restart needed after a build.
 
-
 ### 4.5 Rollbacks
 
 If a bad build is deployed:
@@ -522,16 +566,13 @@ git push origin main
 # Then pull and rebuild on the server as usual
 ```
 
-
 ---
-
-
 
 ## 5. Maintenance and Code Preservation
 
 ### 5.1 CSS Custom Properties Protection
 
-All colors are controlled by CSS variables in [globals.css](file:///home/dreamer/imagitech-online/src/app/globals.css). Do not replace these with hardcoded Tailwind color utilities.
+All colors are controlled by CSS variables in [`globals.css`](src/app/globals.css). Do not replace these with hardcoded Tailwind color utilities.
 
 ```css
 /* Core theme tokens — do not replace with raw Tailwind utilities */
@@ -570,3 +611,49 @@ npm run lint
 # 4. Full production build + search index
 npm run build
 ```
+
+---
+
+## Changelog
+
+For the live reverse-chronological log on the web, visit the [`/changelog`](src/app/changelog/page.tsx) page.
+
+### August 2026
+
+#### 2026-08-17 — Feature Expansion & Production Hardening
+- Added **Topic Matrix / Tags** system with clickable tag navigation across all blog posts
+- Added **Dynamic OpenGraph** image generation for blog posts and projects (1200×630 branded cards)
+- Added **Mermaid diagram zoom** lightbox modal for architecture flowcharts
+- Added **Zod schema validation** for all MDX frontmatter (blog, projects, notes)
+- Added **Giscus comments** (GitHub Discussions) on blog posts
+- Added **Security headers** (CSP, HSTS, X-Frame-Options, Referrer-Policy, Permissions-Policy)
+- Added **Prev/Next post navigation** at the bottom of articles
+- Added **Custom favicon** (SVG) and web manifest for PWA bookmarking
+- Added **Changelog page** (`/changelog`)
+- Fixed `npx pagefind` to run non-interactively with `-y` flag
+
+#### 2026-08-14 — Refactoring & Workflow Accelerators
+- Synced with latest GitHub repo (new notes: Tmux, Penetration Testing Tools)
+- Created `npm run new` interactive content scaffolder CLI
+- Created VS Code MDX snippets for Callouts, Mermaid, and code blocks
+- Created GitHub Actions deploy workflow (`.github/workflows/deploy-azure.yml`)
+- Rewrote `README.md` into a comprehensive operations manual
+
+### July 2026
+
+#### 2026-07-17 — Content Updates
+- Added Tmux keybindings cheatsheet note
+- Updated About, Uses, and Now pages with real data
+- Replaced placeholder social links with actual profiles
+
+### June 2026
+
+#### 2026-06-30 — Initial Launch
+- Deployed imagitech.online as a Next.js 16 static site
+- Built custom dark theme with warm charcoal and terracotta accent palette
+- Implemented MDX blog with Shiki syntax highlighting, Mermaid diagrams, and Callout components
+- Added Pagefind search with keyboard shortcuts (⌘K, /)
+- Added mobile navigation drawer with focus trapping and scroll lock
+- Created Playwright E2E test suite (105 tests across 5 browser engines)
+- Published first blog posts: Self-Hosted VPN Guide, WireGuard Setup
+- Published first project writeups: AutoScript Pro, FileStation

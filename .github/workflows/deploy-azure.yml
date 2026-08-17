@@ -1,0 +1,40 @@
+name: Deploy to Azure Server
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }} # Your Azure Server Public IP
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_SSH_PORT || 22 }}
+          script_stop: true
+          script: |
+            echo "==> Navigating to project directory..."
+            if [ -d "/var/www/imagitech-online" ]; then
+              cd /var/www/imagitech-online
+            elif [ -d "$HOME/imagitech-online" ]; then
+              cd "$HOME/imagitech-online"
+            else
+              echo "Error: imagitech-online directory not found" >&2
+              exit 1
+            fi
+            
+            echo "==> Pulling latest changes from main branch..."
+            git pull origin main
+            
+            echo "==> Installing dependencies if package.json updated..."
+            npm ci --prefer-offline --no-audit
+            
+            echo "==> Compiling static production build & search indexes..."
+            npm run build
+            
+            echo "==> Deployment completed successfully at $(date)!"

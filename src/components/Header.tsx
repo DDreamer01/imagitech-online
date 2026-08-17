@@ -10,10 +10,12 @@ const NAV_LINKS = [
   { href: "/blog", label: "Blog" },
   { href: "/projects", label: "Projects" },
   { href: "/notes", label: "Notes" },
+  { href: "/tags", label: "Tags" },
   { href: "/uses", label: "Uses" },
   { href: "/now", label: "Now" },
   { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
+  { href: "/changelog", label: "Changelog" },
 ];
 
 export default function Header() {
