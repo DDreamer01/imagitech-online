@@ -41,6 +41,29 @@ export default function NowPage() {
           </ul>
         </section>
 
+        <section className="mt-8 space-y-4">
+          <ul className="list-disc pl-5 space-y-2">
+            <li>
+              Halted Sander Van Vugts Oreilly's course as my  trial is up 😅. Now using resources like <Link href="https://learnrhcsa.com" className="text-sky-400 hover:underline">LearnRHCSA.Com</Link> (looks AI generated but quite resourceful), <Link href="https://https://www.youtube.com/@DexTutor" className="text-sky-400 hover:underline">DexTutor YT</Link>
+            </li>
+            <li>
+              Started learning Go
+            </li>
+            <li>
+              Built a vulnerable lab, a school lookup site, and a readme preview site.
+            </li>
+            <li>
+              Completed an abandoned VPN project script I helped build for a friend.
+            </li>
+            <li>
+              Made some UI updates and UX improvements to FileStation
+            </li>
+            <li>
+              Started using Opencode with Deepseek V4, previously using only Antigravity with Gemini & Claude.
+            </li>
+          </ul>
+        </section>
+
         <p className="mt-8 text-xs text-slate-500 italic">
           If my focus changes, I commit new details here in git and push to deploy. Simple.
         </p>

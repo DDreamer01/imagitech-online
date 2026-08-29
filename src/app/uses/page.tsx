@@ -29,6 +29,8 @@ const GEAR = [
     items: [
       { name: "Nextcloud", desc: "Self hosted cloud storage platform." },
       { name: "FileStation", desc: "Python server for uploading and moving files around." },
+      { name: "Schlookup", desc: "Retrieve verified administrative address and contact of Universities."},
+      { name: "README Studio", desc: "Create, preview, and beautify your README files."}
     ],
   },
 ];

@@ -47,8 +47,16 @@ export default function HomePage() {
                 <span className="text-emerald-400">Online</span>
               </div>
               <div className="flex justify-between">
-                <a href="https://nextcloud.imagitech.online" target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-sky-400 transition-colors">nextcloud.imagitech.online</a>
+                <a href="https://schlookup.imagitech.online" target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-sky-400 transition-colors">schlookup.imagitech.online</a>
                 <span className="text-emerald-400">Online</span>
+              </div>
+              <div className="flex justify-between">
+                <a href="https://readme.imagitech.online" target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-sky-400 transition-colors">readme.imagitech.online</a>
+                <span className="text-emerald-400">Online</span>
+              </div>
+              <div className="flex justify-between">
+                <a href="https://nextcloud.imagitech.online" target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-sky-400 transition-colors">nextcloud.imagitech.online</a>
+                <span className="text-emerald-400">Offline</span>
               </div>
               <div className="flex justify-between">
                 <a href="https://us.imagitech.online" target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-sky-400 transition-colors">us.imagitech.online</a>
@@ -61,9 +69,11 @@ export default function HomePage() {
           <div className="space-y-3">
             <h3 className="text-xs text-emerald-400 font-bold border-b border-slate-900 pb-1">{"// Active Networks"}</h3>
             <div className="space-y-1 text-xs text-slate-300">
-              <div className="flex justify-between"><span className="text-slate-500">Azure East US</span> <span>VPN · File</span></div>
-              <div className="flex justify-between"><span className="text-slate-500">Azure West EU</span> <span>Nextcloud</span></div>
-              <div className="flex justify-between"><span className="text-slate-500">Cloudflare DNS</span> <span>imagitech.online</span></div>
+              <div className="flex justify-between"><span className="text-slate-500">North Central US</span> <span>File Storage Server</span></div>
+              <div className="flex justify-between"><span className="text-slate-500">Central US</span> <span>Lookup Tool</span></div>
+              <div className="flex justify-between"><span className="text-slate-500">North Central US</span> <span>README Studio</span></div>
+              <div className="flex justify-between"><span className="text-slate-500">-</span> <span>Nextcloud</span></div>
+              <div className="flex justify-between"><span className="text-slate-500">Cloudflare DNS</span> <span>README Studio</span></div>
             </div>
           </div>
 
@@ -72,7 +82,9 @@ export default function HomePage() {
             <h3 className="text-xs text-slate-400 font-bold border-b border-slate-900 pb-1">{"// Stack"}</h3>
             <div className="space-y-1 text-xs text-slate-300">
               <div className="flex justify-between"><span className="text-slate-500">Cloud</span> <span>Microsoft Azure</span></div>
-              <div className="flex justify-between"><span className="text-slate-500">OS</span> <span>Debian</span></div>
+              <div className="flex justify-between"><span className="text-slate-500">Python</span> <span>Ubuntu</span></div>
+              <div className="flex justify-between"><span className="text-slate-500">HTML/CCS/JavaScript</span> <span>Ubuntu</span></div>
+              <div className="flex justify-between"><span className="text-slate-500">-</span> <span>Docker</span></div>
               <div className="flex justify-between"><span className="text-slate-500">VPN Engine</span> <span>Haproxy • Xray-core</span></div>
             </div>
           </div>
