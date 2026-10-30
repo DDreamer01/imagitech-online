@@ -1,5 +1,5 @@
 import { MetadataRoute } from "next";
-import { getBlogPosts, getProjects, getNotes } from "@/lib/mdx";
+import { getBlogPosts, getProjects, getNotes, getWriteups, WRITEUP_PLATFORMS } from "@/lib/mdx";
 
 export const dynamic = "force-static";
 
@@ -7,7 +7,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = "https://imagitech.online";
 
   // Static pages
-  const staticPaths = ["", "/about", "/uses", "/now", "/contact", "/blog", "/projects", "/notes"];
+  const staticPaths = ["", "/about", "/uses", "/now", "/contact", "/blog", "/projects", "/notes", "/writeups"];
   const staticMaps = staticPaths.map((route) => ({
     url: `${baseUrl}${route}`,
     lastModified: new Date(),
@@ -39,5 +39,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.5,
   }));
 
-  return [...staticMaps, ...blogPosts, ...projects, ...notes];
+  // Writeup platforms
+  const writeupPlatforms = WRITEUP_PLATFORMS.map((platform) => ({
+    url: `${baseUrl}/writeups/${platform.slug}`,
+    lastModified: new Date(),
+    changeFrequency: "weekly" as const,
+    priority: 0.8,
+  }));
+
+  // Dynamic Writeups
+  const writeups = getWriteups().map((writeup) => ({
+    url: `${baseUrl}/writeups/${writeup.platform}/${writeup.slug}`,
+    lastModified: new Date(writeup.date),
+    changeFrequency: "monthly" as const,
+    priority: 0.6,
+  }));
+
+  return [...staticMaps, ...blogPosts, ...projects, ...notes, ...writeupPlatforms, ...writeups];
 }

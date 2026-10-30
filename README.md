@@ -12,6 +12,7 @@ This project functions as a high-density technical notebook, professional engine
 - **Giscus Comments**: GitHub Discussions-backed commenting on blog post detail pages via the [`Giscus`](src/components/Giscus.tsx) component (requires repo-id setup at [giscus.app](https://giscus.app)).
 - **Prev/Next Post Navigation**: Bidirectional article navigation links at the bottom of blog post detail pages.
 - **Changelog Page**: Dedicated [`/changelog`](src/app/changelog/page.tsx) page tracking reverse-chronological site history and updates log.
+- **Security Writeups Platform**: Structured solve walkthroughs (`/writeups`) organized per platform (pwn.college, HackTheBox, PortSwigger Web Security Academy) with per-platform listing pages and difficulty/points metadata ([`/writeups`](src/app/writeups/page.tsx)).
 - **MDX Image Optimization**: Lazy loading (`loading="lazy"`, `decoding="async"`) and responsive styling with automated figcaptions via the [`MdxImage`](src/components/MdxImage.tsx) component.
 - **Hardened Security Headers**: Production-grade HTTP security headers (CSP, HSTS, X-Frame-Options, Referrer-Policy, Permissions-Policy) configured on the static server ([`server.js`](server.js)).
 - **Static Export & Zero-Server Overhead**: Built with Next.js 16 App Router using `output: "export"` and unoptimized images for ultra-fast static hosting.
@@ -65,6 +66,7 @@ imagitech-online/
 │   │   ├── projects/             # Project showcase routes (with OG image)
 │   │   ├── tags/                 # Topic matrix and tag-filtered post lists
 │   │   ├── uses/                 # Hardware/software tooling index ("Uses")
+│   │   ├── writeups/             # Security writeup hub, platform listings, and [platform]/[slug] renderer
 │   │   ├── globals.css           # Design system variables, animations, scrollbars
 │   │   ├── layout.tsx            # Global RootLayout, font loading, HTML shell
 │   │   ├── page.tsx              # Main dashboard landing page
@@ -253,6 +255,7 @@ Content is organized in the `content/` folder. The system parses and renders MDX
 | **Blog Posts** | `content/blog/` | Long-form technical logs, post-mortems, system guides | `title`, `description`, `date`, `published`, `tags` |
 | **Projects** | `content/projects/` | Structural project specs, case studies, open-source work | `title`, `description`, `github`, `url`, `technologies`, `featured` |
 | **Notes** | `content/notes/` | High-density cheatsheets, CLI references, command lists | `title`, `date`, `category`, `published` |
+| **Writeups** | `content/writeups/<platform>/` | Security solve walkthroughs per platform (`pwn-college`, `hackthebox`, `portswigger`) | `title`, `description`, `date`, `difficulty`, `points`, `published` |
 | **Changelog** | `content/changelog.mdx` | Reverse-chronological platform updates log | `title`, `description` |
 
 ### 3.1 Writing a New Blog Post

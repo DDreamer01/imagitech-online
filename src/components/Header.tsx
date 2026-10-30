@@ -10,11 +10,18 @@ const NAV_LINKS = [
   { href: "/blog", label: "Blog" },
   { href: "/projects", label: "Projects" },
   { href: "/notes", label: "Notes" },
+  { href: "/writeups", label: "Writeups" },
+  { href: "/about", label: "About" },
+];
+
+// Contact lives under About in the nav (dropdown on desktop, indented in mobile)
+const ABOUT_CHILDREN = [{ href: "/contact", label: "Contact" }];
+
+// Secondary pages, kept accessible via the mobile drawer footer / site footer
+const SECONDARY_LINKS = [
   { href: "/tags", label: "Tags" },
   { href: "/uses", label: "Uses" },
   { href: "/now", label: "Now" },
-  { href: "/about", label: "About" },
-  { href: "/contact", label: "Contact" },
   { href: "/changelog", label: "Changelog" },
 ];
 
@@ -122,22 +129,67 @@ export default function Header() {
           {/* Desktop Right Side (Nav + Search) */}
           <div className="hidden md:flex items-center gap-6">
             <nav className="flex space-x-6 text-sm font-medium">
-              {NAV_LINKS.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`relative py-1 transition-colors hover:text-slate-100 ${
-                    isActive(link.href)
-                      ? "text-sky-400 font-semibold"
-                      : "text-slate-400"
-                  }`}
-                >
-                  {link.label}
-                  {isActive(link.href) && (
-                    <span className="absolute bottom-0 left-0 h-0.5 w-full bg-sky-400" />
-                  )}
-                </Link>
-              ))}
+              {NAV_LINKS.map((link) =>
+                link.href === "/about" ? (
+                  <div key={link.href} className="relative group">
+                    <Link
+                      href={link.href}
+                      className={`relative py-1 transition-colors hover:text-slate-100 ${
+                        isActive(link.href) || pathname.startsWith("/contact")
+                          ? "text-sky-400 font-semibold"
+                          : "text-slate-400"
+                      }`}
+                      aria-haspopup="true"
+                    >
+                      {link.label}
+                      <svg
+                        className="ml-0.5 inline h-3 w-3 opacity-70"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                      {(isActive(link.href) || pathname.startsWith("/contact")) && (
+                        <span className="absolute bottom-0 left-0 h-0.5 w-full bg-sky-400" />
+                      )}
+                    </Link>
+                    {/* Dropdown panel (opens on hover or keyboard focus) */}
+                    <div className="absolute right-0 top-full pt-2 invisible opacity-0 translate-y-1 group-hover:visible group-hover:opacity-100 group-hover:translate-y-0 group-focus-within:visible group-focus-within:opacity-100 group-focus-within:translate-y-0 transition-all duration-150 ease-out z-50">
+                      <div className="min-w-[150px] rounded-md border border-slate-800/80 bg-slate-950 py-1.5 shadow-lg shadow-black/40">
+                        {ABOUT_CHILDREN.map((child) => (
+                          <Link
+                            key={child.href}
+                            href={child.href}
+                            className={`block px-4 py-2 text-sm transition-colors ${
+                              isActive(child.href)
+                                ? "bg-slate-900/80 text-sky-400"
+                                : "text-slate-400 hover:bg-slate-900/60 hover:text-slate-100"
+                            }`}
+                          >
+                            {child.label}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={`relative py-1 transition-colors hover:text-slate-100 ${
+                      isActive(link.href)
+                        ? "text-sky-400 font-semibold"
+                        : "text-slate-400"
+                    }`}
+                  >
+                    {link.label}
+                    {isActive(link.href) && (
+                      <span className="absolute bottom-0 left-0 h-0.5 w-full bg-sky-400" />
+                    )}
+                  </Link>
+                )
+              )}
             </nav>
             <Search />
           </div>
@@ -206,23 +258,51 @@ export default function Header() {
           {/* Navigation Links with comfortable spacing and large tap targets */}
           <nav className="flex-1 flex flex-col justify-start pt-2 space-y-1.5 overflow-y-auto">
             {NAV_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setIsOpen(false)}
-                className={`block rounded-md px-4 py-2.5 text-xl font-semibold transition-colors ${
-                  isActive(link.href)
-                    ? "bg-slate-900/80 text-sky-400 border-l-4 border-sky-400 pl-3"
-                    : "text-slate-400 hover:bg-slate-900/40 hover:text-slate-200"
-                }`}
-              >
-                {link.label}
-              </Link>
+              <React.Fragment key={link.href}>
+                <Link
+                  href={link.href}
+                  onClick={() => setIsOpen(false)}
+                  className={`block rounded-md px-4 py-2.5 text-xl font-semibold transition-colors ${
+                    isActive(link.href) ||
+                    (link.href === "/about" && pathname.startsWith("/contact"))
+                      ? "bg-slate-900/80 text-sky-400 border-l-4 border-sky-400 pl-3"
+                      : "text-slate-400 hover:bg-slate-900/40 hover:text-slate-200"
+                  }`}
+                >
+                  {link.label}
+                </Link>
+                {/* Contact sits under About */}
+                {link.href === "/about" &&
+                  ABOUT_CHILDREN.map((child) => (
+                    <Link
+                      key={child.href}
+                      href={child.href}
+                      onClick={() => setIsOpen(false)}
+                      className={`block rounded-md pl-10 pr-4 py-2.5 text-lg font-semibold transition-colors ${
+                        isActive(child.href)
+                          ? "bg-slate-900/80 text-sky-400 border-l-4 border-sky-400 pl-8"
+                          : "text-slate-500 hover:bg-slate-900/40 hover:text-slate-200"
+                      }`}
+                    >
+                      {child.label}
+                    </Link>
+                  ))}
+              </React.Fragment>
             ))}
           </nav>
 
           {/* Footer at bottom left with secondary utility links */}
-          <div className="mt-auto pt-6 border-t border-slate-800/60">
+          <div className="mt-auto pt-6 border-t border-slate-800/60 space-y-4">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm font-mono text-slate-500">
+              {SECONDARY_LINKS.map((link, idx) => (
+                <React.Fragment key={link.href}>
+                  {idx > 0 && <span className="text-slate-800">/</span>}
+                  <Link href={link.href} onClick={() => setIsOpen(false)} className="hover:text-sky-400 transition-colors">
+                    {link.label}
+                  </Link>
+                </React.Fragment>
+              ))}
+            </div>
             <div className="flex items-center space-x-6 text-sm font-mono text-slate-400">
               <a href="https://x.com/This_is_Dreamer" target="_blank" rel="noopener noreferrer" className="hover:text-sky-400 transition-colors">
                 X

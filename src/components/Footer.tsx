@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -15,9 +16,25 @@ export default function Footer() {
               <span>System Status: Online</span>
             </span>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 sm:justify-end">
+            <Link href="/tags" className="hover:text-slate-300 transition-colors">
+              Tags
+            </Link>
+            <span className="text-slate-800">/</span>
+            <Link href="/uses" className="hover:text-slate-300 transition-colors">
+              Uses
+            </Link>
+            <span className="text-slate-800">/</span>
+            <Link href="/now" className="hover:text-slate-300 transition-colors">
+              Now
+            </Link>
+            <span className="text-slate-800">/</span>
+            <Link href="/changelog" className="hover:text-slate-300 transition-colors">
+              Changelog
+            </Link>
+            <span className="text-slate-800">/</span>
             <a
-              href="https://github.com"
+              href="https://github.com/DDreamer01"
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-slate-300 transition-colors"

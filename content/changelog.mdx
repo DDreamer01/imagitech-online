@@ -3,6 +3,16 @@ title: "Changelog"
 description: "A reverse-chronological log of changes, improvements, and new content added to imagitech.online."
 ---
 
+## October 2026
+
+### 2026-10-30 — Navigation Restructure & Writeups Section
+- Slimmed header navigation from 9 links to 5 (Blog, Projects, Notes, Writeups, About)
+- Moved **Contact** under **About** via dropdown (desktop) / indented drawer link (mobile)
+- Moved **Tags, Uses, Now, Changelog** links into the site footer and mobile drawer footer
+- Added new **Writeups section** (`/writeups`) with platform hub (pwn.college, HackTheBox, PortSwigger), per-platform listing pages, and detail pages with TOC/badges
+- Added writeup content pipeline: `content/writeups/<platform>/`, Zod frontmatter schema, sitemap integration, `npm run new` scaffolder option
+- Removed accidentally committed duplicate root files (`tags/`, `new-content.js`, `opengraph-image.tsx`) and re-synced `package-lock.json` with `package.json`
+
 ## August 2026
 
 ### 2026-08-17 — Feature Expansion & Production Hardening

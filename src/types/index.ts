@@ -30,3 +30,22 @@ export interface Note {
   published: boolean;
   content: string;
 }
+
+export interface Writeup {
+  slug: string;
+  title: string;
+  description: string;
+  date: string;
+  platform: string;
+  difficulty: string;
+  points: string;
+  published: boolean;
+  readingTime?: string;
+  content: string;
+}
+
+export interface WriteupPlatform {
+  slug: string;
+  name: string;
+  description: string;
+}

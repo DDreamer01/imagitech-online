@@ -48,9 +48,10 @@ async function main() {
   console.log('Select content type:');
   console.log('  1. 📝 Blog Article   (Long-form technical guide / analysis)');
   console.log('  2. ⚡ Note / TIL      (Quick cheatsheet / debugging snippet)');
-  console.log('  3. 🛠️  Project Case   (Full repository case study)\n');
+  console.log('  3. 🛠️  Project Case   (Full repository case study)');
+  console.log('  4. 🏴 Writeup        (Security platform solve walkthrough)\n');
 
-  const choice = await ask('Enter choice (1-3)', '1');
+  const choice = await ask('Enter choice (1-4)', '1');
   const title = await ask('\nTitle');
 
   if (!title) {
@@ -192,6 +193,66 @@ graph TD
 # Run installer or clone repo
 git clone ${github}
 \`\`\`
+`;
+  } else if (choice === '4') {
+    console.log('Platforms:');
+    console.log('  1. pwn.college');
+    console.log('  2. hackthebox');
+    console.log('  3. portswigger\n');
+    const platformChoice = await ask('Enter platform (1-3)', '1');
+    const platformMap = { '1': 'pwn-college', '2': 'hackthebox', '3': 'portswigger' };
+    const platformName = platformMap[platformChoice];
+
+    if (!platformName) {
+      console.error('\x1b[31mInvalid platform choice.\x1b[0m');
+      rl.close();
+      process.exit(1);
+    }
+
+    targetDir = path.join(process.cwd(), 'content', 'writeups', platformName);
+    const description = await ask('Short description');
+    const difficulty = await ask('Difficulty (optional)', '');
+    const points = await ask('Points (optional)', '');
+
+    content = `---
+title: "${title}"
+description: "${description}"
+date: "${date}"
+${difficulty ? `difficulty: "${difficulty}"\n` : ''}${points ? `points: "${points}"\n` : ''}published: true
+---
+
+Write your introduction here: what the target was, what the goal is.
+
+---
+
+## Recon
+
+\`\`\`bash
+# Enumeration commands
+\`\`\`
+
+---
+
+## Foothold
+
+<Callout type="tip" title="Gotcha">
+Document any tricky step or gotcha here.
+</Callout>
+
+---
+
+## Escalation / Solve
+
+\`\`\`bash
+# Final exploit or flag capture
+\`\`\`
+
+---
+
+## Lessons Learned
+
+- **Takeaway 1**: What was new to you.
+- **Takeaway 2**: What to revisit.
 `;
   } else {
     console.error('\x1b[31mInvalid choice.\x1b[0m');

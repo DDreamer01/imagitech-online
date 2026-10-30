@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import matter from "gray-matter";
 import { z } from "zod";
-import { BlogPost, Project, Note } from "../types";
+import { BlogPost, Project, Note, Writeup, WriteupPlatform } from "../types";
 
 const CONTENT_PATH = path.join(process.cwd(), "content");
 
@@ -44,6 +44,15 @@ export const NoteFrontmatterSchema = z.object({
   published: z.boolean().default(true),
 });
 
+export const WriteupFrontmatterSchema = z.object({
+  title: z.string().min(1, "Writeup title is required"),
+  description: z.string().default(""),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must follow YYYY-MM-DD format"),
+  difficulty: z.string().default(""),
+  points: z.string().default(""),
+  published: z.boolean().default(true),
+});
+
 // Helper to calculate reading time
 function getReadingTime(text: string): string {
   const wordsPerMinute = 200;
@@ -58,6 +67,7 @@ function ensureDirectories() {
     path.join(CONTENT_PATH, "blog"),
     path.join(CONTENT_PATH, "projects"),
     path.join(CONTENT_PATH, "notes"),
+    path.join(CONTENT_PATH, "writeups"),
   ];
   dirs.forEach((dir) => {
     if (!fs.existsSync(dir)) {
@@ -290,6 +300,157 @@ export function getNoteBySlug(slug: string): Note | null {
       published: data.published !== false,
       content,
     } as Note;
+  }
+}
+
+// --- WRITEUPS ---
+
+// Platform registry: the URL slug maps to a themed display name
+export const WRITEUP_PLATFORMS: WriteupPlatform[] = [
+  {
+    slug: "pwn-college",
+    name: "pwn.college",
+    description:
+      "Binary exploitation and systems security writeups from pwn.college — assembly, shellcode, ROP, and kernel challenges.",
+  },
+  {
+    slug: "hackthebox",
+    name: "HackTheBox",
+    description:
+      "HTB machine walk-throughs — recon, enumeration, foothold, and privilege escalation notes across retired boxes.",
+  },
+  {
+    slug: "portswigger",
+    name: "PortSwigger Web Security Academy",
+    description:
+      "Burp Suite lab solutions covering the whole of the Web Security Academy curriculum, one vulnerability class at a time.",
+  },
+];
+
+export function getWriteupPlatform(platformSlug: string): WriteupPlatform | null {
+  return WRITEUP_PLATFORMS.find((platform) => platform.slug === platformSlug) ?? null;
+}
+
+interface ValidatedWriteup {
+  slug: string;
+  platform: string;
+  validated: {
+    title: string;
+    description: string;
+    date: string;
+    difficulty: string;
+    points: string;
+    published: boolean;
+  };
+  content: string;
+}
+
+function mapWriteup(writeup: ValidatedWriteup): Writeup {
+  return {
+    slug: writeup.slug,
+    platform: writeup.platform,
+    ...writeup.validated,
+    readingTime: getReadingTime(writeup.content),
+    content: writeup.content,
+  };
+}
+
+export function getWriteups(platformSlug?: string): Writeup[] {
+  ensureDirectories();
+  const writeupsBaseDir = path.join(CONTENT_PATH, "writeups");
+
+  let platformDirs: string[] = [];
+  try {
+    platformDirs = fs
+      .readdirSync(writeupsBaseDir, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name);
+  } catch (err) {
+    console.error(`\x1b[31m[Content Error] Cannot read writeups directory:\x1b[0m`, err);
+    return [];
+  }
+
+  if (platformSlug) {
+    if (!getWriteupPlatform(platformSlug)) {
+      console.error(`\x1b[31m[Content Error] Unknown writeup platform: ${platformSlug}\x1b[0m`);
+      return [];
+    }
+    platformDirs = platformDirs.filter((dir) => dir === platformSlug);
+  }
+
+  const writeups = platformDirs.flatMap((platformDir) => {
+    const dirPath = path.join(writeupsBaseDir, platformDir);
+    return (fs.existsSync(dirPath) ? fs.readdirSync(dirPath) : [])
+      .filter((file) => file.endsWith(".mdx") || file.endsWith(".md"))
+      .map((file) => {
+        const slug = file.replace(/\.mdx?$/, "");
+        const fileContent = fs.readFileSync(path.join(dirPath, file), "utf-8");
+        const { data, content } = matter(fileContent);
+
+        try {
+          const validated = WriteupFrontmatterSchema.parse(data);
+          return mapWriteup({ slug, platform: platformDir, validated, content });
+        } catch (err) {
+          console.error(
+            `\x1b[31m[Zod Error] Invalid writeup frontmatter in ${platformDir}/${slug}:\x1b[0m`,
+            err
+          );
+          return mapWriteup({
+            slug,
+            platform: platformDir,
+            validated: {
+              title: (data.title as string) || "Untitled Writeup",
+              description: (data.description as string) || "",
+              date: (data.date as string) || new Date().toISOString().split("T")[0],
+              difficulty: (data.difficulty as string) || "",
+              points: (data.points as string) || "",
+              published: data.published !== false,
+            },
+            content,
+          });
+        }
+      });
+  });
+
+  return writeups
+    .filter((writeup) => writeup.published)
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime() || a.slug.localeCompare(b.slug));
+}
+
+export function getWriteupBySlug(platformSlug: string, slug: string): Writeup | null {
+  const platformDir = path.join(CONTENT_PATH, "writeups", platformSlug);
+  if (!getWriteupPlatform(platformSlug) || !fs.existsSync(platformDir)) return null;
+
+  const mdxPath = path.join(platformDir, `${slug}.mdx`);
+  const mdPath = path.join(platformDir, `${slug}.md`);
+  const filePath = fs.existsSync(mdxPath) ? mdxPath : fs.existsSync(mdPath) ? mdPath : null;
+
+  if (!filePath) return null;
+
+  const fileContent = fs.readFileSync(filePath, "utf-8");
+  const { data, content } = matter(fileContent);
+
+  try {
+    const validated = WriteupFrontmatterSchema.parse(data);
+    return mapWriteup({ slug, platform: platformSlug, validated, content });
+  } catch (err) {
+    console.error(
+      `\x1b[31m[Zod Error] Invalid writeup frontmatter in ${platformSlug}/${slug}:\x1b[0m`,
+      err
+    );
+    return mapWriteup({
+      slug,
+      platform: platformSlug,
+      validated: {
+        title: (data.title as string) || "Untitled Writeup",
+        description: (data.description as string) || "",
+        date: (data.date as string) || new Date().toISOString().split("T")[0],
+        difficulty: (data.difficulty as string) || "",
+        points: (data.points as string) || "",
+        published: data.published !== false,
+      },
+      content,
+    });
   }
 }
 
