@@ -32,7 +32,9 @@ jobs:
             fi
             
             echo "==> Pulling latest changes from main branch..."
-            git pull origin main
+            git fetch origin main
+            # Discard any local drift (e.g. recreated feed.xml) and match origin exactly
+            git reset --hard origin/main
             
             echo "==> Installing dependencies if needed..."
             npm ci --prefer-offline --no-audit
