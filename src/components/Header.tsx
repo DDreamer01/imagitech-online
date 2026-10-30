@@ -134,7 +134,7 @@ export default function Header() {
                   <div key={link.href} className="relative group">
                     <Link
                       href={link.href}
-                      className={`relative py-1 transition-colors hover:text-slate-100 ${
+                      className={`relative inline-flex items-center gap-0.5 py-1 transition-colors hover:text-slate-100 ${
                         isActive(link.href) || pathname.startsWith("/contact")
                           ? "text-sky-400 font-semibold"
                           : "text-slate-400"
@@ -143,7 +143,7 @@ export default function Header() {
                     >
                       {link.label}
                       <svg
-                        className="ml-0.5 inline h-3 w-3 opacity-70"
+                        className="h-3 w-3 opacity-70 transition-transform group-hover:translate-y-px"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
