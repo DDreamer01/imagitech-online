@@ -20,7 +20,7 @@ export default function HomePage() {
           Linux systems administration &bull; Automation & Scripting &bull; Cybersecurity
         </p>
         <p className="text-lg text-slate-300 leading-relaxed pt-2">
-          I work with Linux servers and Cloud VMs, and use languages like Bash and Python. I'm learning to hack too.
+          I work with Linux servers and Cloud VMs, and use languages like Bash, Python, and Go. I'm learning to hack too.
           This website serves as my technical documentation vault, project library, and notebook for lessons learned in the field.
         </p>
       </section>

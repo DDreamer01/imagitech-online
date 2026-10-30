@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 };
 
 export default function NowPage() {
-  const lastUpdated = "July 2026";
+  const lastUpdated = "October 2026";
 
   return (
     <div className="max-w-3xl">
@@ -36,7 +36,7 @@ export default function NowPage() {
               Signed up for <Link href="https://developers.redhat.com" className="text-sky-400 hover:underline">Red Hat Developer Subscription.</Link>
             </li>
             <li>
-              Started studying AZ-900 (Microsoft Azure Fundamentals).
+              Started studying AZ-900 (Microsoft Azure Fundamentals) — still in progress.
             </li>
           </ul>
         </section>
@@ -44,11 +44,34 @@ export default function NowPage() {
         <section className="mt-8 space-y-4">
           <ul className="list-disc pl-5 space-y-2">
             <li>
-              Halted Sander Van Vugts Oreilly's course as my  trial is up 😅. Now using resources like <Link href="https://learnrhcsa.com" className="text-sky-400 hover:underline">LearnRHCSA.Com</Link> (looks AI generated but quite resourceful), <Link href="https://https://www.youtube.com/@DexTutor" className="text-sky-400 hover:underline">DexTutor YT</Link>
+              Learning <strong>Go</strong> — picking it up in between infra work, next stop: small CLI tools.
             </li>
             <li>
-              Started learning Go
+              Daily-driving <Link href="https://github.com/DDreamer01/dotfiles" className="text-sky-400 hover:underline">Hyprland</Link> — my obsidian &lsquo;Last Horizon&rsquo; rice (Waybar, Rofi, SwayNC) plus an agent-built <Link href="https://github.com/DDreamer01/neovim" className="text-sky-400 hover:underline">Neovim IDE</Link> config.
             </li>
+            <li>
+              Working through <strong>Hack The Box Season 12 (Aero)</strong> and the PortSwigger Web Security Academy — solving and writing everything up in my new <Link href="/writeups" className="text-sky-400 hover:underline">Writeups</Link> section.
+            </li>
+            <li>
+              Hardened this site&rsquo;s self-hosting: GitHub Actions CI/CD deploying to my Azure box, Giscus comments, and security headers.
+            </li>
+            <li>
+              Still on RHCSA track via <Link href="https://learnrhcsa.com" className="text-sky-400 hover:underline">LearnRHCSA.Com</Link> and <Link href="https://www.youtube.com/@DexTutor" className="text-sky-400 hover:underline">DexTutor YT</Link>.
+            </li>
+            <li>
+              Consolidated TG Downloader into a single resilient v2 package and added its <Link href="/projects/tgdownloader" className="text-sky-400 hover:underline">case study</Link> here.
+            </li>
+            <li>
+              AI-assisted engineering is now the default workflow — coding agents build configs, scaffold content, and ship deploys; I architect and review.
+            </li>
+          </ul>
+        </section>
+
+        <section className="mt-8 space-y-4">
+          <h2 className="text-lg font-bold text-slate-100 border-b border-slate-800 pb-2 font-mono">
+            {"// Shipped Recently"}
+          </h2>
+          <ul className="list-disc pl-5 space-y-2">
             <li>
               Built a vulnerable lab, a school lookup site, and a readme preview site.
             </li>
@@ -57,9 +80,6 @@ export default function NowPage() {
             </li>
             <li>
               Made some UI updates and UX improvements to FileStation
-            </li>
-            <li>
-              Started using Opencode with Deepseek V4, previously using only Antigravity with Gemini & Claude.
             </li>
           </ul>
         </section>

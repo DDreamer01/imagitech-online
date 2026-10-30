@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 const SKILL_CATEGORIES = [
   {
     title: "Systems & Infrastructure",
-    skills: ["Linux (AlmaLinux, Debian, RedHat, Ubuntu)", "Bash Scripting", "Systemd Services", "Self-Hosting"],
+    skills: ["Linux (AlmaLinux, Debian, RedHat, Ubuntu, Kali)", "Bash Scripting", "Go (learning)", "Systemd Services", "Self-Hosting", "Neovim + Hyprland (Lua)"],
   },
   {
     title: "Networking & VPNs",
@@ -17,11 +17,11 @@ const SKILL_CATEGORIES = [
   },
   {
     title: "Cloud & Automation",
-    skills: ["Amazon Web Services (AWS)", "Microsoft Azure", "GitHub Actions CI/CD", "Cloudflare Ecosystem", "Python Scripts"],
+    skills: ["Amazon Web Services (AWS)", "Microsoft Azure", "GitHub Actions CI/CD", "Cloudflare Ecosystem", "Python Scripts", "AI-Assisted Workflows"],
   },
   {
     title: "Cybersecurity",
-    skills: ["Linux CLI", "Server Hardening", "Web Hacking", "VPN"],
+    skills: ["Linux CLI", "Server Hardening", "Web Hacking", "Offensive Security (HTB, pwn.college, PortSwigger)", "VPN"],
   },
 ];
 

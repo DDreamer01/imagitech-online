@@ -19,9 +19,11 @@ const GEAR = [
     category: "Software & Terminal",
     items: [
       { name: "Operating System", desc: "Kali Linux (Desktop)." },
-      { name: "Terminal Emulator", desc: "GNOME Terminal with Tmux for session management." },
-      { name: "Shell & Prompt", desc: "Zsh" },
-      { name: "Text Editor", desc: "VS Code with Vim keybindings. Many time I just use Vim on my terminal" },
+      { name: "Desktop Environment", desc: "Hyprland (Wayland) with Waybar, Rofi, SwayNC, Hyprlock — obsidian 'Last Horizon' rice, tuned for NVIDIA Turing GPUs (see dotfiles)." },
+      { name: "Terminal Emulator", desc: "Kitty — GPU-accelerated, obsidian-themed. Still pairing Tmux for remote session management." },
+      { name: "Text Editor / IDE", desc: "Neovim — a modular Lua-based IDE config (lazy.nvim, TokyoNight, Go/Python tooling) evolved by my coding agents; Neovide as GUI, VS Code for the rest." },
+      { name: "Shell & Prompt", desc: "Zsh." },
+      { name: "Languages", desc: "Bash, Python, and Go (learning)." },
     ],
   },
   {
