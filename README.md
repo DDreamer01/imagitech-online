@@ -12,7 +12,7 @@ This project functions as a high-density technical notebook, professional engine
 - **Giscus Comments**: GitHub Discussions-backed commenting on blog post detail pages via the [`Giscus`](src/components/Giscus.tsx) component (requires repo-id setup at [giscus.app](https://giscus.app)).
 - **Prev/Next Post Navigation**: Bidirectional article navigation links at the bottom of blog post detail pages.
 - **Changelog Page**: Dedicated [`/changelog`](src/app/changelog/page.tsx) page tracking reverse-chronological site history and updates log.
-- **Security Writeups Platform**: Structured solve walkthroughs (`/writeups`) organized per platform (pwn.college, HackTheBox, PortSwigger Web Security Academy) with per-platform listing pages and difficulty/points metadata ([`/writeups`](src/app/writeups/page.tsx)).
+- **Security Writeups Platform**: Structured solve walkthroughs (`/writeups`) organized per platform (pwn.college, HackTheBox, PortSwigger) with per-platform listing pages and difficulty/points metadata ([`/writeups`](src/app/writeups/page.tsx)).
 - **MDX Image Optimization**: Lazy loading (`loading="lazy"`, `decoding="async"`) and responsive styling with automated figcaptions via the [`MdxImage`](src/components/MdxImage.tsx) component.
 - **Hardened Security Headers**: Production-grade HTTP security headers (CSP, HSTS, X-Frame-Options, Referrer-Policy, Permissions-Policy) configured on the static server ([`server.js`](server.js)).
 - **Static Export & Zero-Server Overhead**: Built with Next.js 16 App Router using `output: "export"` and unoptimized images for ultra-fast static hosting.

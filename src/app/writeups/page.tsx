@@ -6,7 +6,7 @@ import { getWriteups, getWriteupPlatform, WRITEUP_PLATFORMS } from "@/lib/mdx";
 export const metadata: Metadata = {
   title: "Writeups",
   description:
-    "†hε drεαmεr's security writeups — walk-throughs and solutions from pwn.college, HackTheBox, and the PortSwigger Web Security Academy.",
+    "†hε drεαmεr's security writeups — walk-throughs and solutions from pwn.college, HackTheBox, and PortSwigger.",
 };
 
 function platformAccentIndex(index: number) {

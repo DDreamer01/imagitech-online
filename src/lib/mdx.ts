@@ -321,9 +321,9 @@ export const WRITEUP_PLATFORMS: WriteupPlatform[] = [
   },
   {
     slug: "portswigger",
-    name: "PortSwigger Web Security Academy",
+    name: "PortSwigger",
     description:
-      "Burp Suite lab solutions covering the whole of the Web Security Academy curriculum, one vulnerability class at a time.",
+      "Burp Suite lab solutions from the Web Security Academy, one vulnerability class at a time.",
   },
 ];
 
