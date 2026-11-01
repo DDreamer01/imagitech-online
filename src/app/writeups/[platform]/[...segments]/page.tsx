@@ -75,7 +75,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const modName = moduleSlug.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
     return {
       title: `${modName} — ${platform.name}`,
-      description: `Writeups for the ${modName} module on ${platform.name}.`,
+      description: `Writeups and solutions for the ${modName} course on ${platform.name}.`,
     };
   }
 
@@ -93,7 +93,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 // ------------------------------------------------------------------
-// Helpers
+// Helpers & Track Syllabus
 // ------------------------------------------------------------------
 
 function toTitleCase(slug: string): string {
@@ -106,7 +106,7 @@ function toTitleCase(slug: string): string {
 function statusConfig(status?: string) {
   if (status === "completed")
     return {
-      label: "🟠 Orange Flag",
+      label: "🟠 Completed",
       className: "px-1.5 py-0.5 rounded border border-orange-900 bg-orange-950/40 text-orange-400",
     };
   if (status === "in-progress")
@@ -116,6 +116,23 @@ function statusConfig(status?: string) {
     };
   return null;
 }
+
+interface SyllabusItem {
+  slug: string;
+  number: number;
+  name: string;
+  summary: string;
+}
+
+const INTRO_CYBERSECURITY_SYLLABUS: SyllabusItem[] = [
+  { slug: "web-security", number: 1, name: "Web Security", summary: "Content injection, cross-site scripting (XSS), and CSRF" },
+  { slug: "intercepting-communication", number: 2, name: "Intercepting Communication", summary: "Wireshark packet sniffing, ARP spoofing & TLS interception" },
+  { slug: "cryptography", number: 3, name: "Cryptography", summary: "Classical ciphers, modern encryption, hashing & RSA" },
+  { slug: "access-control", number: 4, name: "Access Control", summary: "Linux permissions, SUID abuse, capabilities & authorization" },
+  { slug: "reverse-engineering", number: 5, name: "Reverse Engineering", summary: "x86 disassembly, decompilation & control flow recovery" },
+  { slug: "binary-exploitation", number: 6, name: "Binary Exploitation", summary: "Memory corruption, stack overflows & shellcoding" },
+  { slug: "integrated-security", number: 7, name: "Integrated Security", summary: "Full-spectrum capstone challenge awarding the Orange Belt" },
+];
 
 // ------------------------------------------------------------------
 // Page
@@ -138,6 +155,11 @@ export default async function WriteupCatchAllPage({ params }: PageProps) {
 
     const writeups = getWriteupsByModule(platformSlug, moduleSlug);
     const modName = toTitleCase(moduleSlug);
+    const publishedSlugs = new Set(writeups.map((w) => w.slug));
+    const isIntroTrack = moduleSlug === "intro-to-cybersecurity";
+    const totalCount = isIntroTrack ? INTRO_CYBERSECURITY_SYLLABUS.length : writeups.length;
+    const completedCount = writeups.filter((w) => w.status === "completed").length;
+    const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
     return (
       <div className="space-y-10 max-w-4xl">
@@ -151,62 +173,164 @@ export default async function WriteupCatchAllPage({ params }: PageProps) {
           back_to_{platformSlug}()
         </Link>
 
-        <header>
-          <div className="flex items-center gap-2 font-mono text-xs text-slate-500 mb-2">
+        {/* Header */}
+        <header className="space-y-3">
+          <div className="flex items-center gap-2 font-mono text-xs text-slate-500">
             <span>{platform.name}</span>
             <span>/</span>
             <span className="text-emerald-400">{modName}</span>
           </div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-100 sm:text-4xl">
-            {modName}
-          </h1>
-          <p className="mt-2 text-sm text-slate-400 font-mono">
-            listing_sections() &bull; {writeups.length}{" "}
-            {writeups.length === 1 ? "section" : "sections"} published
+
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-3xl font-extrabold tracking-tight text-slate-100 sm:text-4xl">
+              {modName}
+            </h1>
+            {mod.belt && (
+              <span className="px-2 py-0.5 rounded border border-orange-900/80 bg-orange-950/40 text-orange-400 font-mono text-xs font-semibold">
+                🥋 {mod.belt} Track
+              </span>
+            )}
+          </div>
+
+          <p className="text-sm text-slate-400 leading-relaxed max-w-2xl">
+            {mod.description ||
+              "Working through the required modules to earn belt recognition on pwn.college."}
           </p>
+
+          {/* Progress Tracker Card */}
+          <div className="rounded-lg border border-slate-800 bg-slate-950/60 p-4 font-mono text-xs space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-slate-400">
+                Track Progress: <strong className="text-slate-200">{completedCount} of {totalCount}</strong> modules completed
+              </span>
+              <span className="text-orange-400 font-semibold">{progressPercent}%</span>
+            </div>
+            <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+              <div
+                className="bg-gradient-to-r from-orange-500 to-amber-400 h-full transition-all duration-500"
+                style={{ width: `${Math.max(progressPercent, 4)}%` }}
+              />
+            </div>
+            <p className="text-[11px] text-slate-500">
+              Completion of all 7 modules awards the official pwn.college 🥋 <strong className="text-slate-300">Orange Belt</strong>.
+            </p>
+          </div>
         </header>
 
-        {writeups.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-slate-800 bg-slate-950/40 p-10 text-center">
-            <p className="font-mono text-sm text-slate-500">No writeups published for this module yet.</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {writeups.map((writeup) => {
-              const badge = statusConfig(writeup.status);
-              return (
-                <Link
-                  key={writeup.slug}
-                  href={`/writeups/${platformSlug}/${moduleSlug}/${writeup.slug}`}
-                  className="group block rounded-lg border border-slate-800 bg-slate-950/40 p-5 transition-colors hover:border-slate-600 hover:bg-slate-900/40"
-                >
-                  <div className="flex flex-wrap items-center gap-2 font-mono text-xs mb-2">
-                    {writeup.difficulty && (
-                      <span className="px-1.5 py-0.5 rounded border border-slate-800 bg-slate-900/60 text-sky-400">
-                        {writeup.difficulty}
-                      </span>
-                    )}
-                    {badge && <span className={`font-mono text-xs ${badge.className}`}>{badge.label}</span>}
-                    <span className="text-slate-500">&bull;</span>
-                    <time className="text-slate-500" dateTime={writeup.date}>{writeup.date}</time>
-                    {writeup.readingTime && (
-                      <>
+        {/* Module Roadmap & Writeups */}
+        <div className="space-y-4">
+          <h2 className="font-mono text-xs text-slate-400 uppercase tracking-wider">
+            Curriculum Roadmap ({totalCount} Modules)
+          </h2>
+
+          {isIntroTrack ? (
+            <div className="space-y-3">
+              {INTRO_CYBERSECURITY_SYLLABUS.map((item) => {
+                const isPublished = publishedSlugs.has(item.slug);
+                const writeup = writeups.find((w) => w.slug === item.slug);
+                const isCompleted = writeup?.status === "completed";
+
+                if (isPublished && writeup) {
+                  return (
+                    <Link
+                      key={item.slug}
+                      href={`/writeups/${platformSlug}/${moduleSlug}/${item.slug}`}
+                      className="group block rounded-lg border border-slate-800 bg-slate-950/40 p-5 transition-colors hover:border-slate-600 hover:bg-slate-900/40"
+                    >
+                      <div className="flex flex-wrap items-center gap-2 font-mono text-xs mb-2">
+                        <span className="px-1.5 py-0.5 rounded border border-slate-800 bg-slate-900/60 text-slate-400">
+                          Module {item.number}
+                        </span>
+                        {isCompleted && (
+                          <span className="px-1.5 py-0.5 rounded border border-orange-900 bg-orange-950/40 text-orange-400 font-mono text-xs">
+                            🟠 Completed
+                          </span>
+                        )}
                         <span className="text-slate-500">&bull;</span>
-                        <span className="text-slate-500">{writeup.readingTime}</span>
-                      </>
-                    )}
+                        <time className="text-slate-500" dateTime={writeup.date}>{writeup.date}</time>
+                        {writeup.readingTime && (
+                          <>
+                            <span className="text-slate-500">&bull;</span>
+                            <span className="text-slate-500">{writeup.readingTime}</span>
+                          </>
+                        )}
+                      </div>
+                      <h3 className="text-lg font-bold text-slate-100 group-hover:text-emerald-400 transition-colors">
+                        {writeup.title}
+                      </h3>
+                      <p className="mt-1 text-sm text-slate-400 leading-relaxed">
+                        {writeup.description || item.summary}
+                      </p>
+                    </Link>
+                  );
+                }
+
+                // In-progress or upcoming module placeholder
+                const isNext = item.number === 2;
+                return (
+                  <div
+                    key={item.slug}
+                    className="rounded-lg border border-dashed border-slate-800/80 bg-slate-950/20 p-4 opacity-75"
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2 font-mono text-xs text-slate-500">
+                        <span>Module {item.number}</span>
+                        <span>&bull;</span>
+                        <span className="text-slate-300 font-semibold">{item.name}</span>
+                      </div>
+                      {isNext ? (
+                        <span className="font-mono text-[11px] px-1.5 py-0.5 rounded border border-yellow-900/80 bg-yellow-950/30 text-yellow-400">
+                          ⏳ In Progress
+                        </span>
+                      ) : (
+                        <span className="font-mono text-[11px] text-slate-600">
+                          🔒 Upcoming
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-500 font-mono">{item.summary}</p>
                   </div>
-                  <h2 className="text-lg font-bold text-slate-100 group-hover:text-emerald-400 transition-colors">
-                    {writeup.title}
-                  </h2>
-                  {writeup.description && (
-                    <p className="mt-1.5 text-sm text-slate-400 leading-relaxed">{writeup.description}</p>
-                  )}
-                </Link>
-              );
-            })}
-          </div>
-        )}
+                );
+              })}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {writeups.map((writeup) => {
+                const badge = statusConfig(writeup.status);
+                return (
+                  <Link
+                    key={writeup.slug}
+                    href={`/writeups/${platformSlug}/${moduleSlug}/${writeup.slug}`}
+                    className="group block rounded-lg border border-slate-800 bg-slate-950/40 p-5 transition-colors hover:border-slate-600 hover:bg-slate-900/40"
+                  >
+                    <div className="flex flex-wrap items-center gap-2 font-mono text-xs mb-2">
+                      {writeup.difficulty && (
+                        <span className="px-1.5 py-0.5 rounded border border-slate-800 bg-slate-900/60 text-sky-400">
+                          {writeup.difficulty}
+                        </span>
+                      )}
+                      {badge && <span className={`font-mono text-xs ${badge.className}`}>{badge.label}</span>}
+                      <span className="text-slate-500">&bull;</span>
+                      <time className="text-slate-500" dateTime={writeup.date}>{writeup.date}</time>
+                      {writeup.readingTime && (
+                        <>
+                          <span className="text-slate-500">&bull;</span>
+                          <span className="text-slate-500">{writeup.readingTime}</span>
+                        </>
+                      )}
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-100 group-hover:text-emerald-400 transition-colors">
+                      {writeup.title}
+                    </h3>
+                    {writeup.description && (
+                      <p className="mt-1.5 text-sm text-slate-400 leading-relaxed">{writeup.description}</p>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
     );
   }
@@ -253,6 +377,11 @@ export default async function WriteupCatchAllPage({ params }: PageProps) {
               <span className="px-1.5 py-0.5 rounded border border-slate-800 bg-slate-900/60 text-slate-400">
                 {modName}
               </span>
+              {writeup.belt && (
+                <span className="px-1.5 py-0.5 rounded border border-orange-900 bg-orange-950/40 text-orange-400 font-semibold">
+                  🥋 {writeup.belt}
+                </span>
+              )}
               {writeup.difficulty && (
                 <span className="px-1.5 py-0.5 rounded border border-slate-800 bg-slate-900/60 text-sky-400">
                   {writeup.difficulty}

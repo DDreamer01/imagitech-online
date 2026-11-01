@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 // Status badge config
 function statusBadge(status?: string) {
   if (status === "completed") {
-    return { label: "🟠 Orange Flag", className: "text-orange-400 border-orange-900 bg-orange-950/40" };
+    return { label: "🟠 Completed", className: "text-orange-400 border-orange-900 bg-orange-950/40" };
   }
   if (status === "in-progress") {
     return { label: "⏳ In Progress", className: "text-yellow-400 border-yellow-900 bg-yellow-950/40" };
@@ -92,10 +92,15 @@ export default async function WriteupPlatformPage({ params }: PageProps) {
               >
                 <div className="flex flex-wrap items-center gap-2 font-mono text-xs mb-2">
                   <span className="px-1.5 py-0.5 rounded border border-slate-800 bg-slate-900/60 text-emerald-400">
-                    module
+                    track
                   </span>
+                  {mod.belt && (
+                    <span className="px-1.5 py-0.5 rounded border border-orange-900/80 bg-orange-950/40 text-orange-400 font-semibold">
+                      🥋 {mod.belt} Track
+                    </span>
+                  )}
                   <span className="px-1.5 py-0.5 rounded border border-slate-800 bg-slate-900/60 text-slate-400">
-                    {mod.writeupCount} {mod.writeupCount === 1 ? "section" : "sections"}
+                    {mod.writeupCount}{mod.totalModules ? ` / ${mod.totalModules}` : ""} modules
                   </span>
                 </div>
 
@@ -103,8 +108,14 @@ export default async function WriteupPlatformPage({ params }: PageProps) {
                   {mod.name}
                 </h2>
 
+                {mod.description && (
+                  <p className="mt-1.5 text-sm text-slate-400 leading-relaxed">
+                    {mod.description}
+                  </p>
+                )}
+
                 <div className="mt-3 pt-3 border-t border-slate-800/80 font-mono text-xs text-slate-600 flex items-center justify-between">
-                  <span>view sections →</span>
+                  <span>view track &amp; writeups →</span>
                 </div>
               </Link>
             ))}

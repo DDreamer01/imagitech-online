@@ -43,6 +43,8 @@ export interface Writeup {
   points: string;
   /** Optional completion status indicator, e.g. "completed" | "in-progress" */
   status?: string;
+  /** Martial arts belt attained upon path completion (e.g. "Orange Belt") */
+  belt?: string;
   published: boolean;
   readingTime?: string;
   content: string;
@@ -62,4 +64,8 @@ export interface WriteupModule {
   platform: string;
   description?: string;
   writeupCount: number;
+  /** Target belt awarded upon completing the entire track, e.g. "Orange Belt" */
+  belt?: string;
+  /** Total number of modules required in the track (e.g. 7 for Intro to Cybersecurity) */
+  totalModules?: number;
 }

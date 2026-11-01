@@ -54,6 +54,8 @@ export const WriteupFrontmatterSchema = z.object({
   module: z.string().optional(),
   /** Completion status: "completed" | "in-progress" */
   status: z.string().optional(),
+  /** Martial arts belt attained upon completing this track (e.g. "Orange Belt") */
+  belt: z.string().optional(),
   published: z.boolean().default(true),
 });
 
@@ -349,6 +351,7 @@ interface ValidatedWriteup {
     points: string;
     module?: string;
     status?: string;
+    belt?: string;
     published: boolean;
   };
   content: string;
@@ -367,6 +370,19 @@ function mapWriteup(writeup: ValidatedWriteup): Writeup {
 // ----------------------------------------------------------------
 // MODULE HELPERS (pwn.college-style: platform → module → writeup)
 // ----------------------------------------------------------------
+
+/** Metadata for known coursework tracks (e.g. pwn.college belt dojos) */
+const TRACK_METADATA: Record<
+  string,
+  { belt?: string; totalModules?: number; description?: string }
+> = {
+  "intro-to-cybersecurity": {
+    belt: "Orange Belt",
+    totalModules: 7,
+    description:
+      "7 core modules covering web security, network protocols, cryptography, access control, reverse engineering, binary exploitation, and integrated security toward the pwn.college Orange Belt.",
+  },
+};
 
 /**
  * Returns metadata for every module subfolder inside a platform that has
@@ -389,6 +405,8 @@ export function getWriteupModules(platformSlug: string): WriteupModule[] {
         .readdirSync(moduleDir)
         .filter((f) => f.endsWith(".mdx") || f.endsWith(".md")).length;
 
+      const trackMeta = TRACK_METADATA[entry.name];
+
       return {
         slug: entry.name,
         // Convert kebab-case folder name to Title Case for display
@@ -398,6 +416,9 @@ export function getWriteupModules(platformSlug: string): WriteupModule[] {
           .join(" "),
         platform: platformSlug,
         writeupCount,
+        belt: trackMeta?.belt,
+        totalModules: trackMeta?.totalModules,
+        description: trackMeta?.description,
       } satisfies WriteupModule;
     })
     .sort((a, b) => a.slug.localeCompare(b.slug));
@@ -441,6 +462,7 @@ export function getWriteupsByModule(platformSlug: string, moduleSlug: string): W
             points: (data.points as string) || "",
             module: (data.module as string) || undefined,
             status: (data.status as string) || undefined,
+            belt: (data.belt as string) || undefined,
             published: data.published !== false,
           },
           content,
@@ -492,6 +514,7 @@ export function getWriteupByModuleAndSlug(
         points: (data.points as string) || "",
         module: (data.module as string) || undefined,
         status: (data.status as string) || undefined,
+        belt: (data.belt as string) || undefined,
         published: data.published !== false,
       },
       content,
@@ -595,6 +618,7 @@ export function getWriteups(platformSlug?: string): Writeup[] {
                       points: (data.points as string) || "",
                       module: (data.module as string) || undefined,
                       status: (data.status as string) || undefined,
+                      belt: (data.belt as string) || undefined,
                       published: data.published !== false,
                     },
                     content,
