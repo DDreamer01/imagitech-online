@@ -1,0 +1,392 @@
+import React from "react";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import type { Metadata } from "next";
+import {
+  getWriteupPlatform,
+  getWriteupModules,
+  getWriteupsByModule,
+  getWriteupByModuleAndSlug,
+  getWriteupBySlug,
+  getWriteups,
+  extractHeadings,
+  WRITEUP_PLATFORMS,
+} from "@/lib/mdx";
+import Mdx from "@/components/Mdx";
+import TableOfContents from "@/components/TableOfContents";
+
+interface PageProps {
+  params: Promise<{ platform: string; segments: string[] }>;
+}
+
+// ------------------------------------------------------------------
+// Static params generation
+// ------------------------------------------------------------------
+
+export async function generateStaticParams() {
+  const params: { platform: string; segments: string[] }[] = [];
+
+  for (const platform of WRITEUP_PLATFORMS) {
+    if (platform.hasModules) {
+      // Module list page: /writeups/[platform]/[module]
+      const modules = getWriteupModules(platform.slug);
+      for (const mod of modules) {
+        params.push({ platform: platform.slug, segments: [mod.slug] });
+
+        // Individual writeup page: /writeups/[platform]/[module]/[slug]
+        const writeups = getWriteupsByModule(platform.slug, mod.slug);
+        for (const writeup of writeups) {
+          params.push({ platform: platform.slug, segments: [mod.slug, writeup.slug] });
+        }
+      }
+    } else {
+      // Flat writeup page: /writeups/[platform]/[slug]
+      const writeups = getWriteups(platform.slug);
+      for (const writeup of writeups) {
+        params.push({ platform: platform.slug, segments: [writeup.slug] });
+      }
+    }
+  }
+
+  return params;
+}
+
+// ------------------------------------------------------------------
+// Metadata
+// ------------------------------------------------------------------
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { platform: platformSlug, segments } = await params;
+  const platform = getWriteupPlatform(platformSlug);
+  if (!platform) return { title: "Not Found" };
+
+  if (platform.hasModules && segments.length === 2) {
+    const [moduleSlug, slug] = segments;
+    const writeup = getWriteupByModuleAndSlug(platformSlug, moduleSlug, slug);
+    if (!writeup) return { title: "Writeup Not Found" };
+    return {
+      title: `${writeup.title} — ${platform.name}`,
+      description: writeup.description || `${platform.name} writeup: ${writeup.title}`,
+    };
+  }
+
+  if (platform.hasModules && segments.length === 1) {
+    const [moduleSlug] = segments;
+    const modName = moduleSlug.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+    return {
+      title: `${modName} — ${platform.name}`,
+      description: `Writeups for the ${modName} module on ${platform.name}.`,
+    };
+  }
+
+  // Flat
+  if (segments.length === 1) {
+    const writeup = getWriteupBySlug(platformSlug, segments[0]);
+    if (!writeup) return { title: "Writeup Not Found" };
+    return {
+      title: `${writeup.title} - ${platform.name}`,
+      description: writeup.description || `Security writeup for ${writeup.title} on ${platform.name}.`,
+    };
+  }
+
+  return { title: "Not Found" };
+}
+
+// ------------------------------------------------------------------
+// Helpers
+// ------------------------------------------------------------------
+
+function toTitleCase(slug: string): string {
+  return slug
+    .split("-")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+function statusConfig(status?: string) {
+  if (status === "completed")
+    return {
+      label: "🟠 Orange Flag",
+      className: "px-1.5 py-0.5 rounded border border-orange-900 bg-orange-950/40 text-orange-400",
+    };
+  if (status === "in-progress")
+    return {
+      label: "⏳ In Progress",
+      className: "px-1.5 py-0.5 rounded border border-yellow-900 bg-yellow-950/40 text-yellow-400",
+    };
+  return null;
+}
+
+// ------------------------------------------------------------------
+// Page
+// ------------------------------------------------------------------
+
+export default async function WriteupCatchAllPage({ params }: PageProps) {
+  const { platform: platformSlug, segments } = await params;
+  const platform = getWriteupPlatform(platformSlug);
+
+  if (!platform) notFound();
+
+  // ----------------------------------------------------------------
+  // MODULE LIST PAGE  /writeups/[platform]/[module]
+  // ----------------------------------------------------------------
+  if (platform.hasModules && segments.length === 1) {
+    const moduleSlug = segments[0];
+    const modules = getWriteupModules(platformSlug);
+    const mod = modules.find((m) => m.slug === moduleSlug);
+    if (!mod) notFound();
+
+    const writeups = getWriteupsByModule(platformSlug, moduleSlug);
+    const modName = toTitleCase(moduleSlug);
+
+    return (
+      <div className="space-y-10 max-w-4xl">
+        <Link
+          href={`/writeups/${platformSlug}`}
+          className="inline-flex items-center gap-1.5 font-mono text-xs text-slate-500 hover:text-emerald-400 transition-colors"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          back_to_{platformSlug}()
+        </Link>
+
+        <header>
+          <div className="flex items-center gap-2 font-mono text-xs text-slate-500 mb-2">
+            <span>{platform.name}</span>
+            <span>/</span>
+            <span className="text-emerald-400">{modName}</span>
+          </div>
+          <h1 className="text-3xl font-extrabold tracking-tight text-slate-100 sm:text-4xl">
+            {modName}
+          </h1>
+          <p className="mt-2 text-sm text-slate-400 font-mono">
+            listing_sections() &bull; {writeups.length}{" "}
+            {writeups.length === 1 ? "section" : "sections"} published
+          </p>
+        </header>
+
+        {writeups.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-slate-800 bg-slate-950/40 p-10 text-center">
+            <p className="font-mono text-sm text-slate-500">No writeups published for this module yet.</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {writeups.map((writeup) => {
+              const badge = statusConfig(writeup.status);
+              return (
+                <Link
+                  key={writeup.slug}
+                  href={`/writeups/${platformSlug}/${moduleSlug}/${writeup.slug}`}
+                  className="group block rounded-lg border border-slate-800 bg-slate-950/40 p-5 transition-colors hover:border-slate-600 hover:bg-slate-900/40"
+                >
+                  <div className="flex flex-wrap items-center gap-2 font-mono text-xs mb-2">
+                    {writeup.difficulty && (
+                      <span className="px-1.5 py-0.5 rounded border border-slate-800 bg-slate-900/60 text-sky-400">
+                        {writeup.difficulty}
+                      </span>
+                    )}
+                    {badge && <span className={`font-mono text-xs ${badge.className}`}>{badge.label}</span>}
+                    <span className="text-slate-500">&bull;</span>
+                    <time className="text-slate-500" dateTime={writeup.date}>{writeup.date}</time>
+                    {writeup.readingTime && (
+                      <>
+                        <span className="text-slate-500">&bull;</span>
+                        <span className="text-slate-500">{writeup.readingTime}</span>
+                      </>
+                    )}
+                  </div>
+                  <h2 className="text-lg font-bold text-slate-100 group-hover:text-emerald-400 transition-colors">
+                    {writeup.title}
+                  </h2>
+                  {writeup.description && (
+                    <p className="mt-1.5 text-sm text-slate-400 leading-relaxed">{writeup.description}</p>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ----------------------------------------------------------------
+  // MODULE WRITEUP PAGE  /writeups/[platform]/[module]/[slug]
+  // ----------------------------------------------------------------
+  if (platform.hasModules && segments.length === 2) {
+    const [moduleSlug, slug] = segments;
+    const writeup = getWriteupByModuleAndSlug(platformSlug, moduleSlug, slug);
+    if (!writeup) notFound();
+
+    const headings = extractHeadings(writeup.content);
+    const badge = statusConfig(writeup.status);
+    const modName = toTitleCase(moduleSlug);
+
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 lg:gap-12 items-start">
+        <div className="lg:col-span-3 min-w-0">
+          {/* Breadcrumb */}
+          <div className="flex items-center gap-1.5 font-mono text-xs text-slate-500 mb-6 flex-wrap">
+            <Link href="/writeups" className="hover:text-sky-400 transition-colors">writeups</Link>
+            <span>/</span>
+            <Link href={`/writeups/${platformSlug}`} className="hover:text-emerald-400 transition-colors">
+              {platform.name}
+            </Link>
+            <span>/</span>
+            <Link
+              href={`/writeups/${platformSlug}/${moduleSlug}`}
+              className="hover:text-emerald-400 transition-colors"
+            >
+              {modName}
+            </Link>
+            <span>/</span>
+            <span className="text-slate-400 truncate">{writeup.title}</span>
+          </div>
+
+          {/* Header */}
+          <header className="mb-8 border-b border-slate-800 pb-5">
+            <div className="flex flex-wrap items-center gap-3 text-xs font-mono mb-2">
+              <span className="px-1.5 py-0.5 rounded border border-slate-800 bg-slate-900/60 text-emerald-400">
+                {platform.name}
+              </span>
+              <span className="px-1.5 py-0.5 rounded border border-slate-800 bg-slate-900/60 text-slate-400">
+                {modName}
+              </span>
+              {writeup.difficulty && (
+                <span className="px-1.5 py-0.5 rounded border border-slate-800 bg-slate-900/60 text-sky-400">
+                  {writeup.difficulty}
+                </span>
+              )}
+              {badge && <span className={`font-mono text-xs ${badge.className}`}>{badge.label}</span>}
+              <span className="text-slate-500">&bull;</span>
+              <time className="text-slate-500" dateTime={writeup.date}>{writeup.date}</time>
+              {writeup.readingTime && (
+                <>
+                  <span className="text-slate-500">&bull;</span>
+                  <span className="text-slate-500">{writeup.readingTime}</span>
+                </>
+              )}
+            </div>
+            <h1 className="text-3xl font-extrabold tracking-tight text-slate-100 sm:text-4xl">
+              {writeup.title}
+            </h1>
+          </header>
+
+          {/* Mobile ToC */}
+          {headings.length > 0 && (
+            <details className="lg:hidden mb-6 rounded-lg border border-slate-800 bg-slate-950/20 p-4 font-mono text-xs">
+              <summary className="font-semibold text-slate-300 cursor-pointer select-none focus:text-emerald-400 focus:outline-none">
+                Outline ({headings.length} headings)
+              </summary>
+              <ul className="mt-3 pl-3 border-l border-slate-800 space-y-2 text-slate-400">
+                {headings.map((item) => (
+                  <li key={item.id} style={{ paddingLeft: `${(item.depth - 2) * 12}px` }}>
+                    <a href={`#${item.id}`} className="hover:text-emerald-400 transition-colors">
+                      {item.text}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
+
+          <div className="prose prose-slate prose-invert max-w-none">
+            <Mdx source={writeup.content} />
+          </div>
+        </div>
+
+        {headings.length > 0 && (
+          <aside className="lg:col-span-1 sticky top-24 hidden lg:block max-h-[calc(100vh-8rem)] overflow-y-auto pr-2 border-l border-slate-800/60 pl-6">
+            <TableOfContents items={headings} />
+          </aside>
+        )}
+      </div>
+    );
+  }
+
+  // ----------------------------------------------------------------
+  // FLAT WRITEUP PAGE  /writeups/[platform]/[slug]  (HTB, PortSwigger)
+  // ----------------------------------------------------------------
+  if (!platform.hasModules && segments.length === 1) {
+    const slug = segments[0];
+    const writeup = getWriteupBySlug(platformSlug, slug);
+    if (!writeup) notFound();
+
+    const headings = extractHeadings(writeup.content);
+
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 lg:gap-12 items-start">
+        <div className="lg:col-span-3 min-w-0">
+          <Link
+            href={`/writeups/${platformSlug}`}
+            className="inline-flex items-center gap-1.5 font-mono text-xs text-slate-500 hover:text-sky-400 mb-6 transition-colors"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            back_to_{platformSlug}()
+          </Link>
+
+          <header className="mb-8 border-b border-slate-800 pb-5">
+            <div className="flex flex-wrap items-center gap-3 text-xs font-mono mb-2">
+              <span className="px-1.5 py-0.5 rounded border border-slate-800 bg-slate-900/60 text-emerald-400">
+                {platform.name}
+              </span>
+              {writeup.difficulty && (
+                <span className="px-1.5 py-0.5 rounded border border-slate-800 bg-slate-900/60 text-sky-400">
+                  {writeup.difficulty}
+                </span>
+              )}
+              {writeup.points && (
+                <span className="px-1.5 py-0.5 rounded border border-slate-800 bg-slate-900/60 text-slate-400">
+                  {writeup.points} pts
+                </span>
+              )}
+              <span className="text-slate-500">&bull;</span>
+              <time className="text-slate-500" dateTime={writeup.date}>{writeup.date}</time>
+              {writeup.readingTime && (
+                <>
+                  <span className="text-slate-500">&bull;</span>
+                  <span className="text-slate-500">{writeup.readingTime}</span>
+                </>
+              )}
+            </div>
+            <h1 className="text-3xl font-extrabold tracking-tight text-slate-100 sm:text-4xl">
+              {writeup.title}
+            </h1>
+          </header>
+
+          {headings.length > 0 && (
+            <details className="lg:hidden mb-6 rounded-lg border border-slate-800 bg-slate-950/20 p-4 font-mono text-xs">
+              <summary className="font-semibold text-slate-300 cursor-pointer select-none focus:text-sky-400 focus:outline-none">
+                Outline ({headings.length} headings)
+              </summary>
+              <ul className="mt-3 pl-3 border-l border-slate-800 space-y-2 text-slate-400">
+                {headings.map((item) => (
+                  <li key={item.id} style={{ paddingLeft: `${(item.depth - 2) * 12}px` }}>
+                    <a href={`#${item.id}`} className="hover:text-sky-400 transition-colors">
+                      {item.text}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
+
+          <div className="prose prose-slate prose-invert max-w-none">
+            <Mdx source={writeup.content} />
+          </div>
+        </div>
+
+        {headings.length > 0 && (
+          <aside className="lg:col-span-1 sticky top-24 hidden lg:block max-h-[calc(100vh-8rem)] overflow-y-auto pr-2 border-l border-slate-800/60 pl-6">
+            <TableOfContents items={headings} />
+          </aside>
+        )}
+      </div>
+    );
+  }
+
+  notFound();
+}

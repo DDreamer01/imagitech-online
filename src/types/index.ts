@@ -37,8 +37,12 @@ export interface Writeup {
   description: string;
   date: string;
   platform: string;
+  /** Only set when the writeup lives inside a module subfolder (e.g. pwn.college) */
+  module?: string;
   difficulty: string;
   points: string;
+  /** Optional completion status indicator, e.g. "completed" | "in-progress" */
+  status?: string;
   published: boolean;
   readingTime?: string;
   content: string;
@@ -48,4 +52,14 @@ export interface WriteupPlatform {
   slug: string;
   name: string;
   description: string;
+  /** Whether this platform uses module subfolders instead of a flat writeup list */
+  hasModules?: boolean;
+}
+
+export interface WriteupModule {
+  slug: string;
+  name: string;
+  platform: string;
+  description?: string;
+  writeupCount: number;
 }
