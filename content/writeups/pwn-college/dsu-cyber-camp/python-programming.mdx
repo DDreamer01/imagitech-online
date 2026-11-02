@@ -9,9 +9,8 @@ status: "completed"
 published: true
 ---
 
-# Python Programming
 
-## Overview
+# Overview
 
 This module walks through the fundamentals of the Python programming language.
 
@@ -46,3 +45,68 @@ gpa = 3.43
 
 print(f"My name is {name}, I am {age} years old, and my GPA is {gpa}")
 ```
+
+### User Input - userinput.py
+
+```python
+name = input("What is your name: ")
+
+print("Hello", name)
+```
+
+### Type Casting - typecasting.py
+
+```python
+age = input("What is your age: ")
+
+future = int(age) + 7
+print(future)
+```
+
+### Knowledge Check I (Input/Output) - knowledgecheck1.py
+
+```python
+name = input("Please give me a Name: ")
+place = input("Please give me a Place: ")
+noun = input("Please give me a Noun: ")
+
+print("\nHere is your Mad Lib!")
+print("Hello, {}! Welcome to {}, where we make {}.".format(name, place, noun))
+```
+
+### Knowledge Check II (Input/Output) - knowledgecheck2
+
+```python
+a = int(input("Enter a number: "))
+b = int(input("Enter a second number: "))
+c = int(input("Enter a third number: "))
+d = int(input("Enter a fourth number: "))
+e = int(input("Now enter a last one: "))
+
+total = (a + b + c + d + e)
+
+print(total)
+average = total / 5
+print(average)
+```
+
+### Math - math.py
+
+```python
+number = int(input("Enter a number: "))
+
+mod = number % 2
+print(mod)
+```
+
+### Floor Division - floordivision.py
+
+```python
+num_one = int(input("Enter the first number: "))
+num_two = int(input("Enter the second number: "))
+
+floor_div = num_one // num_two
+
+print("\nThe result of floor division is: {}".format(floor_div))
+```
+
