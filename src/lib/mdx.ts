@@ -67,6 +67,12 @@ function getReadingTime(text: string): string {
   return `${minutes} min read`;
 }
 
+// Helper to parse MDX frontmatter safely, handling typos like `--` instead of `---` at file start
+export function parseMdxMatter(fileContent: string) {
+  const normalized = fileContent.replace(/^--[ \t]*(\r?\n)/, "---$1");
+  return matter(normalized);
+}
+
 // Ensure content directories exist
 function ensureDirectories() {
   const dirs = [
@@ -134,7 +140,7 @@ export function getBlogPostBySlug(slug: string): BlogPost | null {
   if (!filePath) return null;
 
   const fileContent = fs.readFileSync(filePath, "utf-8");
-  const { data, content } = matter(fileContent);
+  const { data, content } = parseMdxMatter(fileContent);
 
   try {
     const validated = BlogPostFrontmatterSchema.parse(data);
@@ -212,7 +218,7 @@ export function getProjectBySlug(slug: string): Project | null {
   if (!filePath) return null;
 
   const fileContent = fs.readFileSync(filePath, "utf-8");
-  const { data, content } = matter(fileContent);
+  const { data, content } = parseMdxMatter(fileContent);
 
   try {
     const validated = ProjectFrontmatterSchema.parse(data);
@@ -287,7 +293,7 @@ export function getNoteBySlug(slug: string): Note | null {
   if (!filePath) return null;
 
   const fileContent = fs.readFileSync(filePath, "utf-8");
-  const { data, content } = matter(fileContent);
+  const { data, content } = parseMdxMatter(fileContent);
 
   try {
     const validated = NoteFrontmatterSchema.parse(data);
@@ -371,16 +377,27 @@ function mapWriteup(writeup: ValidatedWriteup): Writeup {
 // MODULE HELPERS (pwn.college-style: platform → module → writeup)
 // ----------------------------------------------------------------
 
-/** Metadata for known coursework tracks (e.g. pwn.college belt dojos) */
+/** Metadata for known coursework tracks (e.g. pwn.college belt dojos or collections) */
 const TRACK_METADATA: Record<
   string,
-  { belt?: string; totalModules?: number; description?: string }
+  { name?: string; belt?: string; totalModules?: number; description?: string }
 > = {
   "intro-to-cybersecurity": {
+    name: "Intro to Cybersecurity",
     belt: "Orange Belt",
     totalModules: 7,
     description:
       "7 core modules covering web security, network protocols, cryptography, access control, reverse engineering, binary exploitation, and integrated security toward the pwn.college Orange Belt.",
+  },
+  "dsu-cyber-camp": {
+    name: "DSU Cyber Camps",
+    description:
+      "Challenges and modules from the Dakota State University Cyber Camp dojo on pwn.college.",
+  },
+  "dsu-cyber-camps": {
+    name: "DSU Cyber Camps",
+    description:
+      "Challenges and modules from the Dakota State University Cyber Camp dojo on pwn.college.",
   },
 };
 
@@ -388,6 +405,7 @@ const TRACK_METADATA: Record<
  * Returns metadata for every module subfolder inside a platform that has
  * `hasModules: true`. Each entry carries the folder slug, a human-readable
  * name derived from the folder name, and a writeup count.
+ * Supports optional `_meta.json` inside module folders for custom names/descriptions.
  */
 export function getWriteupModules(platformSlug: string): WriteupModule[] {
   const platform = getWriteupPlatform(platformSlug);
@@ -405,20 +423,39 @@ export function getWriteupModules(platformSlug: string): WriteupModule[] {
         .readdirSync(moduleDir)
         .filter((f) => f.endsWith(".mdx") || f.endsWith(".md")).length;
 
+      // Check for optional _meta.json file inside the folder
+      let fileMeta: {
+        name?: string;
+        description?: string;
+        belt?: string;
+        totalModules?: number;
+      } = {};
+      const metaPath = path.join(moduleDir, "_meta.json");
+      if (fs.existsSync(metaPath)) {
+        try {
+          fileMeta = JSON.parse(fs.readFileSync(metaPath, "utf-8"));
+        } catch (e) {
+          console.error(`Invalid _meta.json in ${moduleDir}:`, e);
+        }
+      }
+
       const trackMeta = TRACK_METADATA[entry.name];
+      const name =
+        fileMeta.name ||
+        trackMeta?.name ||
+        entry.name
+          .split("-")
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+          .join(" ");
 
       return {
         slug: entry.name,
-        // Convert kebab-case folder name to Title Case for display
-        name: entry.name
-          .split("-")
-          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-          .join(" "),
+        name,
         platform: platformSlug,
         writeupCount,
-        belt: trackMeta?.belt,
-        totalModules: trackMeta?.totalModules,
-        description: trackMeta?.description,
+        belt: fileMeta.belt ?? trackMeta?.belt,
+        totalModules: fileMeta.totalModules ?? trackMeta?.totalModules,
+        description: fileMeta.description ?? trackMeta?.description,
       } satisfies WriteupModule;
     })
     .sort((a, b) => a.slug.localeCompare(b.slug));
@@ -440,7 +477,7 @@ export function getWriteupsByModule(platformSlug: string, moduleSlug: string): W
     .map((file) => {
       const slug = file.replace(/\.mdx?$/, "");
       const fileContent = fs.readFileSync(path.join(moduleDir, file), "utf-8");
-      const { data, content } = matter(fileContent);
+      const { data, content } = parseMdxMatter(fileContent);
 
       try {
         const validated = WriteupFrontmatterSchema.parse(data);
@@ -492,7 +529,7 @@ export function getWriteupByModuleAndSlug(
   if (!filePath) return null;
 
   const fileContent = fs.readFileSync(filePath, "utf-8");
-  const { data, content } = matter(fileContent);
+  const { data, content } = parseMdxMatter(fileContent);
 
   try {
     const validated = WriteupFrontmatterSchema.parse(data);
@@ -558,7 +595,7 @@ export function getWriteups(platformSlug?: string): Writeup[] {
       .map((e) => {
         const slug = e.name.replace(/\.mdx?$/, "");
         const fileContent = fs.readFileSync(path.join(dirPath, e.name), "utf-8");
-        const { data, content } = matter(fileContent);
+        const { data, content } = parseMdxMatter(fileContent);
         try {
           const validated = WriteupFrontmatterSchema.parse(data);
           return mapWriteup({ slug, platform: platformDir, validated, content });
@@ -595,7 +632,7 @@ export function getWriteups(platformSlug?: string): Writeup[] {
               .map((file) => {
                 const slug = file.replace(/\.mdx?$/, "");
                 const fileContent = fs.readFileSync(path.join(moduleDir, file), "utf-8");
-                const { data, content } = matter(fileContent);
+                const { data, content } = parseMdxMatter(fileContent);
                 try {
                   const validated = WriteupFrontmatterSchema.parse(data);
                   return mapWriteup({
@@ -647,7 +684,7 @@ export function getWriteupBySlug(platformSlug: string, slug: string): Writeup | 
   if (!filePath) return null;
 
   const fileContent = fs.readFileSync(filePath, "utf-8");
-  const { data, content } = matter(fileContent);
+  const { data, content } = parseMdxMatter(fileContent);
 
   try {
     const validated = WriteupFrontmatterSchema.parse(data);

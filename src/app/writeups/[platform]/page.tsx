@@ -91,8 +91,8 @@ export default async function WriteupPlatformPage({ params }: PageProps) {
                 className="group block rounded-lg border border-slate-800 bg-slate-950/40 p-5 transition-colors hover:border-slate-600 hover:bg-slate-900/40"
               >
                 <div className="flex flex-wrap items-center gap-2 font-mono text-xs mb-2">
-                  <span className="px-1.5 py-0.5 rounded border border-slate-800 bg-slate-900/60 text-emerald-400">
-                    track
+                  <span className="px-1.5 py-0.5 rounded border border-slate-800 bg-slate-950 text-emerald-400">
+                    {mod.belt ? "track" : "dojo"}
                   </span>
                   {mod.belt && (
                     <span className="px-1.5 py-0.5 rounded border border-orange-900/80 bg-orange-950/40 text-orange-400 font-semibold">
@@ -100,7 +100,9 @@ export default async function WriteupPlatformPage({ params }: PageProps) {
                     </span>
                   )}
                   <span className="px-1.5 py-0.5 rounded border border-slate-800 bg-slate-900/60 text-slate-400">
-                    {mod.writeupCount}{mod.totalModules ? ` / ${mod.totalModules}` : ""} modules
+                    {mod.belt && mod.totalModules
+                      ? `${mod.writeupCount} / ${mod.totalModules} modules`
+                      : `${mod.writeupCount} ${mod.writeupCount === 1 ? "writeup" : "writeups"}`}
                   </span>
                 </div>
 
@@ -115,7 +117,7 @@ export default async function WriteupPlatformPage({ params }: PageProps) {
                 )}
 
                 <div className="mt-3 pt-3 border-t border-slate-800/80 font-mono text-xs text-slate-600 flex items-center justify-between">
-                  <span>view track &amp; writeups →</span>
+                  <span>{mod.belt ? "view track & writeups →" : "view writeups →"}</span>
                 </div>
               </Link>
             ))}
