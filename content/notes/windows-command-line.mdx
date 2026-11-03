@@ -1,0 +1,84 @@
+---
+title: "Windows Command Line"
+date: "2026-11-03"
+category: "Cybersecurity"
+published: true
+---
+
+A list of some cmd / powershell commands I learnt from HackTheBox Intro to Windows Command Line
+
+Similar to Linux `man`, Windows has `help` for documentation e.g `help dir`
+
+---
+
+## 1. Viewing & Listing Directories
+
+### dir
+
+Used to list the content of a directory.
+
+### cd and chdir
+
+Used to change directory.
+
+### tree /f
+
+provides a complete listing of all files and folders within the specified path.
+
+## 2. Create a New Directory
+
+### md and mkdir
+
+Creates a new directory
+
+## 3. Delete Directories
+
+### rd and rmdir
+
+When used ordinarily it deletes only empty directories.
+
+`rd /s` - Delete non-empty directory
+
+## 4. Move a Directory
+
+### move `source` `destination`
+
+Moves a directory including it's children to destination, while the source gets deleted.
+
+## 5. Copy a Directory
+
+### copy `source` `destination` and robocopy
+
+Copies a directory including it's children to destination, while the source still remains.
+
+## 6. List Files & View Their Contents
+
+### more file.txt
+
+### type file.txt
+
+type can also be used to redirect e.g `type passwords.txt >> secrets.txt`
+
+## 7. Create and Modify a File
+
+### echo
+
+echo Check out this text > demo.txt
+
+### fsutil
+
+file createNew for-sure.txt 222
+
+### ren - Ren(name) a file
+
+ren demo.txt superdemo.txt
+
+## 8. Deleting Files
+
+### del
+
+del file-1
+
+### erase
+
+erase file-3 file-5
