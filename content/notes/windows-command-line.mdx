@@ -8,7 +8,7 @@ published: true
 
 A collection of `cmd` / PowerShell commands learned from the **HackTheBox Intro to Windows Command Line** module.
 
-> Similar to Linux `man`, Windows has `help` for inline documentation — e.g. `help dir`
+> Similar to Linux `man`, Windows has `help` for inline documentation — e.g. `help dir` or `command /?`
 
 ---
 
@@ -130,7 +130,7 @@ type passwords.txt >> secrets.txt
 
 ## 7. Create and Modify Files
 
-### `echo`
+### `Echo (Write to File)`
 
 Writes text to a file using output redirection. Use `>` to create/overwrite and `>>` to append.
 
@@ -175,4 +175,334 @@ Alias for `del` — can delete multiple files at once.
 
 ```cmd
 erase file-3.txt file-5.txt
+```
+
+## 9. Gathering System Information
+
+### `systeminfo`
+
+This provides a lot of information of the machine
+
+```cmd
+PS C:\Users\dreamer> systeminfo
+
+Host Name:                 ICL-WIN11
+OS Name:                   Microsoft Windows 11 Pro
+OS Version:                10.0.22000 N/A Build 22000
+OS Manufacturer:           Microsoft Corporation
+OS Configuration:          Member Workstation
+OS Build Type:             Multiprocessor Free
+Registered Owner:          dreamer
+```
+
+### `hostname`
+
+This provides the name of the host
+
+```cmd
+PS C:\Users\dreamer> hostname
+ICL-WIN11
+```
+
+### `ver`
+
+This provides the version of Windows
+
+```cmd
+C:\Users\Adminuser>ver
+Microsoft Windows [Version 10.0.19044.7725]
+```
+
+### `whoami`
+
+This prints the name of the user
+
+```cmd
+PS C:\Users\dreamer> whoami
+icl-win11\dreamer
+```
+
+### `whoami /priv`
+
+This provides privilege information
+
+```cmd
+PS C:\Users\dreamer> whoami /priv
+
+PRIVILEGES INFORMATION
+----------------------
+
+Privilege Name                            Description
+                             State
+========================================= ================================================================== =======
+SeIncreaseQuotaPrivilege                  Adjust memory quotas for a process                                 Enabled
+SeSecurityPrivilege                       Manage auditing and security log                                   Enabled
+SeTakeOwnershipPrivilege                  Take ownership of files or other objects                           Enabled
+SeLoadDriverPrivilege                     Load and unload device drivers                                     Enabled
+SeSystemProfilePrivilege                  Profile system performance
+                             Enabled
+SeSystemtimePrivilege                     Change the system time
+                             Enabled
+SeProfileSingleProcessPrivilege           Profile single process
+                             Enabled
+SeIncreaseBasePriorityPrivilege           Increase scheduling priority
+                             Enabled
+SeCreatePagefilePrivilege                 Create a pagefile
+                             Enabled
+SeBackupPrivilege                         Back up files and directories
+                             Enabled
+SeRestorePrivilege                        Restore files and directories
+                             Enabled
+SeShutdownPrivilege                       Shut down the system
+                             Enabled
+SeDebugPrivilege                          Debug programs
+                             Enabled
+SeSystemEnvironmentPrivilege              Modify firmware environment values                                 Enabled
+SeChangeNotifyPrivilege                   Bypass traverse checking
+                             Enabled
+SeRemoteShutdownPrivilege                 Force shutdown from a remote system                                Enabled
+SeUndockPrivilege                         Remove computer from docking station                               Enabled
+SeManageVolumePrivilege                   Perform volume maintenance tasks                                   Enabled
+SeImpersonatePrivilege                    Impersonate a client after authentication                          Enabled
+SeCreateGlobalPrivilege                   Create global objects
+                             Enabled
+SeIncreaseWorkingSetPrivilege             Increase a process working set                                     Enabled
+SeTimeZonePrivilege                       Change the time zone
+                             Enabled
+SeCreateSymbolicLinkPrivilege             Create symbolic links
+                             Enabled
+SeDelegateSessionUserImpersonatePrivilege Obtain an impersonation token for another user in the same session Enabled
+```
+
+### `net user`
+
+This lists every user on the windows machine
+
+```cmd
+PS C:\Users\dreamer> net user
+
+User accounts for \\ICL-WIN11
+
+-------------------------------------------------------------------------------
+Administrator            DefaultAccount           Guest
+dreamer              WDAGUtilityAccount
+The command completed successfully.
+```
+
+### `net share`
+
+View all active shares
+
+```cmd
+PS C:\Users\dreamer> net share
+
+Share name   Resource                        Remark
+
+-------------------------------------------------------------------------------
+C$           C:\                             Default share
+IPC$                                         Remote IPC
+ADMIN$       C:\Windows                      Remote Admin
+```
+
+## 10. Finding Files and Directories
+
+### Where
+
+```cmd
+C:\Users\Adminuser>where calc.exe
+C:\Windows\System32\calc.exe
+```
+
+Find files recursively
+
+```cmd
+PS C:\Users> where.exe /R C:\Users\ waldo.txt
+C:\Users\MTanaka\Favorites\waldo.txt
+```
+
+Using wildcards
+
+```cmd
+C:\Users\student\Desktop>where /R C:\Users\student\ *.csv
+C:\Users\student\AppData\Local\live-hosts.csv
+```
+
+### Find
+
+Used to search for text strings in a file
+
+```cmd
+C:\Users\Adminuser\Downloads\fixed>find "colorama" requirements.txt
+
+---------- REQUIREMENTS.TXT
+colorama>=0.4.6
+```
+
+## 11. Environment Variables
+
+### Set
+
+Set is used to create a variable
+
+```cmd
+C:\Users\Adminuser>set NAME=Joseph
+```
+
+### Setx
+
+> The setx command saves environment variables permanently to the registry for future sessions, but it does not update the environment of the currently open Command Prompt window.
+> To use the variable, you have to open a new window (For permanent variables)
+
+```cmd
+C:\Users\Adminuser>setx COLOR Brown
+
+SUCCESS: Specified value was saved.
+```
+
+### Echo (Display Variables)
+
+Echo is used to view variables global or local.
+
+```cmd
+C:\Users\Adminuser>echo %name%
+JOSEPH
+```
+
+```cmd
+C:\Users\Adminuser>echo %COLOR%
+Brown
+```
+
+## 12. Managing Services
+
+### SC
+
+Service Controller - query, start, stop, config
+
+```cmd
+C:\Users\Adminuser>sc query windefend
+
+SERVICE_NAME: windefend
+        TYPE               : 10  WIN32_OWN_PROCESS
+        STATE              : 1  STOPPED
+        WIN32_EXIT_CODE    : 1077  (0x435)
+        SERVICE_EXIT_CODE  : 0  (0x0)
+        CHECKPOINT         : 0x0
+        WAIT_HINT          : 0x0
+```
+
+### Tasklist
+
+This is a command line tool that gives us a list of currently running processes
+
+```cmd
+C:\Users\Adminuser>tasklist
+
+Image Name                     PID Session Name        Session#    Mem Usage
+========================= ======== ================ =========== ============
+System Idle Process              0 Services                   0          8 K
+System                           4 Services                   0        144 K
+Registry                        88 Services                   0     11,136 K
+smss.exe                       392 Services                   0      1,248 K
+csrss.exe                      496 Services                   0      5,404 K
+csrss.exe                      572 Console                    1      5,088 K
+wininit.exe                    596 Services                   0      7,576 K
+winlogon.exe                   644 Console                    1     10,968 K
+services.exe                   716 Services                   0      9,976 K
+lsass.exe                      724 Services                   0     20,840 K
+svchost.exe                    840 Services                   0     27,548 K
+fontdrvhost.exe                864 Services                   0      4,200 K
+fontdrvhost.exe                868 Console                    1      4,084 K
+svchost.exe                    956 Services                   0     13,192 K
+svchost.exe                   1012 Services                   0      9,600 K
+svchost.exe                    520 Services                   0     61,272 K
+svchost.exe                    460 Services                   0      5,680 K
+svchost.exe                    756 Services                   0     12,100 K
+svchost.exe                   1028 Services                   0      8,204 K
+svchost.exe                   1036 Services                   0      6,776 K
+svchost.exe                   1072 Services                   0      6,616 K
+dwm.exe                       1088 Console                    1     41,896 K
+LogonUI.exe                   1096 Console                    1     58,900 K
+svchost.exe                   1164 Services                   0      6,700 K
+svchost.exe                   1304 Services                   0     20,588 K
+svchost.exe                   1404 Services                   0      6,436 K
+svchost.exe                   1412 Services                   0     15,800 K
+svchost.exe                   1448 Services                   0     12,652 K
+svchost.exe                   1476 Services                   0      7,988 K
+svchost.exe                   1484 Services                   0      6,156 K
+svchost.exe                   1604 Services                   0     10,016 K
+svchost.exe                   1656 Services                   0      8,276 K
+svchost.exe                   1684 Services                   0      7,540 K
+svchost.exe                   1704 Services                   0      8,328 K
+svchost.exe                   1728 Services                   0      7,532 K
+taskhostw.exe                 1792 Services                   0     26,900 K
+svchost.exe                   1856 Services                   0     13,436 K
+svchost.exe                   1956 Services                   0      8,460 K
+svchost.exe                   1976 Services                   0      7,736 K
+svchost.exe                   1984 Services                   0      6,648 K
+svchost.exe                   2024 Services                   0      7,808 K
+svchost.exe                   2036 Services                   0      9,904 K
+svchost.exe                   2044 Services                   0      8,156 K
+svchost.exe                   1972 Services                   0     12,976 K
+svchost.exe                   2120 Services                   0     18,400 K
+svchost.exe                   2232 Services                   0      7,216 K
+svchost.exe                   2292 Services                   0      8,408 K
+svchost.exe                   2432 Services                   0      9,576 K
+svchost.exe                   2552 Services                   0     16,340 K
+svchost.exe                   2560 Services                   0     23,868 K
+svchost.exe                   2576 Services                   0     19,124 K
+svchost.exe                   2636 Services                   0     11,504 K
+svchost.exe                   2652 Services                   0      5,632 K
+svchost.exe                   2684 Services                   0     20,364 K
+svchost.exe                   2708 Services                   0      5,960 K
+WindowsAzureGuestAgent.ex     2740 Services                   0     64,816 K
+WaAppAgent.exe                2788 Services                   0     77,212 K
+svchost.exe                   2832 Services                   0      9,588 K
+svchost.exe                   2864 Services                   0      5,840 K
+svchost.exe                   2932 Services                   0     10,708 K
+svchost.exe                   2800 Services                   0      9,888 K
+svchost.exe                   3560 Services                   0      8,656 K
+svchost.exe                   4000 Services                   0      7,256 K
+svchost.exe                   3888 Services                   0      7,704 K
+WaSecAgentProv.exe            4080 Services                   0      6,556 K
+conhost.exe                   3464 Services                   0     10,228 K
+csrss.exe                     4216 RDP-Tcp#9                  2      5,860 K
+winlogon.exe                  4260 RDP-Tcp#9                  2     10,448 K
+fontdrvhost.exe               4348 RDP-Tcp#9                  2      5,036 K
+WUDFHost.exe                  4356 Services                   0     16,312 K
+dwm.exe                       4416 RDP-Tcp#9                  2     54,424 K
+svchost.exe                   4892 Services                   0      6,896 K
+rdpclip.exe                   4924 RDP-Tcp#9                  2     11,576 K
+sihost.exe                    4976 RDP-Tcp#9                  2     25,852 K
+svchost.exe                   4996 RDP-Tcp#9                  2     29,356 K
+taskhostw.exe                 5068 RDP-Tcp#9                  2     27,996 K
+svchost.exe                   5128 Services                   0     14,388 K
+explorer.exe                  5280 RDP-Tcp#9                  2    123,852 K
+svchost.exe                   5524 RDP-Tcp#9                  2     22,936 K
+svchost.exe                   5584 Services                   0     14,804 K
+svchost.exe                   5740 Services                   0     10,200 K
+StartMenuExperienceHost.e     5824 RDP-Tcp#9                  2     67,932 K
+svchost.exe                   5944 Services                   0      9,700 K
+RuntimeBroker.exe             6032 RDP-Tcp#9                  2     28,764 K
+SearchApp.exe                 4120 RDP-Tcp#9                  2    182,768 K
+RuntimeBroker.exe             4760 RDP-Tcp#9                  2     39,420 K
+TextInputHost.exe             6908 RDP-Tcp#9                  2     40,780 K
+RuntimeBroker.exe             6956 RDP-Tcp#9                  2     16,644 K
+dllhost.exe                   7136 RDP-Tcp#9                  2     12,636 K
+SecurityHealthSystray.exe     4480 RDP-Tcp#9                  2      9,380 K
+SecurityHealthService.exe     4448 Services                   0     13,920 K
+cmd.exe                       7064 RDP-Tcp#9                  2      4,400 K
+conhost.exe                   7084 RDP-Tcp#9                  2     24,452 K
+MicrosoftEdgeUpdate.exe       2376 Services                   0      4,132 K
+svchost.exe                   3812 Services                   0     13,076 K
+svchost.exe                   6076 Services                   0      7,312 K
+svchost.exe                   1044 Services                   0     10,992 K
+svchost.exe                   6532 RDP-Tcp#9                  2     12,904 K
+svchost.exe                   6104 Services                   0      7,692 K
+ShellExperienceHost.exe       3468 RDP-Tcp#9                  2     48,672 K
+RuntimeBroker.exe             3584 RDP-Tcp#9                  2     18,616 K
+cmd.exe                       5772 RDP-Tcp#9                  2      4,720 K
+conhost.exe                   6376 RDP-Tcp#9                  2     22,100 K
+WmiPrvSE.exe                  5812 Services                   0     10,256 K
+tasklist.exe                  1996 RDP-Tcp#9                  2      9,304 K
 ```
