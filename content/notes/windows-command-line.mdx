@@ -2,83 +2,177 @@
 title: "Windows Command Line"
 date: "2026-11-03"
 category: "Cybersecurity"
+tags: ["windows", "cmd", "powershell", "cli", "hackthebox", "file-system"]
 published: true
 ---
 
-A list of some cmd / powershell commands I learnt from HackTheBox Intro to Windows Command Line
+A collection of `cmd` / PowerShell commands learned from the **HackTheBox Intro to Windows Command Line** module.
 
-Similar to Linux `man`, Windows has `help` for documentation e.g `help dir`
+> Similar to Linux `man`, Windows has `help` for inline documentation — e.g. `help dir`
 
 ---
 
 ## 1. Viewing & Listing Directories
 
-### dir
+### `dir`
 
-Used to list the content of a directory.
+Lists the contents of a directory.
 
-### cd and chdir
+```cmd
+dir
+dir C:\Users
+```
 
-Used to change directory.
+### `cd` / `chdir`
 
-### tree /f
+Changes the current working directory.
 
-provides a complete listing of all files and folders within the specified path.
+```cmd
+cd Documents
+chdir C:\Windows\System32
+```
+
+### `tree /f`
+
+Recursively lists all files and folders within the specified path.
+
+```cmd
+tree /f
+tree C:\Users\Admin /f
+```
+
+---
 
 ## 2. Create a New Directory
 
-### md and mkdir
+### `md` / `mkdir`
 
-Creates a new directory
+Creates a new directory.
+
+```cmd
+md NewFolder
+mkdir C:\Projects\MyApp
+```
+
+---
 
 ## 3. Delete Directories
 
-### rd and rmdir
+### `rd` / `rmdir`
 
-When used ordinarily it deletes only empty directories.
+Deletes a directory. Without flags, only works on **empty** directories.
 
-`rd /s` - Delete non-empty directory
+```cmd
+rd EmptyFolder
+rmdir EmptyFolder
+```
+
+Use `/s` to delete a non-empty directory (including all contents):
+
+```cmd
+rd /s NonEmptyFolder
+```
+
+---
 
 ## 4. Move a Directory
 
-### move `source` `destination`
+### `move <source> <destination>`
 
-Moves a directory including it's children to destination, while the source gets deleted.
+Moves a directory (including its children) to the destination. The source is deleted after the move.
+
+```cmd
+move OldFolder C:\NewLocation\OldFolder
+```
+
+---
 
 ## 5. Copy a Directory
 
-### copy `source` `destination` and robocopy
+### `copy <source> <destination>` / `robocopy`
 
-Copies a directory including it's children to destination, while the source still remains.
+Copies a directory to the destination. The source remains intact.
+
+```cmd
+copy file.txt C:\Backup\file.txt
+```
+
+For copying entire directory trees with more control, use `robocopy`:
+
+```cmd
+robocopy C:\Source C:\Destination /E
+```
+
+> `/E` copies all subdirectories including empty ones.
+
+---
 
 ## 6. List Files & View Their Contents
 
-### more file.txt
+### `more`
 
-### type file.txt
+Displays file contents one page at a time (useful for large files).
 
-type can also be used to redirect e.g `type passwords.txt >> secrets.txt`
+```cmd
+more file.txt
+```
 
-## 7. Create and Modify a File
+### `type`
 
-### echo
+Prints the entire contents of a file to the terminal. Can also be used for redirection:
 
+```cmd
+type file.txt
+type passwords.txt >> secrets.txt
+```
+
+---
+
+## 7. Create and Modify Files
+
+### `echo`
+
+Writes text to a file using output redirection. Use `>` to create/overwrite and `>>` to append.
+
+```cmd
 echo Check out this text > demo.txt
+echo More text >> demo.txt
+```
 
-### fsutil
+### `fsutil`
 
-file createNew for-sure.txt 222
+Low-level file utility. Can create a new file of a specified byte size:
 
-### ren - Ren(name) a file
+```cmd
+fsutil file createNew for-sure.txt 222
+```
 
+### `ren` / `rename`
+
+Renames a file.
+
+```cmd
 ren demo.txt superdemo.txt
+rename oldname.txt newname.txt
+```
+
+---
 
 ## 8. Deleting Files
 
-### del
+### `del`
 
-del file-1
+Deletes one or more files.
 
-### erase
+```cmd
+del file-1.txt
+del *.log
+```
 
-erase file-3 file-5
+### `erase`
+
+Alias for `del` — can delete multiple files at once.
+
+```cmd
+erase file-3.txt file-5.txt
+```

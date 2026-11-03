@@ -27,6 +27,7 @@ export interface Note {
   title: string;
   date: string;
   category: string;
+  tags: string[];
   published: boolean;
   content: string;
 }

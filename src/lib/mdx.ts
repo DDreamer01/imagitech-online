@@ -41,6 +41,11 @@ export const NoteFrontmatterSchema = z.object({
   title: z.string().min(1, "Note title is required"),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must follow YYYY-MM-DD format"),
   category: z.string().default("General"),
+  tags: z.preprocess((val) => {
+    if (Array.isArray(val)) return val;
+    if (typeof val === "string") return val.split(",").map((t) => t.trim()).filter(Boolean);
+    return [];
+  }, z.array(z.string())).default([]),
   published: z.boolean().default(true),
 });
 
@@ -273,6 +278,7 @@ export function getNotes(): Note[] {
           title: (data.title as string) || "Untitled Note",
           date: (data.date as string) || new Date().toISOString().split("T")[0],
           category: (data.category as string) || "General",
+          tags: Array.isArray(data.tags) ? data.tags : [],
           published: data.published !== false,
           content,
         } as Note;
@@ -309,6 +315,7 @@ export function getNoteBySlug(slug: string): Note | null {
       title: (data.title as string) || "Untitled Note",
       date: (data.date as string) || new Date().toISOString().split("T")[0],
       category: (data.category as string) || "General",
+      tags: Array.isArray(data.tags) ? data.tags : [],
       published: data.published !== false,
       content,
     } as Note;
