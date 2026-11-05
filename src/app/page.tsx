@@ -1,11 +1,11 @@
 import React from "react";
 import Link from "next/link";
-import { getBlogPosts, getProjects, getNotes } from "@/lib/mdx";
+import { getProjects, getNotes, getWriteups, getWriteupPlatform } from "@/lib/mdx";
 import { generateRssFeed } from "@/lib/rss";
 
 export default function HomePage() {
   generateRssFeed();
-  const posts = getBlogPosts().slice(0, 3);
+  const writeups = getWriteups().slice(0, 3);
   const projects = getProjects().filter(p => p.featured).slice(0, 3);
   const notes = getNotes().slice(0, 4);
 
@@ -133,35 +133,57 @@ export default function HomePage() {
             )}
           </section>
 
-          {/* Recent Articles Section */}
+          {/* Recent Writeups Section */}
           <section className="space-y-4">
             <div className="flex items-baseline justify-between border-b border-slate-800 pb-2">
-              <h2 className="text-xl font-bold text-slate-100">Recent Articles</h2>
-              <Link href="/blog" className="text-xs font-mono text-sky-400 hover:underline">
+              <h2 className="text-xl font-bold text-slate-100">Recent Writeups</h2>
+              <Link href="/writeups" className="text-xs font-mono text-sky-400 hover:underline">
                 view_all()
               </Link>
             </div>
-            {posts.length === 0 ? (
-              <p className="text-sm text-slate-500 font-mono italic">No posts published yet.</p>
+            {writeups.length === 0 ? (
+              <p className="text-sm text-slate-500 font-mono italic">No writeups published yet.</p>
             ) : (
               <div className="space-y-6">
-                {posts.map((post) => (
-                  <article key={post.slug} className="space-y-1.5">
-                    <div className="flex items-center gap-3 text-xs text-slate-500 font-mono">
-                      <time dateTime={post.date}>{post.date}</time>
-                      <span>&bull;</span>
-                      <span>{post.readingTime}</span>
-                    </div>
-                    <h3 className="text-base font-bold text-slate-200 hover:text-sky-400 transition-colors">
-                      <Link href={`/blog/${post.slug}`}>
-                        {post.title}
-                      </Link>
-                    </h3>
-                    <p className="text-sm text-slate-400 line-clamp-2">
-                      {post.description}
-                    </p>
-                  </article>
-                ))}
+                {writeups.map((writeup) => {
+                  const href = writeup.module
+                    ? `/writeups/${writeup.platform}/${writeup.module}/${writeup.slug}`
+                    : `/writeups/${writeup.platform}/${writeup.slug}`;
+                  const platform = getWriteupPlatform(writeup.platform);
+
+                  return (
+                    <article key={`${writeup.platform}-${writeup.module || ""}-${writeup.slug}`} className="space-y-1.5">
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 font-mono">
+                        <span className="px-1.5 py-0.5 rounded border border-slate-800 bg-slate-900/60 text-emerald-400">
+                          {platform?.name || writeup.platform}
+                        </span>
+                        {writeup.difficulty && (
+                          <span className="px-1.5 py-0.5 rounded border border-slate-800 bg-slate-900/60 text-sky-400">
+                            {writeup.difficulty}
+                          </span>
+                        )}
+                        <span>&bull;</span>
+                        <time dateTime={writeup.date}>{writeup.date}</time>
+                        {writeup.readingTime && (
+                          <>
+                            <span>&bull;</span>
+                            <span>{writeup.readingTime}</span>
+                          </>
+                        )}
+                      </div>
+                      <h3 className="text-base font-bold text-slate-200 hover:text-sky-400 transition-colors">
+                        <Link href={href}>
+                          {writeup.title}
+                        </Link>
+                      </h3>
+                      {writeup.description && (
+                        <p className="text-sm text-slate-400 line-clamp-2">
+                          {writeup.description}
+                        </p>
+                      )}
+                    </article>
+                  );
+                })}
               </div>
             )}
           </section>
