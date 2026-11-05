@@ -88,6 +88,7 @@
   
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-display), "Archivo Black", var(--font-geist-sans), sans-serif;
 
   /* Override Tailwind slate and sky values to map our clay design system */
   --color-slate-50: #F2F2F2;

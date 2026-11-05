@@ -11,9 +11,12 @@ export default function ContactPage() {
 
   return (
     <div className="max-w-3xl">
-      <header className="mb-8">
-        <h1 className="text-3xl font-extrabold tracking-tight text-slate-100 sm:text-4xl">Contact</h1>
-        <p className="mt-2 text-sm text-slate-400 font-mono">mail.connect()</p>
+      <header className="mb-8 border-b border-slate-800 pb-6">
+        <div className="font-mono text-[11px] uppercase tracking-[0.25em] text-sky-400 mb-2">
+          // Direct Transmission
+        </div>
+        <h1 className="font-display text-4xl sm:text-6xl uppercase tracking-tight text-slate-100">Contact</h1>
+        <p className="mt-2 text-xs text-slate-400 font-mono tracking-wider uppercase">mail.connect()</p>
       </header>
 
       <div className="space-y-6 text-slate-300">

@@ -15,15 +15,13 @@ export default function TagsPage() {
     <div className="space-y-8">
       {/* Header */}
       <div className="space-y-2 border-b border-edge pb-6">
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-xs text-brand font-bold uppercase tracking-wider">
-            {"// Taxonomy Matrix"}
-          </span>
+        <div className="font-mono text-[11px] uppercase tracking-[0.25em] text-sky-400 mb-2">
+          // Taxonomy Matrix
         </div>
-        <h1 className="text-3xl font-extrabold tracking-tight text-content-main sm:text-4xl">
-          Topic Index & Tags
+        <h1 className="font-display text-4xl sm:text-6xl uppercase tracking-tight text-slate-100">
+          Topic Index
         </h1>
-        <p className="text-base text-content-muted leading-relaxed max-w-2xl">
+        <p className="text-sm text-slate-400 leading-relaxed max-w-2xl pt-1">
           Explore all documented guides, systems architecture diagrams, and networking blueprints filtered by technology.
         </p>
       </div>

@@ -66,11 +66,14 @@ export default async function WriteupPlatformPage({ params }: PageProps) {
           back_to_platforms()
         </Link>
 
-        <header>
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-100 sm:text-4xl">
+        <header className="border-b border-slate-800 pb-6">
+          <div className="font-mono text-[11px] uppercase tracking-[0.25em] text-sky-400 mb-2">
+            // Track &amp; Modules
+          </div>
+          <h1 className="font-display text-3xl sm:text-5xl uppercase tracking-tight text-slate-100">
             {platform.name} <span className="text-emerald-400">Writeups</span>
           </h1>
-          <p className="mt-2 text-sm text-slate-400 font-mono">
+          <p className="mt-2 text-xs text-slate-400 font-mono tracking-wider uppercase">
             listing_modules() &bull; {modules.length} course{modules.length !== 1 ? "s" : ""} tracked
           </p>
         </header>
@@ -143,61 +146,72 @@ export default async function WriteupPlatformPage({ params }: PageProps) {
         back_to_platforms()
       </Link>
 
-      <header>
-        <h1 className="text-3xl font-extrabold tracking-tight text-slate-100 sm:text-4xl">
+      <header className="border-b border-slate-800 pb-6">
+        <div className="font-mono text-[11px] uppercase tracking-[0.25em] text-sky-400 mb-2">
+          // Platform Solves
+        </div>
+        <h1 className="font-display text-3xl sm:text-5xl uppercase tracking-tight text-slate-100">
           {platform.name} <span className="text-sky-400">Writeups</span>
         </h1>
-        <p className="mt-2 text-sm text-slate-400 font-mono">
+        <p className="mt-2 text-xs text-slate-400 font-mono tracking-wider uppercase">
           listing_solves() &bull; {writeups.length} archived
         </p>
       </header>
 
       {writeups.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-slate-800 bg-slate-950/40 p-10 text-center">
+        <div className="border border-dashed border-slate-800 bg-slate-950/40 p-10 text-center">
           <p className="font-mono text-sm text-slate-500">
             No writeups archived for {platform.name} yet.
           </p>
           <p className="mt-2 font-mono text-xs text-slate-600">Run `npm run new` to scaffold one.</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="border-t border-b border-slate-800 divide-y divide-slate-800/80">
           {writeups.map((writeup) => (
             <Link
               key={writeup.slug}
               href={`/writeups/${platformSlug}/${writeup.slug}`}
-              className="group block rounded-lg border border-slate-800 bg-slate-950/40 p-5 transition-colors hover:border-slate-600 hover:bg-slate-900/40"
+              className="group block py-5 px-3 -mx-3 grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-6 items-baseline transition-all hover:bg-slate-900/90"
             >
-              <div className="flex flex-wrap items-center gap-2 font-mono text-xs mb-2">
-                {writeup.difficulty && (
-                  <span className="px-1.5 py-0.5 rounded border border-slate-800 bg-slate-900/60 text-sky-400">
+              {/* Date */}
+              <span className="col-span-12 md:col-span-2 font-mono text-xs uppercase tracking-[0.18em] text-slate-500 group-hover:text-slate-300">
+                {writeup.date}
+              </span>
+
+              {/* Difficulty / Points */}
+              <span className="col-span-12 md:col-span-2 flex flex-wrap items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.15em]">
+                {writeup.difficulty ? (
+                  <span className="border border-slate-700 group-hover:border-sky-400 px-2 py-0.5 text-slate-300 group-hover:text-sky-400 transition-colors">
                     {writeup.difficulty}
+                  </span>
+                ) : (
+                  <span className="border border-slate-800 px-2 py-0.5 text-slate-500">
+                    LAB
                   </span>
                 )}
                 {writeup.points && (
-                  <span className="px-1.5 py-0.5 rounded border border-slate-800 bg-slate-900/60 text-slate-400">
-                    {writeup.points} pts
+                  <span className="text-[10px] text-slate-500">
+                    {writeup.points}pts
                   </span>
                 )}
-                <span className="text-slate-500">&bull;</span>
-                <time className="text-slate-500" dateTime={writeup.date}>
-                  {writeup.date}
-                </time>
-                {writeup.readingTime && (
-                  <>
-                    <span className="text-slate-500">&bull;</span>
-                    <span className="text-slate-500">{writeup.readingTime}</span>
-                  </>
-                )}
-              </div>
+              </span>
 
-              <h2 className="text-lg font-bold text-slate-100 group-hover:text-sky-400 transition-colors">
-                {writeup.title}
-              </h2>
-              {writeup.description && (
-                <p className="mt-1.5 text-sm text-slate-400 leading-relaxed">
-                  {writeup.description}
-                </p>
-              )}
+              {/* Title & Description */}
+              <span className="col-span-12 md:col-span-6">
+                <span className="block font-bold text-slate-100 group-hover:text-sky-400 transition-colors text-base sm:text-lg leading-snug">
+                  {writeup.title}
+                </span>
+                {writeup.description && (
+                  <span className="mt-1 block text-xs text-slate-400 group-hover:text-slate-300 line-clamp-1 leading-relaxed">
+                    {writeup.description}
+                  </span>
+                )}
+              </span>
+
+              {/* Directional Action */}
+              <span className="hidden md:flex col-span-2 justify-end font-mono text-xs uppercase tracking-[0.18em] text-slate-500 group-hover:text-sky-400 transition-colors">
+                Solve →
+              </span>
             </Link>
           ))}
         </div>

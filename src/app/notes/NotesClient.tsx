@@ -40,53 +40,66 @@ export default function NotesClient({ initialNotes }: NotesClientProps) {
   }, [grouped]);
 
   return (
-    <div className="space-y-8">
-      {/* Category Tabs Selector */}
-      <div className="flex flex-wrap gap-2 pb-4 border-b border-slate-900 font-mono text-xs">
+    <div className="space-y-10">
+      {/* Category Tabs Selector with Crisp Hairline Buttons */}
+      <div className="flex flex-wrap gap-2 pb-4 border-b border-slate-800 font-mono text-xs">
         {categories.map((category) => {
           const isActive = selectedCategory === category;
           return (
             <button
               key={category}
               onClick={() => setSelectedCategory(category)}
-              className={`px-3 py-1.5 rounded transition-all focus:outline-none focus:ring-1 focus:ring-sky-500/50 ${
+              className={`px-3 py-1.5 border transition-all uppercase tracking-wider text-[11px] focus:outline-none ${
                 isActive
-                  ? "bg-sky-950/40 border border-sky-500/30 text-sky-400 font-bold"
-                  : "border border-slate-800 bg-slate-950/20 text-slate-400 hover:border-slate-700 hover:text-slate-200"
+                  ? "border-sky-400 bg-sky-950/40 text-sky-400 font-bold"
+                  : "border-slate-800 bg-slate-950/30 text-slate-400 hover:border-slate-600 hover:text-slate-200"
               }`}
             >
-              {category === "All" ? "all_notes()" : `${category.toLowerCase()}`}
+              {category === "All" ? "all_notes()" : category}
             </button>
           );
         })}
       </div>
 
       {filteredNotes.length === 0 ? (
-        <p className="text-sm text-slate-500 font-mono italic p-6 border border-slate-800 rounded bg-slate-950/20">
+        <p className="text-sm text-slate-500 font-mono italic p-6 border border-slate-800 bg-slate-950/20">
           No notes found in this category.
         </p>
       ) : (
-        <div className="space-y-10">
+        <div className="space-y-12">
           {activeCategories.map((category) => (
-            <section key={category} className="space-y-3">
-              <h2 className="text-sm font-mono font-bold text-sky-400 uppercase tracking-wider border-b border-slate-800 pb-1.5">
-                {"//"} {category}
-              </h2>
-              <ul className="divide-y divide-slate-800/40">
+            <section key={category} className="space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                <h2 className="font-mono text-xs font-bold text-sky-400 uppercase tracking-widest flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 bg-sky-400"></span>
+                  {"//"} {category}
+                </h2>
+                <span className="font-mono text-[10px] text-slate-500 uppercase tracking-wider">
+                  {grouped[category].length} {grouped[category].length === 1 ? "entry" : "entries"}
+                </span>
+              </div>
+
+              <div className="border-t border-b border-slate-800 divide-y divide-slate-800/60">
                 {grouped[category].map((note) => (
-                  <li key={note.slug} className="py-3 flex items-center justify-between gap-4 group">
-                    <Link
-                      href={`/notes/${note.slug}`}
-                      className="text-sm font-semibold text-slate-200 hover:text-sky-400 group-hover:text-sky-400 transition-colors"
-                    >
+                  <Link
+                    key={note.slug}
+                    href={`/notes/${note.slug}`}
+                    className="py-4 px-3 flex items-center justify-between gap-4 group hover:bg-slate-900/60 transition-colors"
+                  >
+                    <span className="text-sm sm:text-base font-semibold text-slate-200 group-hover:text-sky-400 transition-colors">
                       {note.title}
-                    </Link>
-                    <time className="text-xs text-slate-500 font-mono shrink-0">
-                      {note.date}
-                    </time>
-                  </li>
+                    </span>
+                    <div className="flex items-center gap-3 shrink-0 font-mono text-xs text-slate-500">
+                      <time dateTime={note.date} className="text-[11px]">
+                        {note.date}
+                      </time>
+                      <span className="text-slate-600 group-hover:text-sky-400 transition-colors">
+                        →
+                      </span>
+                    </div>
+                  </Link>
                 ))}
-              </ul>
+              </div>
             </section>
           ))}
         </div>

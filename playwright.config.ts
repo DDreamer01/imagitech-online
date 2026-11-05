@@ -8,7 +8,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: "html",
   use: {
-    baseURL: "http://localhost:8080",
+    baseURL: process.env.PLAYWRIGHT_TEST_BASE_URL || "http://localhost:8180",
     trace: "on-first-retry",
   },
   projects: [
@@ -35,8 +35,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "node scripts/test-server.js",
-    url: "http://localhost:8080",
+    command: "PORT=8180 node scripts/test-server.js",
+    url: "http://localhost:8180",
     reuseExistingServer: !process.env.CI,
     stdout: "ignore",
     stderr: "pipe",

@@ -52,48 +52,50 @@ export default async function TagDetailPage({ params }: TagDetailPageProps) {
 
       {/* Header */}
       <div className="space-y-2 border-b border-edge pb-6">
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-xs text-brand font-bold uppercase tracking-wider">
-            {"// Tag Archive"}
-          </span>
+        <div className="font-mono text-[11px] uppercase tracking-[0.25em] text-sky-400 mb-2">
+          // Tag Archive
         </div>
-        <h1 className="text-3xl font-extrabold tracking-tight text-content-main sm:text-4xl">
+        <h1 className="font-display text-4xl sm:text-6xl uppercase tracking-tight text-slate-100">
           #{formattedTag}
         </h1>
-        <p className="font-mono text-xs text-content-muted">
-          Showing {posts.length} {posts.length === 1 ? "article" : "articles"} indexed under this topic.
+        <p className="font-mono text-xs text-slate-400 uppercase tracking-wider">
+          Showing {posts.length} {posts.length === 1 ? "article" : "articles"} indexed under this topic
         </p>
       </div>
 
       {/* Articles List */}
-      <div className="space-y-8">
+      <div className="border-t border-b border-slate-800 divide-y divide-slate-800/80">
         {posts.map((post) => (
-          <article key={post.slug} className="group space-y-2">
-            <div className="flex items-center gap-3 text-xs text-content-muted font-mono">
-              <time dateTime={post.date}>{post.date}</time>
-              <span>&bull;</span>
-              <span>{post.readingTime}</span>
-            </div>
-            <h2 className="text-xl font-bold text-content-main group-hover:text-brand transition-colors">
-              <Link href={`/blog/${post.slug}`}>
+          <Link
+            key={post.slug}
+            href={`/blog/${post.slug}`}
+            className="group block py-5 px-3 -mx-3 grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-6 items-baseline transition-all hover:bg-slate-900/90"
+          >
+            {/* Date */}
+            <span className="col-span-12 md:col-span-2 font-mono text-xs uppercase tracking-[0.18em] text-slate-500 group-hover:text-slate-300">
+              {post.date}
+            </span>
+
+            {/* Reading Time */}
+            <span className="col-span-12 md:col-span-2 font-mono text-[11px] text-slate-400 uppercase tracking-wider">
+              {post.readingTime || "Guide"}
+            </span>
+
+            {/* Title & Description */}
+            <span className="col-span-12 md:col-span-6">
+              <span className="block font-bold text-slate-100 group-hover:text-sky-400 transition-colors text-base sm:text-lg leading-snug">
                 {post.title}
-              </Link>
-            </h2>
-            <p className="text-sm text-content-muted leading-relaxed line-clamp-2">
-              {post.description}
-            </p>
-            <div className="flex flex-wrap gap-1.5 pt-1">
-              {post.tags.map((t) => (
-                <Link
-                  key={t}
-                  href={`/tags/${encodeURIComponent(t.toLowerCase())}`}
-                  className="font-mono text-[10px] px-2 py-0.5 rounded border border-edge bg-surface text-content-muted hover:border-brand hover:text-brand transition-colors"
-                >
-                  #{t}
-                </Link>
-              ))}
-            </div>
-          </article>
+              </span>
+              <span className="mt-1 block text-xs text-slate-400 group-hover:text-slate-300 line-clamp-1 leading-relaxed">
+                {post.description}
+              </span>
+            </span>
+
+            {/* Directional Action */}
+            <span className="hidden md:flex col-span-2 justify-end font-mono text-xs uppercase tracking-[0.18em] text-slate-500 group-hover:text-sky-400 transition-colors">
+              Read →
+            </span>
+          </Link>
         ))}
       </div>
     </div>

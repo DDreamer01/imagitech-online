@@ -12,54 +12,70 @@ export default function BlogListingPage() {
   const posts = getBlogPosts();
 
   return (
-    <div className="max-w-3xl space-y-8">
-      <header className="mb-10">
-        <h1 className="text-3xl font-extrabold tracking-tight text-slate-100 sm:text-4xl">Blog</h1>
-        <p className="mt-2 text-sm text-slate-400 font-mono">
-          index_articles() &bull; {posts.length} entries found
+    <div className="space-y-12 max-w-4xl">
+      <header className="border-b border-slate-800 pb-8">
+        <div className="font-mono text-[11px] uppercase tracking-[0.25em] text-slate-400 mb-3 flex items-center gap-3">
+          <span className="inline-block w-2 h-2 bg-sky-400"></span>
+          // Field Notes &amp; Engineering Articles
+        </div>
+        <h1 className="font-display text-4xl sm:text-6xl uppercase tracking-tight text-slate-100">
+          Blog
+        </h1>
+        <p className="mt-2 text-xs text-slate-400 font-mono tracking-wider uppercase">
+          index_articles() &bull; {posts.length} entries published
         </p>
       </header>
 
       {posts.length === 0 ? (
-        <p className="text-sm text-slate-500 font-mono italic p-6 border border-slate-800 rounded bg-slate-950/20">
+        <p className="text-sm text-slate-500 font-mono italic p-6 border border-slate-800 bg-slate-950/20">
           No articles published yet. Check back soon.
         </p>
       ) : (
-        <div className="divide-y divide-slate-800/80 space-y-8">
-          {posts.map((post, idx) => (
-            <article 
-              key={post.slug} 
-              className={`space-y-2 ${idx > 0 ? "pt-8" : ""}`}
+        <div className="border-t border-b border-slate-800 divide-y divide-slate-800/80">
+          {posts.map((post) => (
+            <Link
+              key={post.slug}
+              href={`/blog/${post.slug}`}
+              className="group block py-6 px-4 -mx-4 grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-6 items-baseline transition-all hover:bg-slate-900/90"
             >
-              <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 font-mono">
-                <time dateTime={post.date}>{post.date}</time>
-                <span>&bull;</span>
-                <span>{post.readingTime}</span>
-                {post.tags && post.tags.length > 0 && (
-                  <>
-                    <span>&bull;</span>
-                    <div className="flex gap-1.5">
-                      {post.tags.map((tag) => (
-                        <span 
-                          key={tag} 
-                          className="px-1.5 py-0.5 rounded border border-slate-800/60 bg-slate-900/60 text-slate-400 hover:text-sky-400 transition-colors"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </>
+              {/* Date */}
+              <span className="col-span-12 md:col-span-2 font-mono text-xs uppercase tracking-[0.18em] text-slate-500 group-hover:text-slate-300">
+                {post.date}
+              </span>
+
+              {/* Primary Tag Badge */}
+              <span className="col-span-12 md:col-span-2 flex flex-wrap items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.15em]">
+                {post.tags && post.tags[0] ? (
+                  <span className="border border-slate-700 group-hover:border-sky-400 px-2 py-0.5 text-slate-300 group-hover:text-sky-400 transition-colors">
+                    {post.tags[0]}
+                  </span>
+                ) : (
+                  <span className="border border-slate-800 px-2 py-0.5 text-slate-500">
+                    Guide
+                  </span>
                 )}
-              </div>
-              <h2 className="text-xl font-bold text-slate-200 hover:text-sky-400 transition-colors">
-                <Link href={`/blog/${post.slug}`}>
+                {post.readingTime && (
+                  <span className="text-[10px] text-slate-500 font-mono hidden sm:inline">
+                    {post.readingTime}
+                  </span>
+                )}
+              </span>
+
+              {/* Title & Description */}
+              <span className="col-span-12 md:col-span-6">
+                <span className="block font-bold text-slate-100 group-hover:text-sky-400 transition-colors text-base sm:text-xl leading-snug">
                   {post.title}
-                </Link>
-              </h2>
-              <p className="text-sm text-slate-400 leading-relaxed max-w-none">
-                {post.description}
-              </p>
-            </article>
+                </span>
+                <span className="mt-2 block text-xs sm:text-sm text-slate-400 group-hover:text-slate-300 line-clamp-2 leading-relaxed">
+                  {post.description}
+                </span>
+              </span>
+
+              {/* Directional Prompt */}
+              <span className="hidden md:flex col-span-2 justify-end font-mono text-xs uppercase tracking-[0.18em] text-slate-500 group-hover:text-sky-400 transition-colors">
+                Read →
+              </span>
+            </Link>
           ))}
         </div>
       )}
