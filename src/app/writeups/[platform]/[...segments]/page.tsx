@@ -188,7 +188,7 @@ export default async function WriteupCatchAllPage({ params }: PageProps) {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="font-display text-3xl sm:text-5xl uppercase tracking-tight text-slate-100">
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-100">
               {modName}
             </h1>
             {mod.belt ? (
@@ -435,7 +435,7 @@ export default async function WriteupCatchAllPage({ params }: PageProps) {
                 </>
               )}
             </div>
-            <h1 className="font-display text-2xl sm:text-4xl uppercase tracking-tight text-slate-100">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-100">
               {writeup.title}
             </h1>
           </header>
@@ -519,7 +519,7 @@ export default async function WriteupCatchAllPage({ params }: PageProps) {
                 </>
               )}
             </div>
-            <h1 className="font-display text-2xl sm:text-4xl uppercase tracking-tight text-slate-100">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-100">
               {writeup.title}
             </h1>
           </header>

@@ -16,9 +16,9 @@ export default function TagsPage() {
       {/* Header */}
       <div className="space-y-2 border-b border-edge pb-6">
         <div className="font-mono text-[11px] uppercase tracking-[0.25em] text-sky-400 mb-2">
-          // Taxonomy Matrix
+          Taxonomy Matrix
         </div>
-        <h1 className="font-display text-4xl sm:text-6xl uppercase tracking-tight text-slate-100">
+        <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-100">
           Topic Index
         </h1>
         <p className="text-sm text-slate-400 leading-relaxed max-w-2xl pt-1">

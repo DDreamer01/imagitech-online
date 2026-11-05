@@ -42,9 +42,9 @@ export default function UsesPage() {
     <div className="max-w-3xl">
       <header className="mb-8 border-b border-slate-800 pb-6">
         <div className="font-mono text-[11px] uppercase tracking-[0.25em] text-sky-400 mb-2">
-          // Workspace, Hardware &amp; Tooling
+          Workspace, Hardware &amp; Tooling
         </div>
-        <h1 className="font-display text-4xl sm:text-6xl uppercase tracking-tight text-slate-100">Uses</h1>
+        <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-100">Uses</h1>
         <p className="mt-2 text-xs text-slate-400 font-mono tracking-wider uppercase">system.list_hardware_and_software()</p>
       </header>
 
@@ -55,8 +55,8 @@ export default function UsesPage() {
 
         {GEAR.map((group) => (
           <section key={group.category} className="mt-8">
-            <h2 className="text-lg font-bold text-slate-100 border-b border-slate-800 pb-2 mb-4 font-mono">
-              {"//"} {group.category}
+            <h2 className="text-lg font-bold text-slate-100 border-b border-slate-800 pb-2 mb-4">
+              {group.category}
             </h2>
             <ul className="space-y-4">
               {group.items.map((item) => (

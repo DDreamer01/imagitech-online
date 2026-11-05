@@ -16,9 +16,9 @@ export default function NotesListingPage() {
       <header className="border-b border-slate-800 pb-8">
         <div className="font-mono text-[11px] uppercase tracking-[0.25em] text-sky-400 mb-3 flex items-center gap-3">
           <span className="inline-block w-2 h-2 bg-sky-400"></span>
-          // Cheatsheets · Commands · Diagnostic Logs
+          Cheatsheets · Commands · Diagnostic Logs
         </div>
-        <h1 className="font-display text-4xl sm:text-6xl uppercase tracking-tight text-slate-100">
+        <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-100">
           Wiki Notes
         </h1>
         <p className="mt-2 text-xs text-slate-400 font-mono tracking-wider uppercase">

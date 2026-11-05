@@ -53,9 +53,9 @@ export default async function TagDetailPage({ params }: TagDetailPageProps) {
       {/* Header */}
       <div className="space-y-2 border-b border-edge pb-6">
         <div className="font-mono text-[11px] uppercase tracking-[0.25em] text-sky-400 mb-2">
-          // Tag Archive
+          Tag Archive
         </div>
-        <h1 className="font-display text-4xl sm:text-6xl uppercase tracking-tight text-slate-100">
+        <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-100">
           #{formattedTag}
         </h1>
         <p className="font-mono text-xs text-slate-400 uppercase tracking-wider">

@@ -18,9 +18,9 @@ export default function ProjectsListingPage() {
       <header className="border-b border-slate-800 pb-8">
         <div className="font-mono text-[11px] uppercase tracking-[0.25em] text-sky-400 mb-3 flex items-center gap-3">
           <span className="inline-block w-2 h-2 bg-sky-400"></span>
-          // Systems Infrastructure &amp; Tooling
+          Systems Infrastructure &amp; Tooling
         </div>
-        <h1 className="font-display text-4xl sm:text-6xl uppercase tracking-tight text-slate-100">
+        <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-100">
           Projects
         </h1>
         <p className="mt-2 text-xs text-slate-400 font-mono tracking-wider uppercase">
@@ -32,7 +32,7 @@ export default function ProjectsListingPage() {
       {featured.length > 0 && (
         <section className="space-y-6">
           <div className="font-mono text-[11px] uppercase tracking-[0.25em] text-slate-400 border-b border-slate-800 pb-2">
-            // Primary Systems
+            Primary Systems
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {featured.map((project, idx) => (
@@ -57,7 +57,7 @@ export default function ProjectsListingPage() {
                     )}
                   </div>
 
-                  <h3 className="font-display text-xl uppercase tracking-tight text-slate-100 group-hover:text-sky-400 transition-colors">
+                  <h3 className="text-xl font-bold text-slate-100 group-hover:text-sky-400 transition-colors">
                     <Link href={`/projects/${project.slug}`}>
                       {project.title}
                     </Link>
@@ -94,7 +94,7 @@ export default function ProjectsListingPage() {
       {others.length > 0 && (
         <section className="space-y-6 pt-4">
           <div className="font-mono text-[11px] uppercase tracking-[0.25em] text-slate-400 border-b border-slate-800 pb-2">
-            // Archive &amp; Small Utilities
+            Archive &amp; Utilities
           </div>
           <div className="border-t border-b border-slate-800 divide-y divide-slate-800/60">
             {others.map((project) => (

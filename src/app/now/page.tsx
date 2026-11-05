@@ -14,9 +14,9 @@ export default function NowPage() {
     <div className="max-w-3xl">
       <header className="mb-8 border-b border-slate-800 pb-6">
         <div className="font-mono text-[11px] uppercase tracking-[0.25em] text-sky-400 mb-2">
-          // Status &amp; Real-Time Focus
+          Status &amp; Real-Time Focus
         </div>
-        <h1 className="font-display text-4xl sm:text-6xl uppercase tracking-tight text-slate-100">Now</h1>
+        <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-100">Now</h1>
         <p className="mt-2 text-xs text-slate-400 font-mono tracking-wider uppercase">
           Last updated: {lastUpdated} | query_focus()
         </p>
@@ -28,8 +28,8 @@ export default function NowPage() {
         </p>
 
         <section className="mt-8 space-y-4">
-          <h2 className="text-lg font-bold text-slate-100 border-b border-slate-800 pb-2 font-mono">
-            {"// Learning & Experiments"}
+          <h2 className="text-lg font-bold text-slate-100 border-b border-slate-800 pb-2">
+            Learning &amp; Experiments
           </h2>
           <ul className="list-disc pl-5 space-y-2">
             <li>
@@ -71,8 +71,8 @@ export default function NowPage() {
         </section>
 
         <section className="mt-8 space-y-4">
-          <h2 className="text-lg font-bold text-slate-100 border-b border-slate-800 pb-2 font-mono">
-            {"// Shipped Recently"}
+          <h2 className="text-lg font-bold text-slate-100 border-b border-slate-800 pb-2">
+            Shipped Recently
           </h2>
           <ul className="list-disc pl-5 space-y-2">
             <li>

@@ -26,9 +26,9 @@ export default function WriteupsHubPage() {
       <header className="border-b border-slate-800 pb-8">
         <div className="font-mono text-[11px] uppercase tracking-[0.25em] text-sky-400 mb-3 flex items-center gap-3">
           <span className="inline-block w-2 h-2 bg-sky-400"></span>
-          // Offensive Security · CTF Walk-Throughs &amp; Labs
+          Offensive Security · CTF Walk-Throughs &amp; Labs
         </div>
-        <h1 className="font-display text-4xl sm:text-6xl uppercase tracking-tight text-slate-100">
+        <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-100">
           Writeups
         </h1>
         <p className="mt-2 text-xs text-slate-400 font-mono tracking-wider uppercase">
@@ -39,7 +39,7 @@ export default function WriteupsHubPage() {
       {/* Practice Platforms Grid */}
       <section className="space-y-6">
         <div className="font-mono text-[11px] uppercase tracking-[0.25em] text-slate-400 border-b border-slate-800 pb-2">
-          // Target Platforms
+          Target Platforms
         </div>
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
@@ -67,7 +67,7 @@ export default function WriteupsHubPage() {
                     </span>
                   </div>
 
-                  <h2 className={`font-display text-xl uppercase tracking-tight ${accent.text} group-hover:text-white transition-colors`}>
+                  <h2 className={`text-xl font-bold ${accent.text} group-hover:text-white transition-colors`}>
                     {platform.name}
                   </h2>
 
@@ -99,9 +99,9 @@ export default function WriteupsHubPage() {
         <div className="flex items-end justify-between border-b border-slate-800 pb-3 gap-4">
           <div>
             <div className="font-mono text-[11px] uppercase tracking-[0.25em] text-slate-400 mb-1">
-              // Master Solves Stream
+              Master Solves Stream
             </div>
-            <h2 className="font-display text-2xl uppercase tracking-tight text-slate-100">
+            <h2 className="text-2xl font-bold tracking-tight text-slate-100">
               Recent Walkthroughs
             </h2>
           </div>

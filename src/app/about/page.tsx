@@ -30,9 +30,9 @@ export default function AboutPage() {
     <article className="prose prose-slate max-w-3xl">
       <header className="mb-8 border-b border-slate-800 pb-6">
         <div className="font-mono text-[11px] uppercase tracking-[0.25em] text-sky-400 mb-2">
-          // Profile &amp; Background
+          Profile &amp; Background
         </div>
-        <h1 className="font-display text-4xl sm:text-6xl uppercase tracking-tight text-slate-100">About Me</h1>
+        <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-100">About Me</h1>
         <p className="mt-2 text-xs text-slate-400 font-mono tracking-wider uppercase">the-dreamer.about()</p>
       </header>
 

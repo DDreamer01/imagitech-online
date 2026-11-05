@@ -13,9 +13,9 @@ export default function ContactPage() {
     <div className="max-w-3xl">
       <header className="mb-8 border-b border-slate-800 pb-6">
         <div className="font-mono text-[11px] uppercase tracking-[0.25em] text-sky-400 mb-2">
-          // Direct Transmission
+          Direct Transmission
         </div>
-        <h1 className="font-display text-4xl sm:text-6xl uppercase tracking-tight text-slate-100">Contact</h1>
+        <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-100">Contact</h1>
         <p className="mt-2 text-xs text-slate-400 font-mono tracking-wider uppercase">mail.connect()</p>
       </header>
 

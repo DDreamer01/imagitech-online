@@ -68,9 +68,9 @@ export default async function WriteupPlatformPage({ params }: PageProps) {
 
         <header className="border-b border-slate-800 pb-6">
           <div className="font-mono text-[11px] uppercase tracking-[0.25em] text-sky-400 mb-2">
-            // Track &amp; Modules
+            Track &amp; Modules
           </div>
-          <h1 className="font-display text-3xl sm:text-5xl uppercase tracking-tight text-slate-100">
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-100">
             {platform.name} <span className="text-emerald-400">Writeups</span>
           </h1>
           <p className="mt-2 text-xs text-slate-400 font-mono tracking-wider uppercase">
@@ -148,9 +148,9 @@ export default async function WriteupPlatformPage({ params }: PageProps) {
 
       <header className="border-b border-slate-800 pb-6">
         <div className="font-mono text-[11px] uppercase tracking-[0.25em] text-sky-400 mb-2">
-          // Platform Solves
+          Platform Solves
         </div>
-        <h1 className="font-display text-3xl sm:text-5xl uppercase tracking-tight text-slate-100">
+        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-100">
           {platform.name} <span className="text-sky-400">Writeups</span>
         </h1>
         <p className="mt-2 text-xs text-slate-400 font-mono tracking-wider uppercase">

@@ -74,7 +74,7 @@ export default async function BlogPostDetailPage({ params }: PageProps) {
         {/* Post Header */}
         <header className="mb-8 border-b border-slate-800 pb-6">
           <div className="font-mono text-[11px] uppercase tracking-[0.25em] text-sky-400 mb-2">
-            // Field Guide
+            Field Guide
           </div>
           <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 font-mono mb-3">
             <time dateTime={post.date}>{post.date}</time>
@@ -89,7 +89,7 @@ export default async function BlogPostDetailPage({ params }: PageProps) {
               </>
             )}
           </div>
-          <h1 className="font-display text-3xl sm:text-5xl uppercase tracking-tight text-slate-100 leading-tight">
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-100 leading-tight">
             {post.title}
           </h1>
           <p className="mt-4 text-slate-400 text-base leading-relaxed">

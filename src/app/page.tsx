@@ -18,9 +18,9 @@ export default function HomePage() {
           System Engineering × Infrastructure &amp; Security
         </div>
 
-        <h1 className="font-display text-4xl sm:text-6xl md:text-7xl leading-[0.94] tracking-tight uppercase text-slate-100">
-          †Hε DRεαMεR<br />
-          <span className="text-sky-400 block text-2xl sm:text-4xl md:text-5xl mt-2 tracking-normal font-sans font-extrabold normal-case">
+        <h1 className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-slate-100">
+          †hε drεαmεr<br />
+          <span className="text-sky-400 block text-2xl sm:text-4xl md:text-5xl mt-2 font-extrabold">
             Build &bull; Secure &bull; Automate &bull; Break
           </span>
         </h1>
@@ -61,7 +61,7 @@ export default function HomePage() {
         <div className="flex flex-wrap items-center justify-between border-b border-slate-800 pb-3 mb-6 gap-2">
           <div className="flex items-center gap-2.5 font-mono text-xs font-bold text-slate-200 uppercase tracking-wider">
             <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>// Laboratory Status · Live Nodes Telemetry</span>
+            <span>Laboratory Status · Live Nodes Telemetry</span>
           </div>
           <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-slate-500">
             cloud: azure · region: eastus
@@ -134,9 +134,9 @@ export default function HomePage() {
         <div className="flex items-end justify-between border-b border-slate-800 pb-3 gap-4 flex-wrap">
           <div>
             <div className="font-mono text-[11px] uppercase tracking-[0.25em] text-sky-400 mb-1">
-              // Security Research &amp; Solves
+              Security Research &amp; Solves
             </div>
-            <h2 className="font-display text-2xl sm:text-4xl uppercase tracking-tight text-slate-100">
+            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-100">
               Recent Writeups
             </h2>
           </div>
@@ -213,9 +213,9 @@ export default function HomePage() {
           <div className="flex items-end justify-between border-b border-slate-800 pb-3 gap-4">
             <div>
               <div className="font-mono text-[11px] uppercase tracking-[0.25em] text-slate-400 mb-1">
-                // Engineering Repositories
+                Engineering Repositories
               </div>
-              <h2 className="font-display text-2xl uppercase tracking-tight text-slate-100">
+              <h2 className="text-2xl font-bold tracking-tight text-slate-100">
                 Featured Projects
               </h2>
             </div>
@@ -284,9 +284,9 @@ export default function HomePage() {
             <div className="flex items-end justify-between border-b border-slate-800 pb-3 gap-4">
               <div>
                 <div className="font-mono text-[11px] uppercase tracking-[0.25em] text-slate-400 mb-1">
-                  // Quick Cheatsheets
+                  Quick Cheatsheets
                 </div>
-                <h2 className="font-display text-2xl uppercase tracking-tight text-slate-100">
+                <h2 className="text-2xl font-bold tracking-tight text-slate-100">
                   Latest Notes
                 </h2>
               </div>
@@ -328,7 +328,7 @@ export default function HomePage() {
           {/* Quick System Links */}
           <div className="p-5 border border-slate-800 bg-slate-950/30 space-y-3 font-mono text-xs">
             <h3 className="font-bold text-slate-200 border-b border-slate-800/80 pb-2 uppercase tracking-wider text-[11px]">
-              {"// System Indexes"}
+              System Indexes
             </h3>
             <ul className="space-y-2 text-slate-400">
               <li>
