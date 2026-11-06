@@ -120,9 +120,7 @@ export default function Header() {
               href="/" 
               className="flex items-center font-mono text-sm font-bold tracking-tight text-slate-100 hover:text-sky-400 transition-colors whitespace-nowrap"
             >
-              <span>the-dreamer</span>
-              <span className="text-slate-500 mx-1.5">/</span>
-              <span className="text-sky-400">imagitech</span>
+              †hε drεαmεr
             </Link>
           </div>
 
@@ -239,9 +237,7 @@ export default function Header() {
               onClick={() => setIsOpen(false)}
               className="flex items-center font-mono text-sm font-bold tracking-tight text-slate-100 hover:text-sky-400 transition-colors whitespace-nowrap"
             >
-              <span>the-dreamer</span>
-              <span className="text-slate-500 mx-1.5">/</span>
-              <span className="text-sky-400">imagitech</span>
+              †hε drεαmεr
             </Link>
             <button
               onClick={() => setIsOpen(false)}

@@ -49,7 +49,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Dynamic Writeups
   const writeups = getWriteups().map((writeup) => ({
-    url: `${baseUrl}/writeups/${writeup.platform}/${writeup.slug}`,
+    url: `${baseUrl}/writeups/${writeup.platform}/${writeup.moduleSlug ? `${writeup.moduleSlug}/` : ""}${writeup.slug}`,
     lastModified: new Date(writeup.date),
     changeFrequency: "monthly" as const,
     priority: 0.6,

@@ -374,6 +374,7 @@ function mapWriteup(writeup: ValidatedWriteup): Writeup {
   return {
     slug: writeup.slug,
     platform: writeup.platform,
+    moduleSlug: writeup.moduleSlug,
     ...writeup.validated,
     readingTime: getReadingTime(writeup.content),
     content: writeup.content,

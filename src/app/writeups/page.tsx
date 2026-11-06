@@ -2,21 +2,13 @@ import React from "react";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { getWriteups, getWriteupPlatform, WRITEUP_PLATFORMS } from "@/lib/mdx";
+import { getPlatformTheme } from "@/lib/platform-themes";
 
 export const metadata: Metadata = {
   title: "Writeups",
   description:
     "†hε drεαmεr's security writeups — walk-throughs and solutions from pwn.college, HackTheBox, and PortSwigger.",
 };
-
-function platformAccentIndex(index: number) {
-  const accents = [
-    { text: "text-emerald-400", chip: "border-emerald-500/30 text-emerald-400 bg-emerald-950/20" },
-    { text: "text-sky-400", chip: "border-sky-500/30 text-sky-400 bg-sky-950/20" },
-    { text: "text-amber-400", chip: "border-amber-500/30 text-amber-400 bg-amber-950/20" },
-  ];
-  return accents[index % accents.length];
-}
 
 export default function WriteupsHubPage() {
   const allWriteups = getWriteups();
@@ -45,7 +37,7 @@ export default function WriteupsHubPage() {
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           {WRITEUP_PLATFORMS.map((platform, index) => {
             const writeups = getWriteups(platform.slug);
-            const accent = platformAccentIndex(index);
+            const theme = getPlatformTheme(platform.slug);
             const latest = writeups[0];
             const validPlatform = getWriteupPlatform(platform.slug) !== null;
 
@@ -53,7 +45,7 @@ export default function WriteupsHubPage() {
               <Link
                 key={platform.slug}
                 href={`/writeups/${platform.slug}`}
-                className="group flex flex-col justify-between border border-slate-800 bg-slate-950/40 p-6 transition-all hover:border-slate-600 hover:bg-slate-900/60"
+                className={`group flex flex-col justify-between border border-slate-800 bg-slate-950/40 p-6 transition-all ${theme.borderHover} hover:bg-slate-900/60`}
               >
                 <div>
                   <div className="flex items-center justify-between mb-3 font-mono text-[11px]">
@@ -61,13 +53,13 @@ export default function WriteupsHubPage() {
                       [ 0{index + 1} ]
                     </span>
                     <span
-                      className={`shrink-0 px-2 py-0.5 border text-[10px] uppercase font-bold tracking-wider ${accent.chip}`}
+                      className={`shrink-0 px-2 py-0.5 border text-[10px] uppercase font-bold tracking-wider ${theme.chip}`}
                     >
                       {writeups.length} {writeups.length === 1 ? "solve" : "solves"}
                     </span>
                   </div>
 
-                  <h2 className={`text-xl font-bold ${accent.text} group-hover:text-white transition-colors`}>
+                  <h2 className={`text-xl font-bold ${theme.text} group-hover:text-white transition-colors`}>
                     {platform.name}
                   </h2>
 
@@ -84,7 +76,7 @@ export default function WriteupsHubPage() {
                       {validPlatform ? "no writeups yet" : "offline"}
                     </span>
                   )}
-                  <span className="shrink-0 text-slate-500 group-hover:text-sky-400 transition-colors">
+                  <span className={`shrink-0 text-slate-500 ${theme.actionHover} transition-colors`}>
                     enter →
                   </span>
                 </div>
@@ -112,14 +104,15 @@ export default function WriteupsHubPage() {
 
         <div className="border-t border-b border-slate-800 divide-y divide-slate-800/80">
           {allWriteups.map((writeup) => {
-            const href = writeup.module
-              ? `/writeups/${writeup.platform}/${writeup.module}/${writeup.slug}`
+            const href = writeup.moduleSlug
+              ? `/writeups/${writeup.platform}/${writeup.moduleSlug}/${writeup.slug}`
               : `/writeups/${writeup.platform}/${writeup.slug}`;
             const platform = getWriteupPlatform(writeup.platform);
+            const theme = getPlatformTheme(writeup.platform);
 
             return (
               <Link
-                key={`${writeup.platform}-${writeup.module || ""}-${writeup.slug}`}
+                key={`${writeup.platform}-${writeup.moduleSlug || ""}-${writeup.slug}`}
                 href={href}
                 className="group block py-5 px-3 -mx-3 grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-6 items-baseline transition-all hover:bg-slate-900/90"
               >
@@ -130,7 +123,7 @@ export default function WriteupsHubPage() {
 
                 {/* Platform Badge */}
                 <span className="col-span-12 md:col-span-2 flex flex-wrap items-center gap-2 font-mono text-[11px] uppercase tracking-[0.15em]">
-                  <span className="border border-slate-700 group-hover:border-sky-400 px-2 py-0.5 text-slate-300 group-hover:text-sky-400 transition-colors">
+                  <span className={`border px-2 py-0.5 transition-colors ${theme.badge}`}>
                     {platform?.name || writeup.platform}
                   </span>
                   {writeup.difficulty && (
@@ -142,7 +135,7 @@ export default function WriteupsHubPage() {
 
                 {/* Title & Description */}
                 <span className="col-span-12 md:col-span-6">
-                  <span className="block font-bold text-slate-100 group-hover:text-sky-400 transition-colors text-base sm:text-lg leading-snug">
+                  <span className={`block font-bold text-slate-100 transition-colors text-base sm:text-lg leading-snug ${theme.actionHover}`}>
                     {writeup.title}
                   </span>
                   {writeup.description && (
@@ -153,7 +146,7 @@ export default function WriteupsHubPage() {
                 </span>
 
                 {/* Directional Action */}
-                <span className="hidden md:flex col-span-2 justify-end font-mono text-xs uppercase tracking-[0.18em] text-slate-500 group-hover:text-sky-400 transition-colors">
+                <span className={`hidden md:flex col-span-2 justify-end font-mono text-xs uppercase tracking-[0.18em] text-slate-500 transition-colors ${theme.actionHover}`}>
                   Solve →
                 </span>
               </Link>

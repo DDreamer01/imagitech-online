@@ -40,6 +40,7 @@ export interface Writeup {
   platform: string;
   /** Only set when the writeup lives inside a module subfolder (e.g. pwn.college) */
   module?: string;
+  moduleSlug?: string;
   difficulty: string;
   points: string;
   /** Optional completion status indicator, e.g. "completed" | "in-progress" */

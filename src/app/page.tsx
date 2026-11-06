@@ -2,6 +2,7 @@ import React from "react";
 import Link from "next/link";
 import { getProjects, getNotes, getWriteups, getWriteupPlatform } from "@/lib/mdx";
 import { generateRssFeed } from "@/lib/rss";
+import { getPlatformTheme } from "@/lib/platform-themes";
 
 export default function HomePage() {
   generateRssFeed();
@@ -19,10 +20,7 @@ export default function HomePage() {
         </div>
 
         <h1 className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-slate-100">
-          †hε drεαmεr<br />
-          <span className="text-sky-400 block text-2xl sm:text-4xl md:text-5xl mt-2 font-extrabold">
-            Build &bull; Secure &bull; Automate &bull; Break
-          </span>
+          †hε drεαmεr
         </h1>
 
         <p className="font-mono text-xs sm:text-sm text-slate-400 uppercase tracking-widest">
@@ -155,14 +153,15 @@ export default function HomePage() {
         ) : (
           <div className="border-t border-b border-slate-800 divide-y divide-slate-800/80">
             {writeups.map((writeup) => {
-              const href = writeup.module
-                ? `/writeups/${writeup.platform}/${writeup.module}/${writeup.slug}`
+              const href = writeup.moduleSlug
+                ? `/writeups/${writeup.platform}/${writeup.moduleSlug}/${writeup.slug}`
                 : `/writeups/${writeup.platform}/${writeup.slug}`;
               const platform = getWriteupPlatform(writeup.platform);
+              const theme = getPlatformTheme(writeup.platform);
 
               return (
                 <Link
-                  key={`${writeup.platform}-${writeup.module || ""}-${writeup.slug}`}
+                  key={`${writeup.platform}-${writeup.moduleSlug || ""}-${writeup.slug}`}
                   href={href}
                   className="group block py-5 px-3 -mx-3 grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-6 items-baseline transition-all hover:bg-slate-900/90"
                 >
@@ -173,7 +172,7 @@ export default function HomePage() {
 
                   {/* Platform & Difficulty Badges */}
                   <span className="col-span-12 md:col-span-2 flex flex-wrap items-center gap-2 font-mono text-[11px] uppercase tracking-[0.15em]">
-                    <span className="border border-slate-700 group-hover:border-sky-400 px-2 py-0.5 text-slate-300 group-hover:text-sky-400 transition-colors">
+                    <span className={`border px-2 py-0.5 transition-colors ${theme.badge}`}>
                       {platform?.name || writeup.platform}
                     </span>
                     {writeup.difficulty && (
@@ -185,7 +184,7 @@ export default function HomePage() {
 
                   {/* Title & Description */}
                   <span className="col-span-12 md:col-span-6">
-                    <span className="block font-bold text-slate-100 group-hover:text-sky-400 transition-colors text-base sm:text-lg leading-snug">
+                    <span className={`block font-bold text-slate-100 transition-colors text-base sm:text-lg leading-snug ${theme.actionHover}`}>
                       {writeup.title}
                     </span>
                     {writeup.description && (
@@ -196,7 +195,7 @@ export default function HomePage() {
                   </span>
 
                   {/* Action Link */}
-                  <span className="hidden md:flex col-span-2 justify-end font-mono text-xs uppercase tracking-[0.18em] text-slate-500 group-hover:text-sky-400 transition-colors">
+                  <span className={`hidden md:flex col-span-2 justify-end font-mono text-xs uppercase tracking-[0.18em] text-slate-500 transition-colors ${theme.actionHover}`}>
                     Solve →
                   </span>
                 </Link>

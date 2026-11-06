@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getWriteups, getWriteupPlatform, getWriteupModules, WRITEUP_PLATFORMS } from "@/lib/mdx";
+import { getPlatformTheme } from "@/lib/platform-themes";
 
 interface PageProps {
   params: Promise<{ platform: string }>;
@@ -49,6 +50,8 @@ export default async function WriteupPlatformPage({ params }: PageProps) {
     notFound();
   }
 
+  const theme = getPlatformTheme(platformSlug);
+
   // --- pwn.college: show module cards ---
   if (platform.hasModules) {
     const modules = getWriteupModules(platformSlug);
@@ -58,7 +61,7 @@ export default async function WriteupPlatformPage({ params }: PageProps) {
         {/* Back Link */}
         <Link
           href="/writeups"
-          className="inline-flex items-center gap-1.5 font-mono text-xs text-slate-500 hover:text-sky-400 transition-colors"
+          className={`inline-flex items-center gap-1.5 font-mono text-xs text-slate-500 ${theme.hoverText} transition-colors`}
         >
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -67,11 +70,11 @@ export default async function WriteupPlatformPage({ params }: PageProps) {
         </Link>
 
         <header className="border-b border-slate-800 pb-6">
-          <div className="font-mono text-[11px] uppercase tracking-[0.25em] text-sky-400 mb-2">
+          <div className={`font-mono text-[11px] uppercase tracking-[0.25em] ${theme.text} mb-2`}>
             Track &amp; Modules
           </div>
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-100">
-            {platform.name} <span className="text-emerald-400">Writeups</span>
+            {platform.name} <span className={theme.text}>Writeups</span>
           </h1>
           <p className="mt-2 text-xs text-slate-400 font-mono tracking-wider uppercase">
             listing_modules() &bull; {modules.length} course{modules.length !== 1 ? "s" : ""} tracked
@@ -94,7 +97,7 @@ export default async function WriteupPlatformPage({ params }: PageProps) {
                 className="group block rounded-lg border border-slate-800 bg-slate-950/40 p-5 transition-colors hover:border-slate-600 hover:bg-slate-900/40"
               >
                 <div className="flex flex-wrap items-center gap-2 font-mono text-xs mb-2">
-                  <span className="px-1.5 py-0.5 rounded border border-slate-800 bg-slate-950 text-emerald-400">
+                  <span className={`px-1.5 py-0.5 rounded border ${theme.chip}`}>
                     {mod.belt ? "track" : "dojo"}
                   </span>
                   {mod.belt && (
@@ -109,7 +112,7 @@ export default async function WriteupPlatformPage({ params }: PageProps) {
                   </span>
                 </div>
 
-                <h2 className="text-lg font-bold text-slate-100 group-hover:text-emerald-400 transition-colors">
+                <h2 className={`text-lg font-bold text-slate-100 ${theme.actionHover} transition-colors`}>
                   {mod.name}
                 </h2>
 
@@ -138,7 +141,7 @@ export default async function WriteupPlatformPage({ params }: PageProps) {
       {/* Back Link */}
       <Link
         href="/writeups"
-        className="inline-flex items-center gap-1.5 font-mono text-xs text-slate-500 hover:text-sky-400 transition-colors"
+        className={`inline-flex items-center gap-1.5 font-mono text-xs text-slate-500 ${theme.hoverText} transition-colors`}
       >
         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -147,11 +150,11 @@ export default async function WriteupPlatformPage({ params }: PageProps) {
       </Link>
 
       <header className="border-b border-slate-800 pb-6">
-        <div className="font-mono text-[11px] uppercase tracking-[0.25em] text-sky-400 mb-2">
+        <div className={`font-mono text-[11px] uppercase tracking-[0.25em] ${theme.text} mb-2`}>
           Platform Solves
         </div>
         <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-100">
-          {platform.name} <span className="text-sky-400">Writeups</span>
+          {platform.name} <span className={theme.text}>Writeups</span>
         </h1>
         <p className="mt-2 text-xs text-slate-400 font-mono tracking-wider uppercase">
           listing_solves() &bull; {writeups.length} archived
@@ -181,7 +184,7 @@ export default async function WriteupPlatformPage({ params }: PageProps) {
               {/* Difficulty / Points */}
               <span className="col-span-12 md:col-span-2 flex flex-wrap items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.15em]">
                 {writeup.difficulty ? (
-                  <span className="border border-slate-700 group-hover:border-sky-400 px-2 py-0.5 text-slate-300 group-hover:text-sky-400 transition-colors">
+                  <span className={`border px-2 py-0.5 text-slate-300 transition-colors ${theme.badge}`}>
                     {writeup.difficulty}
                   </span>
                 ) : (
@@ -198,7 +201,7 @@ export default async function WriteupPlatformPage({ params }: PageProps) {
 
               {/* Title & Description */}
               <span className="col-span-12 md:col-span-6">
-                <span className="block font-bold text-slate-100 group-hover:text-sky-400 transition-colors text-base sm:text-lg leading-snug">
+                <span className={`block font-bold text-slate-100 transition-colors text-base sm:text-lg leading-snug ${theme.actionHover}`}>
                   {writeup.title}
                 </span>
                 {writeup.description && (
@@ -209,7 +212,7 @@ export default async function WriteupPlatformPage({ params }: PageProps) {
               </span>
 
               {/* Directional Action */}
-              <span className="hidden md:flex col-span-2 justify-end font-mono text-xs uppercase tracking-[0.18em] text-slate-500 group-hover:text-sky-400 transition-colors">
+              <span className={`hidden md:flex col-span-2 justify-end font-mono text-xs uppercase tracking-[0.18em] text-slate-500 transition-colors ${theme.actionHover}`}>
                 Solve →
               </span>
             </Link>
