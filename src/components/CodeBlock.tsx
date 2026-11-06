@@ -55,14 +55,17 @@ export default function CodeBlock({ children, title, ...props }: CodeBlockProps)
   };
 
   return (
-    <div className="relative group my-6 rounded-lg overflow-hidden border border-slate-800 bg-slate-950/40">
+    <div className="relative group my-8 overflow-hidden border border-slate-800 bg-slate-950/40">
       {/* Code Header Bar */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-slate-800 bg-slate-900/20 text-xs font-mono">
-        <span className="text-slate-400 font-semibold">{displayTitle}</span>
+      <div className="flex items-center justify-between px-4 py-2 border-b border-slate-800 bg-slate-950/70 text-xs font-mono">
+        <div className="flex items-center gap-2">
+          <span className="inline-block w-1.5 h-1.5 bg-sky-400"></span>
+          <span className="text-slate-400 font-bold tracking-wider uppercase text-[11px]">{displayTitle}</span>
+        </div>
         <button
           onClick={handleCopy}
           data-testid="copy-button"
-          className="flex items-center gap-1.5 px-2 py-1 rounded bg-slate-800/40 hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-all focus:outline-none focus:ring-1 focus:ring-sky-500/50"
+          className="flex items-center gap-1.5 px-2.5 py-1 border border-slate-800 bg-slate-900/60 hover:border-slate-600 hover:bg-slate-800 text-slate-300 transition-colors uppercase text-[10px] tracking-wider font-mono focus:outline-none focus:ring-1 focus:ring-sky-500/50"
           aria-label={copied ? "Code copied" : "Copy code snippet"}
         >
           {copied ? (
@@ -70,14 +73,14 @@ export default function CodeBlock({ children, title, ...props }: CodeBlockProps)
               <svg className="w-3.5 h-3.5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
               </svg>
-              <span className="text-emerald-400 font-sans font-medium">Copied</span>
+              <span className="text-emerald-400 font-medium">Copied</span>
             </>
           ) : (
             <>
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
               </svg>
-              <span className="font-sans font-medium">Copy</span>
+              <span>Copy</span>
             </>
           )}
         </button>

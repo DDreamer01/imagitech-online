@@ -406,45 +406,50 @@ export default async function WriteupCatchAllPage({ params }: PageProps) {
             <span className="text-slate-400 truncate">{writeup.title}</span>
           </div>
 
-          {/* Header */}
-          <header className="mb-8 border-b border-slate-800 pb-5">
-            <div className="flex flex-wrap items-center gap-3 text-xs font-mono mb-2">
-              <span className="px-1.5 py-0.5 rounded border border-slate-800 bg-slate-900/60 text-emerald-400">
-                {platform.name}
-              </span>
-              <span className="px-1.5 py-0.5 rounded border border-slate-800 bg-slate-900/60 text-slate-400">
-                {modName}
-              </span>
-              {writeup.belt && (
-                <span className="px-1.5 py-0.5 rounded border border-orange-900 bg-orange-950/40 text-orange-400 font-semibold">
-                  🥋 {writeup.belt}
+          {/* Header — Framed Spec Dossier */}
+          <header className="mb-10 border border-slate-800 bg-slate-950/40 p-6 sm:p-8 space-y-4">
+            <div className="flex flex-wrap items-center justify-between border-b border-slate-800 pb-3 gap-3 font-mono text-xs">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="px-2 py-0.5 border border-slate-800 bg-slate-900/60 text-emerald-400 uppercase tracking-wider text-[11px] font-bold">
+                  {platform.name}
                 </span>
-              )}
-              {writeup.difficulty && (
-                <span className="px-1.5 py-0.5 rounded border border-slate-800 bg-slate-900/60 text-sky-400">
-                  {writeup.difficulty}
+                <span className="px-2 py-0.5 border border-slate-800 bg-slate-900/60 text-slate-300 uppercase tracking-wider text-[11px]">
+                  {modName}
                 </span>
-              )}
-              {badge && <span className={`font-mono text-xs ${badge.className}`}>{badge.label}</span>}
-              <span className="text-slate-500">&bull;</span>
-              <time className="text-slate-500" dateTime={writeup.date}>{writeup.date}</time>
-              {writeup.readingTime && (
-                <>
-                  <span className="text-slate-500">&bull;</span>
-                  <span className="text-slate-500">{writeup.readingTime}</span>
-                </>
-              )}
+                {writeup.belt && (
+                  <span className="px-2 py-0.5 border border-orange-900 bg-orange-950/40 text-orange-400 font-semibold text-[11px]">
+                    🥋 {writeup.belt}
+                  </span>
+                )}
+                {writeup.difficulty && (
+                  <span className="px-2 py-0.5 border border-slate-800 bg-slate-900/60 text-sky-400 text-[11px]">
+                    {writeup.difficulty}
+                  </span>
+                )}
+                {badge && <span className={`font-mono text-xs ${badge.className}`}>{badge.label}</span>}
+              </div>
+              <div className="flex items-center gap-3 text-slate-500 uppercase tracking-wider text-[11px]">
+                <time dateTime={writeup.date}>{writeup.date}</time>
+                {writeup.readingTime && (
+                  <>
+                    <span>&bull;</span>
+                    <span>{writeup.readingTime}</span>
+                  </>
+                )}
+              </div>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-100">
+
+            <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-slate-100 leading-tight">
               {writeup.title}
             </h1>
           </header>
 
           {/* Mobile ToC */}
           {headings.length > 0 && (
-            <details className="lg:hidden mb-6 rounded-lg border border-slate-800 bg-slate-950/20 p-4 font-mono text-xs">
-              <summary className="font-semibold text-slate-300 cursor-pointer select-none focus:text-emerald-400 focus:outline-none">
-                Outline ({headings.length} headings)
+            <details className="lg:hidden mb-8 border border-slate-800 bg-slate-950/40 p-4 font-mono text-xs">
+              <summary className="font-semibold text-slate-300 cursor-pointer select-none focus:text-emerald-400 focus:outline-none flex items-center justify-between">
+                <span>Outline ({headings.length} headings)</span>
+                <span className="text-slate-600 text-[10px]">toc()</span>
               </summary>
               <ul className="mt-3 pl-3 border-l border-slate-800 space-y-2 text-slate-400">
                 {headings.map((item) => (
@@ -464,7 +469,7 @@ export default async function WriteupCatchAllPage({ params }: PageProps) {
         </div>
 
         {headings.length > 0 && (
-          <aside className="lg:col-span-1 sticky top-24 hidden lg:block max-h-[calc(100vh-8rem)] overflow-y-auto pr-2 border-l border-slate-800/60 pl-6">
+          <aside className="lg:col-span-1 sticky top-24 hidden lg:block max-h-[calc(100vh-8rem)] overflow-y-auto">
             <TableOfContents items={headings} />
           </aside>
         )}
@@ -495,39 +500,45 @@ export default async function WriteupCatchAllPage({ params }: PageProps) {
             back_to_{platformSlug}()
           </Link>
 
-          <header className="mb-8 border-b border-slate-800 pb-5">
-            <div className="flex flex-wrap items-center gap-3 text-xs font-mono mb-2">
-              <span className="px-1.5 py-0.5 rounded border border-slate-800 bg-slate-900/60 text-emerald-400">
-                {platform.name}
-              </span>
-              {writeup.difficulty && (
-                <span className="px-1.5 py-0.5 rounded border border-slate-800 bg-slate-900/60 text-sky-400">
-                  {writeup.difficulty}
+          {/* Header — Framed Spec Dossier */}
+          <header className="mb-10 border border-slate-800 bg-slate-950/40 p-6 sm:p-8 space-y-4">
+            <div className="flex flex-wrap items-center justify-between border-b border-slate-800 pb-3 gap-3 font-mono text-xs">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="px-2 py-0.5 border border-slate-800 bg-slate-900/60 text-emerald-400 uppercase tracking-wider text-[11px] font-bold">
+                  {platform.name}
                 </span>
-              )}
-              {writeup.points && (
-                <span className="px-1.5 py-0.5 rounded border border-slate-800 bg-slate-900/60 text-slate-400">
-                  {writeup.points} pts
-                </span>
-              )}
-              <span className="text-slate-500">&bull;</span>
-              <time className="text-slate-500" dateTime={writeup.date}>{writeup.date}</time>
-              {writeup.readingTime && (
-                <>
-                  <span className="text-slate-500">&bull;</span>
-                  <span className="text-slate-500">{writeup.readingTime}</span>
-                </>
-              )}
+                {writeup.difficulty && (
+                  <span className="px-2 py-0.5 border border-slate-800 bg-slate-900/60 text-sky-400 text-[11px]">
+                    {writeup.difficulty}
+                  </span>
+                )}
+                {writeup.points && (
+                  <span className="px-2 py-0.5 border border-slate-800 bg-slate-900/60 text-slate-300 text-[11px]">
+                    {writeup.points} pts
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-3 text-slate-500 uppercase tracking-wider text-[11px]">
+                <time dateTime={writeup.date}>{writeup.date}</time>
+                {writeup.readingTime && (
+                  <>
+                    <span>&bull;</span>
+                    <span>{writeup.readingTime}</span>
+                  </>
+                )}
+              </div>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-100">
+
+            <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-slate-100 leading-tight">
               {writeup.title}
             </h1>
           </header>
 
           {headings.length > 0 && (
-            <details className="lg:hidden mb-6 rounded-lg border border-slate-800 bg-slate-950/20 p-4 font-mono text-xs">
-              <summary className="font-semibold text-slate-300 cursor-pointer select-none focus:text-sky-400 focus:outline-none">
-                Outline ({headings.length} headings)
+            <details className="lg:hidden mb-8 border border-slate-800 bg-slate-950/40 p-4 font-mono text-xs">
+              <summary className="font-semibold text-slate-300 cursor-pointer select-none focus:text-sky-400 focus:outline-none flex items-center justify-between">
+                <span>Outline ({headings.length} headings)</span>
+                <span className="text-slate-600 text-[10px]">toc()</span>
               </summary>
               <ul className="mt-3 pl-3 border-l border-slate-800 space-y-2 text-slate-400">
                 {headings.map((item) => (
@@ -547,7 +558,7 @@ export default async function WriteupCatchAllPage({ params }: PageProps) {
         </div>
 
         {headings.length > 0 && (
-          <aside className="lg:col-span-1 sticky top-24 hidden lg:block max-h-[calc(100vh-8rem)] overflow-y-auto pr-2 border-l border-slate-800/60 pl-6">
+          <aside className="lg:col-span-1 sticky top-24 hidden lg:block max-h-[calc(100vh-8rem)] overflow-y-auto">
             <TableOfContents items={headings} />
           </aside>
         )}

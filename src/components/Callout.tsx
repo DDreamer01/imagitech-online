@@ -53,10 +53,10 @@ export default function Callout({ type = "info", title, children }: CalloutProps
   const currentStyle = styles[type];
 
   return (
-    <div className={`my-6 flex items-start gap-4 p-4 border rounded-lg ${currentStyle.border} ${currentStyle.bg}`}>
+    <div className={`my-8 flex items-start gap-4 p-5 border border-l-4 ${currentStyle.border} ${currentStyle.bg} bg-slate-950/30`}>
       <span className={`mt-0.5 flex-shrink-0 ${currentStyle.text}`}>{currentStyle.icon}</span>
       <div className="flex-1 min-w-0">
-        {title && <span className={`block font-semibold mb-1 ${currentStyle.text}`}>{title}</span>}
+        {title && <span className={`block font-mono text-xs uppercase tracking-wider font-bold mb-1.5 ${currentStyle.text}`}>[ {title} ]</span>}
         <div className="text-slate-300 text-sm leading-relaxed prose-direct-child">{children}</div>
       </div>
     </div>
