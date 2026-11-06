@@ -35,12 +35,12 @@ export default function TagsPage() {
             <Link
               key={name}
               href={`/tags/${encodeURIComponent(name.toLowerCase())}`}
-              className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-edge bg-surface/60 hover:border-brand/60 hover:bg-surface-elevated transition-all font-mono text-xs"
+              className="group inline-flex items-center gap-2 px-3 py-1.5 border border-edge bg-surface/60 hover:border-brand/60 hover:bg-surface-elevated transition-all font-mono text-xs"
             >
               <span className="text-content-muted group-hover:text-brand transition-colors">
                 #{name}
               </span>
-              <span className="px-1.5 py-0.2 rounded bg-canvas text-[10px] text-content-muted group-hover:text-content-main border border-edge/60 transition-colors">
+              <span className="px-1.5 py-0.2 bg-canvas text-[10px] text-content-muted group-hover:text-content-main border border-edge/60 transition-colors">
                 {count}
               </span>
             </Link>

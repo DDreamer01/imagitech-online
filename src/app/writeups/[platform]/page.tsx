@@ -82,7 +82,7 @@ export default async function WriteupPlatformPage({ params }: PageProps) {
         </header>
 
         {modules.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-slate-800 bg-slate-950/40 p-10 text-center">
+          <div className="border border-dashed border-slate-800 bg-slate-950/40 p-10 text-center">
             <p className="font-mono text-sm text-slate-500">
               No modules found. Add a subfolder under{" "}
               <code className="text-slate-400">content/writeups/{platformSlug}/</code>.
@@ -94,18 +94,18 @@ export default async function WriteupPlatformPage({ params }: PageProps) {
               <Link
                 key={mod.slug}
                 href={`/writeups/${platformSlug}/${mod.slug}`}
-                className="group block rounded-lg border border-slate-800 bg-slate-950/40 p-5 transition-colors hover:border-slate-600 hover:bg-slate-900/40"
+                className="group block border border-slate-800 bg-slate-950/40 p-5 transition-colors hover:border-slate-600 hover:bg-slate-900/40"
               >
                 <div className="flex flex-wrap items-center gap-2 font-mono text-xs mb-2">
-                  <span className={`px-1.5 py-0.5 rounded border ${theme.chip}`}>
+                  <span className={`px-1.5 py-0.5 border ${theme.chip}`}>
                     {mod.belt ? "track" : "dojo"}
                   </span>
                   {mod.belt && (
-                    <span className="px-1.5 py-0.5 rounded border border-orange-900/80 bg-orange-950/40 text-orange-400 font-semibold">
+                    <span className="px-1.5 py-0.5 border border-orange-900/80 bg-orange-950/40 text-orange-400 font-semibold">
                       🥋 {mod.belt} Track
                     </span>
                   )}
-                  <span className="px-1.5 py-0.5 rounded border border-slate-800 bg-slate-900/60 text-slate-400">
+                  <span className="px-1.5 py-0.5 border border-slate-800 bg-slate-900/60 text-slate-400">
                     {mod.belt && mod.totalModules
                       ? `${mod.writeupCount} / ${mod.totalModules} modules`
                       : `${mod.writeupCount} ${mod.writeupCount === 1 ? "writeup" : "writeups"}`}

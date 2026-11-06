@@ -58,7 +58,7 @@ export default function HomePage() {
       <section className="border border-slate-800 bg-slate-950/40 p-6">
         <div className="flex flex-wrap items-center justify-between border-b border-slate-800 pb-3 mb-6 gap-2">
           <div className="flex items-center gap-2.5 font-mono text-xs font-bold text-slate-200 uppercase tracking-wider">
-            <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span className="inline-block w-2 h-2 bg-emerald-500 animate-pulse"></span>
             <span>Laboratory Status · Live Nodes Telemetry</span>
           </div>
           <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-slate-500">

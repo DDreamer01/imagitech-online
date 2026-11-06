@@ -52,7 +52,7 @@ export default function AboutPage() {
         <h2 className="text-xl font-semibold text-slate-100 mt-10 mb-4 border-b border-slate-800 pb-2">Technical Capabilities</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
           {SKILL_CATEGORIES.map((category) => (
-            <div key={category.title} className="p-4 rounded-lg border border-slate-800 bg-slate-950/20">
+            <div key={category.title} className="p-4 border border-slate-800 bg-slate-950/20">
               <h3 className="font-mono text-sm font-semibold text-sky-400 mb-3">{category.title}</h3>
               <ul className="space-y-2 text-sm text-slate-300">
                 {category.skills.map((skill) => (

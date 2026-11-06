@@ -124,12 +124,12 @@ function statusConfig(status?: string) {
   if (status === "completed")
     return {
       label: "🟠 Completed",
-      className: "px-1.5 py-0.5 rounded border border-orange-900 bg-orange-950/40 text-orange-400",
+      className: "px-1.5 py-0.5 border border-orange-900 bg-orange-950/40 text-orange-400",
     };
   if (status === "in-progress")
     return {
       label: "⏳ In Progress",
-      className: "px-1.5 py-0.5 rounded border border-yellow-900 bg-yellow-950/40 text-yellow-400",
+      className: "px-1.5 py-0.5 border border-yellow-900 bg-yellow-950/40 text-yellow-400",
     };
   return null;
 }
@@ -322,11 +322,11 @@ export default async function WriteupCatchAllPage({ params }: PageProps) {
                 {modName}
               </h1>
               {mod.belt ? (
-                <span className="px-2 py-0.5 rounded border border-orange-900/80 bg-orange-950/40 text-orange-400 font-mono text-xs font-semibold">
+                <span className="px-2 py-0.5 border border-orange-900/80 bg-orange-950/40 text-orange-400 font-mono text-xs font-semibold">
                   🥋 {mod.belt} Track
                 </span>
               ) : (
-                <span className="px-1.5 py-0.5 rounded border border-slate-800 bg-slate-900/60 text-slate-400 font-mono text-xs">
+                <span className="px-1.5 py-0.5 border border-slate-800 bg-slate-900/60 text-slate-400 font-mono text-xs">
                   {writeups.length} {writeups.length === 1 ? "writeup" : "writeups"}
                 </span>
               )}
@@ -344,14 +344,14 @@ export default async function WriteupCatchAllPage({ params }: PageProps) {
 
             {/* Progress Tracker Card — only rendered for formal belt tracks */}
             {isBeltTrack && (
-              <div className="rounded-lg border border-slate-800 bg-slate-950/60 p-4 font-mono text-xs space-y-2">
+              <div className="border border-slate-800 bg-slate-950/60 p-4 font-mono text-xs space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400">
                     Track Progress: <strong className="text-slate-200">{completedCount} of {totalCount}</strong> modules completed
                   </span>
                   <span className="text-orange-400 font-semibold">{progressPercent}%</span>
                 </div>
-                <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                <div className="w-full bg-slate-800 h-2 overflow-hidden">
                   <div
                     className="bg-gradient-to-r from-orange-500 to-amber-400 h-full transition-all duration-500"
                     style={{ width: `${Math.max(progressPercent, 4)}%` }}
@@ -383,14 +383,14 @@ export default async function WriteupCatchAllPage({ params }: PageProps) {
                         <Link
                           key={item.slug}
                           href={`/writeups/${platformSlug}/${moduleOrSlug}/${item.slug}`}
-                          className="group block rounded-lg border border-slate-800 bg-slate-950/40 p-5 transition-colors hover:border-slate-600 hover:bg-slate-900/40"
+                          className="group block border border-slate-800 bg-slate-950/40 p-5 transition-colors hover:border-slate-600 hover:bg-slate-900/40"
                         >
                           <div className="flex flex-wrap items-center gap-2 font-mono text-xs mb-2">
-                            <span className="px-1.5 py-0.5 rounded border border-slate-800 bg-slate-900/60 text-slate-400">
+                            <span className="px-1.5 py-0.5 border border-slate-800 bg-slate-900/60 text-slate-400">
                               Module {item.number}
                             </span>
                             {isCompleted && (
-                              <span className="px-1.5 py-0.5 rounded border border-orange-900 bg-orange-950/40 text-orange-400 font-mono text-xs">
+                              <span className="px-1.5 py-0.5 border border-orange-900 bg-orange-950/40 text-orange-400 font-mono text-xs">
                                 🟠 Completed
                               </span>
                             )}
@@ -418,7 +418,7 @@ export default async function WriteupCatchAllPage({ params }: PageProps) {
                     return (
                       <div
                         key={item.slug}
-                        className="rounded-lg border border-dashed border-slate-800/80 bg-slate-950/20 p-4 opacity-75"
+                        className="border border-dashed border-slate-800/80 bg-slate-950/20 p-4 opacity-75"
                       >
                         <div className="flex items-center justify-between mb-1">
                           <div className="flex items-center gap-2 font-mono text-xs text-slate-500">
@@ -427,7 +427,7 @@ export default async function WriteupCatchAllPage({ params }: PageProps) {
                             <span className="text-slate-300 font-semibold">{item.name}</span>
                           </div>
                           {isNext ? (
-                            <span className="font-mono text-[11px] px-1.5 py-0.5 rounded border border-yellow-900/80 bg-yellow-950/30 text-yellow-400">
+                            <span className="font-mono text-[11px] px-1.5 py-0.5 border border-yellow-900/80 bg-yellow-950/30 text-yellow-400">
                               Next Up
                             </span>
                           ) : (
@@ -447,7 +447,7 @@ export default async function WriteupCatchAllPage({ params }: PageProps) {
                 </h2>
 
                 {writeups.length === 0 ? (
-                  <div className="rounded-lg border border-dashed border-slate-800 bg-slate-950/40 p-10 text-center">
+                  <div className="border border-dashed border-slate-800 bg-slate-950/40 p-10 text-center">
                     <p className="font-mono text-sm text-slate-500">
                       No writeups published in this module yet.
                     </p>
@@ -463,11 +463,11 @@ export default async function WriteupCatchAllPage({ params }: PageProps) {
                         <Link
                           key={writeup.slug}
                           href={`/writeups/${platformSlug}/${moduleOrSlug}/${writeup.slug}`}
-                          className="group block rounded-lg border border-slate-800 bg-slate-950/40 p-5 transition-colors hover:border-slate-600 hover:bg-slate-900/40"
+                          className="group block border border-slate-800 bg-slate-950/40 p-5 transition-colors hover:border-slate-600 hover:bg-slate-900/40"
                         >
                           <div className="flex flex-wrap items-center gap-2 font-mono text-xs mb-2">
                             {writeup.difficulty && (
-                              <span className="px-1.5 py-0.5 rounded border border-slate-800 bg-slate-900/60 text-slate-300">
+                              <span className="px-1.5 py-0.5 border border-slate-800 bg-slate-900/60 text-slate-300">
                                 {writeup.difficulty}
                               </span>
                             )}

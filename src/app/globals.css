@@ -30,7 +30,7 @@
   --input: #353535;
   --ring: #CF7253;
   
-  --radius: 0.375rem;
+  --radius: 0px;
 }
 
 /* Light mode fallback (styled identically for consistent dark-first theme) */

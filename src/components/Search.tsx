@@ -188,7 +188,7 @@ export default function Search() {
       {/* Navigation Trigger Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-0 md:gap-2 px-2 md:px-3 py-1.5 rounded-md border border-slate-800 bg-slate-950/60 text-slate-400 hover:border-slate-700 hover:text-slate-200 text-xs font-mono select-none focus:outline-none focus:ring-1 focus:ring-sky-500/50"
+        className="flex items-center gap-0 md:gap-2 px-2 md:px-3 py-1.5 border border-slate-800 bg-slate-950/60 text-slate-400 hover:border-slate-700 hover:text-slate-200 text-xs font-mono select-none focus:outline-none focus:ring-1 focus:ring-sky-500/50"
         aria-haspopup="dialog"
         aria-expanded={isOpen}
         aria-label="Open search dialog"
@@ -197,7 +197,7 @@ export default function Search() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
         <span className="hidden md:inline">search()</span>
-        <kbd className="hidden md:inline-block px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-[10px] text-slate-500 font-sans tracking-tight">
+        <kbd className="hidden md:inline-block px-1.5 py-0.5 bg-slate-900 border border-slate-800 text-[10px] text-slate-500 font-sans tracking-tight">
           ⌘K
         </kbd>
       </button>
@@ -218,7 +218,7 @@ export default function Search() {
           >
             {/* Dialog Body */}
             <div 
-              className="relative w-full max-w-xl rounded-lg border border-slate-800 bg-slate-900 shadow-2xl overflow-hidden flex flex-col max-h-[60vh] text-left"
+              className="relative w-full max-w-xl border border-slate-800 bg-slate-900 shadow-2xl overflow-hidden flex flex-col max-h-[60vh] text-left"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Search Input Box */}
@@ -244,14 +244,14 @@ export default function Search() {
                 <button
                   onClick={closeModal}
                   type="button"
-                  className="p-1 hover:bg-slate-800 rounded text-slate-400 hover:text-slate-100 focus:outline-none focus-visible:ring-1 focus-visible:ring-sky-500/50"
+                  className="p-1 hover:bg-slate-800 text-slate-400 hover:text-slate-100 focus:outline-none focus-visible:ring-1 focus-visible:ring-sky-500/50"
                   aria-label="Close search"
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
-                <span className="text-[10px] font-mono text-slate-500 border border-slate-800 px-1.5 py-0.5 rounded">
+                <span className="text-[10px] font-mono text-slate-500 border border-slate-800 px-1.5 py-0.5">
                   ESC
                 </span>
               </div>
@@ -279,7 +279,7 @@ export default function Search() {
                         aria-selected={focusedIndex === idx}
                         onClick={() => handleSelectResult(result.url)}
                         onMouseEnter={() => setFocusedIndex(idx)}
-                        className={`w-full text-left p-3 rounded transition-colors border border-transparent flex flex-col focus:outline-none ${
+                        className={`w-full text-left p-3 transition-colors border border-transparent flex flex-col focus:outline-none ${
                           focusedIndex === idx
                             ? "bg-slate-800/80 border-slate-700/80 text-sky-400"
                             : "hover:bg-slate-800/40 text-slate-200"

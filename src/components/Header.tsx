@@ -154,7 +154,7 @@ export default function Header() {
                     </Link>
                     {/* Dropdown panel (opens on hover or keyboard focus) */}
                     <div className="absolute right-0 top-full pt-2 invisible opacity-0 translate-y-1 group-hover:visible group-hover:opacity-100 group-hover:translate-y-0 group-focus-within:visible group-focus-within:opacity-100 group-focus-within:translate-y-0 transition-all duration-150 ease-out z-50">
-                      <div className="min-w-[150px] rounded-md border border-slate-800/80 bg-slate-950 py-1.5 shadow-lg shadow-black/40">
+                      <div className="min-w-[150px] border border-slate-800/80 bg-slate-950 py-1.5 shadow-lg shadow-black/40">
                         {ABOUT_CHILDREN.map((child) => (
                           <Link
                             key={child.href}
@@ -199,7 +199,7 @@ export default function Header() {
               ref={triggerRef}
               onClick={() => setIsOpen(!isOpen)}
               type="button"
-              className="inline-flex items-center justify-center rounded-md p-1.5 text-slate-400 hover:bg-slate-800 hover:text-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
+              className="inline-flex items-center justify-center p-1.5 text-slate-400 hover:bg-slate-800 hover:text-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
               aria-controls="mobile-menu"
               aria-expanded={isOpen}
               aria-haspopup="dialog"
@@ -242,7 +242,7 @@ export default function Header() {
             <button
               onClick={() => setIsOpen(false)}
               type="button"
-              className="inline-flex items-center justify-center rounded-md p-1.5 text-slate-400 hover:bg-slate-800 hover:text-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
+              className="inline-flex items-center justify-center p-1.5 text-slate-400 hover:bg-slate-800 hover:text-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
               aria-label="Close menu"
             >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -258,7 +258,7 @@ export default function Header() {
                 <Link
                   href={link.href}
                   onClick={() => setIsOpen(false)}
-                  className={`block rounded-md px-4 py-2.5 text-xl font-semibold transition-colors ${
+                  className={`block px-4 py-2.5 text-xl font-semibold transition-colors ${
                     isActive(link.href) ||
                     (link.href === "/about" && pathname.startsWith("/contact"))
                       ? "bg-slate-900/80 text-sky-400 border-l-4 border-sky-400 pl-3"
@@ -274,7 +274,7 @@ export default function Header() {
                       key={child.href}
                       href={child.href}
                       onClick={() => setIsOpen(false)}
-                      className={`block rounded-md pl-10 pr-4 py-2.5 text-lg font-semibold transition-colors ${
+                      className={`block pl-10 pr-4 py-2.5 text-lg font-semibold transition-colors ${
                         isActive(child.href)
                           ? "bg-slate-900/80 text-sky-400 border-l-4 border-sky-400 pl-8"
                           : "text-slate-500 hover:bg-slate-900/40 hover:text-slate-200"

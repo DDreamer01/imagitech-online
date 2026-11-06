@@ -21,7 +21,7 @@ export default function MdxImage({ src, alt, title, width, height }: MdxImagePro
         height={height}
         loading="lazy"
         decoding="async"
-        className="rounded-lg border border-slate-800 w-full h-auto"
+        className="border border-slate-800 w-full h-auto"
       />
       {alt && (
         <figcaption className="mt-2 text-center text-xs text-slate-500 font-mono">
