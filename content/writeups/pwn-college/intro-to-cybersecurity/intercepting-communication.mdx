@@ -1,17 +1,256 @@
 ---
-title: "Intercepting Communication"
-description: "Writeup for the Intercepting Communication module of pwn.college's Intro to Cybersecurity path — packet inspection, Wireshark, ARP poisoning, and MITM attacks."
-date: "2026-11-01"
+title: "Intercepting Communication — TCP Connections, Netcat & Traffic Analysis"
+description: "Writeup for the Intercepting Communication module of pwn.college's Intro to Cybersecurity path — netcat connections, half-close semantics, port scanning and Wireshark traffic analysis."
+date: "2026-11-16"
 module: "Intro to Cybersecurity"
 difficulty: "Intro"
 points: "0"
 status: "in-progress"
 belt: "Orange Belt"
-published: false
+published: true
 ---
 
 # Intercepting Communication
 
-> Module 2 of 7 in [Intro to Cybersecurity](https://pwn.college/intro-to-cybersecurity/) on pwn.college. Journey to the 🥋 **Orange Belt**.
+> Module 2 of 7 in [Intro to Cybersecurity](https://pwn.college/intro-to-cybersecurity/) on pwn.college — covering netcat connections, TCP shutdown semantics, local network scanning and Wireshark traffic analysis. Solved on the path to attaining the 🥋 **Orange Belt**.
 
-Writeup coming soon.
+---
+
+## Overview
+
+Every service you interact with over a network is just bytes moving across a socket. This module drills the mechanics of that exchange using `netcat` and `nmap`, then turns the same tools on your own traffic with Wireshark.
+
+| Challenge   | What it tests                                                          |
+| ----------- | ---------------------------------------------------------------------- |
+| **connect** | Establishing a TCP session with a listening service                     |
+| **send**    | Sending data over an established connection, with verbose diagnostics  |
+| **shutdown** | Half-closing a connection cleanly and reading the trailing response   |
+| **listen**  | Binding a listener and accepting an inbound connection                |
+| **scan-1**  | Sweeping the local `/24` for live hosts with `ping`                   |
+| **scan-2**  | Sweeping a full `/16` for an open port with `nmap`                    |
+| **monitor-1** | Capturing and inspecting packets with Wireshark                      |
+| **monitor-2** | Intercepting traffic that is not addressed to you *(pending)*         |
+| **monitor-3** | TLS interception against an encrypted service *(pending)*             |
+
+<Callout type="info" title="Lab Topology">
+  The `run` script drops you into a container with two interfaces. `10.0.0.1` is
+  you; the challenge service lives on a second host inside the same private
+  range. `nc` connects to `10.0.0.2` on port `31337`.
+</Callout>
+
+---
+
+## Connect
+
+The simplest possible interaction: open a TCP connection and read whatever the
+service sends back. The flag is simply the first thing the service prints.
+
+```bash
+hacker@intercepting-communication~connect:~$ cd /challenge/
+hacker@intercepting-communication~connect:/challenge$ ls
+DESCRIPTION.md  run
+hacker@intercepting-communication~connect:/challenge$ ./run
+root@ip-10-0-0-1:/challenge# nc 10.0.0.2 31337
+pwn.college{Q049…3EzW}
+```
+
+`nc <host> <port>` opens the connection, waits for the remote side to write, and
+prints what it receives until the connection closes.
+
+---
+
+## Send
+
+Same connection, but now we write to it. Adding `-v` makes netcat report the
+connection attempt and the negotiated port.
+
+```bash
+hacker@intercepting-communication~send:~$ cd /challenge/
+hacker@intercepting-communication~send:/challenge$ ls
+DESCRIPTION.md  run
+hacker@intercepting-communication~send:/challenge$ ./run
+root@ip-10-0-0-1:/challenge# nc 10.0.0.2 31337 -v
+root@ip-10-0-0-1:/challenge# nc 10.0.0.2 31337 -v
+Connection to 10.0.0.2 31337 port [tcp/*] succeeded!
+Hello, World!
+pwn.college{giEc…3EzW}
+```
+
+Note the transcript order: netcat prints the `succeeded!` line and the banner
+only *after* the exchange, because the output is flushed when the session
+tears down. The first invocation appears to hang — that is netcat waiting on
+the peer, not a failure.
+
+---
+
+## Shutdown
+
+`shutdown` is about the **half-close** (`shutdown()` on a socket sends FIN
+while still allowing reads in the other direction). `-q 3` tells netcat to wait
+three seconds after EOF on stdin before quitting, which gives the peer time to
+flush its response.
+
+```bash
+hacker@intercepting-communication~shutdown:~$ cd /challenge/
+hacker@intercepting-communication~shutdown:/challenge$ ls
+DESCRIPTION.md  run
+hacker@intercepting-communication~shutdown:/challenge$ ./run
+root@ip-10-0-0-1:/challenge# nc 10.0.0.2 31337 -v -q 3
+Connection to 10.0.0.2 (10.0.0.2) 31337 port [tcp/*] succeeded!
+```
+
+Sending `Ctrl + D` closes stdin, which is the EOF the service is waiting for:
+
+```bash
+...
+pwn.college{EU_r…3EzW}
+root@ip-10-0-0-1:/challenge#
+```
+
+<Callout type="tip" title="EOF Is a Signal">
+  `Ctrl + D` is not "quit" — it is an explicit end-of-file marker on stdin. A
+  well-behaved service treats it as "I am done talking, please reply", which is
+  why the flag only appears after the close rather than before it.
+</Callout>
+
+---
+
+## Listen
+
+Reversing the roles — `nc -l 31337` binds to port `31337` and waits for someone
+else to connect. The flag is delivered by the connecting client.
+
+```bash
+hacker@intercepting-communication~listen:~$ cd /challenge/
+hacker@intercepting-communication~listen:/challenge$ ls
+DESCRIPTION.md  run
+hacker@intercepting-communication~listen:/challenge$ ./run
+root@ip-10-0-0-1:/challenge# nc -l 31337
+pwn.college{QMQl…3EzW}
+root@ip-10-0-0-1:/challenge#
+```
+
+<Callout type="warning" title="Who Is Talking?">
+  A listener answers whoever connects first. On a shared network that means an
+  unsolicited peer can be the one that receives your flag — this is the same
+  primitive behind ARP spoofing and rogue DHCP servers.
+</Callout>
+
+---
+
+## Scan 1
+
+The service does not sit on a well-known address, so we sweep the local
+subnet. A single ICMP echo per host is enough to find live machines.
+
+```bash
+hacker@intercepting-communication~scan-1:~$ cd /challenge/
+hacker@intercepting-communication~scan-1:/challenge$ ls
+DESCRIPTION.md  run
+hacker@intercepting-communication~scan-1:/challenge$ ./run
+root@ip-10-0-0-1:/challenge# for i in $(seq 1 254); do     ping -c 1 -W 1 10.0.0.$i 2>/dev/null | grep -q "1 received" && echo "10.0.0.$i is alive"; done
+-bash: child setpgid (95 to 387): Operation not permitted
+10.0.0.1 is alive
+...
+10.0.0.66 is alive
+...
+^C
+root@ip-10-0-0-1:/challenge# nc 10.0.0.66 31337
+pwn.college{canc…3EzW}
+```
+
+<Callout type="tip" title="Reading the Noise">
+  The `child setpgid ... Operation not permitted` lines are an artifact of
+  running `ping` inside the container, not a networking error. Redirecting
+  `stderr` to `/dev/null` (as above) keeps them out of the way.
+</Callout>
+
+---
+
+## Scan 2
+
+A `/24` sweep only covers the immediate subnet, and the target may live
+anywhere in the wider range. `nmap` handles the full `/16` far more efficiently:
+
+```bash
+hacker@intercepting-communication~scan-2:~$ cd /challenge/
+hacker@intercepting-communication~scan-2:/challenge$ ls
+DESCRIPTION.md  run
+hacker@intercepting-communication~scan-2:/challenge$ ./run
+root@ip-10-0-0-1:/challenge# nmap -n --min-rate 1000 -p 31337 10.0.0.0/16
+Starting Nmap 7.99 ( https://nmap.org ) at 2026-11-16 19:48 +0000
+Nmap scan report for 10.0.0.1
+Host is up.
+
+PORT      STATE    SERVICE
+31337/tcp filtered Elite
+
+Nmap scan report for 10.0.98.162
+Host is up (0.000053s latency).
+
+PORT      STATE SERVICE
+31337/tcp open  Elite
+MAC Address: A2:83:C0:4B:95:7D (Unknown)
+
+Nmap done: 65536 IP addresses (2 hosts up) scanned in 142.30 seconds
+root@ip-10-0-0-1:/challenge# nc 10.0.98.162 31337
+pwn.college{4wDL…3EzW}
+```
+
+<Callout type="info" title="Reading the Nmap States">
+  **filtered** means the port did not answer — packets are being dropped
+  somewhere on the path. **open** means the port replied, and a service is
+  listening. The `-n` flag skips DNS resolution, which is what makes a
+  65 000-address sweep finish in a couple of minutes instead of hours.
+</Callout>
+
+---
+
+## Monitor
+
+The final group of challenges turns the tools around: instead of hunting for a
+service, you watch the traffic that is already flowing.
+
+### Monitor 1 — Packet Capture
+
+Wireshark is started inside the challenge container and the capture begins on
+the container's interface.
+
+```bash
+hacker@intercepting-communication~monitor-1:~$ cd /challenge/
+hacker@intercepting-communication~monitor-1:/challenge$ ls
+DESCRIPTION.md  run
+hacker@intercepting-communication~monitor-1:/challenge$ ./run
+root@ip-10-0-0-1:/challenge# wireshark
+qt.multimedia.symbolsresolver: Couldn't load pipewire-0.3 library
+qt.multimedia.symbolsresolver: Couldn't resolve pipewire-0.3 symbols
+_IceTransSocketUNIXConnect: Cannot connect to non-local host intercepting-communication~monitor-1
+ ** (wireshark:9) 18:38:28.293993 [GUI WARNING] -- Qt: Session management error: Could not open network socket
+```
+
+Clicking **Start capturing packets** brings the interface up:
+
+```bash
+...
+: Could not open network socket
+ ** (wireshark:72) 18:41:31.484373 [Capture MESSAGE] -- Capture Start ...
+ ** (wireshark:72) 18:41:31.548398 [Capture MESSAGE] -- Capture started
+ ** (wireshark:72) 18:41:31.549665 [Capture MESSAGE] -- File: "/tmp/wireshark_eth0AUQKY3.pcapng"
+```
+
+<Callout type="warning" title="Still In Progress">
+  The capture is running but the analysis portion of `monitor-1` — and the
+  `monitor-2` / `monitor-3` interception challenges — are not worked through
+  yet. This module is marked **In Progress** until they are.
+</Callout>
+
+---
+
+## Lessons Learned
+
+- **`nc` is a complete socket toolkit.** The same binary acts as client, server, and raw byte pump; the flags that matter are `-l` (listen), `-v` (verbose), `-q` (linger before quitting) and `-e` (exec a command on connect).
+- **EOF is a protocol message.** `Ctrl + D` closes stdin only — the socket stays open for reading, which is exactly the half-close semantics the `shutdown` challenge is built around.
+- **Subnets hide services.** The target lived at `10.0.98.162`, well outside the `/24` that the ping sweep covered. A ping sweep answers "who is alive", never "who is serving"; you need a port scan to get the second half.
+- **Always scan wider than you assume.** A `/24` is a guess about where a service lives; a `/16` is a fact about the address plan. `nmap -n` over `10.0.0.0/16` covered 65 536 addresses in roughly two minutes.
+- **Filtered is not closed.** A silent port (`filtered`) usually means a firewall dropped the SYN rather than the service being down — the difference matters when deciding whether to keep looking.
+- **Listening is not free of risk.** An open port on a shared network answers whoever connects first, which is the same weakness that traffic-interception techniques exploit.
