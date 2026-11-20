@@ -7,7 +7,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = "https://imagitech.online";
 
   // Static pages
-  const staticPaths = ["", "/about", "/uses", "/now", "/contact", "/blog", "/projects", "/notes", "/writeups"];
+  const staticPaths = ["", "/whoami", "/uses", "/now", "/contact", "/blog", "/projects", "/notes", "/writeups"];
   const staticMaps = staticPaths.map((route) => ({
     url: `${baseUrl}${route}`,
     lastModified: new Date(),

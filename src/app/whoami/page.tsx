@@ -2,7 +2,7 @@ import React from "react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "About",
+  title: "whoami",
   description: "Learn more about †hε drεαmεr, his background, technical expertise, and what drives his self-hosting and engineering work.",
 };
 
@@ -25,15 +25,15 @@ const SKILL_CATEGORIES = [
   },
 ];
 
-export default function AboutPage() {
+export default function WhoamiPage() {
   return (
     <article className="prose prose-slate max-w-3xl">
       <header className="mb-8 border-b border-slate-800 pb-6">
         <div className="font-mono text-[11px] uppercase tracking-[0.25em] text-sky-400 mb-2">
           Profile &amp; Background
         </div>
-        <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-100">About Me</h1>
-        <p className="mt-2 text-xs text-slate-400 font-mono tracking-wider uppercase">the-dreamer.about()</p>
+        <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-100 font-mono">whoami</h1>
+        <p className="mt-2 text-xs text-slate-400 font-mono tracking-wider uppercase">the-dreamer.whoami()</p>
       </header>
 
       <section className="space-y-6 text-slate-300">

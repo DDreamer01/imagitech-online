@@ -11,11 +11,11 @@ const NAV_LINKS = [
   { href: "/projects", label: "Projects" },
   { href: "/notes", label: "Notes" },
   { href: "/writeups", label: "Writeups" },
-  { href: "/about", label: "About" },
+  { href: "/whoami", label: "whoami" },
 ];
 
-// Contact lives under About in the nav (dropdown on desktop, indented in mobile)
-const ABOUT_CHILDREN = [{ href: "/contact", label: "Contact" }];
+// Contact lives under whoami in the nav (dropdown on desktop, indented in mobile)
+const WHOAMI_CHILDREN = [{ href: "/contact", label: "Contact" }];
 
 // Secondary pages, kept accessible via the mobile drawer footer / site footer
 const SECONDARY_LINKS = [
@@ -128,7 +128,7 @@ export default function Header() {
           <div className="hidden md:flex items-center gap-6">
             <nav className="flex space-x-6 text-sm font-medium">
               {NAV_LINKS.map((link) =>
-                link.href === "/about" ? (
+                link.href === "/whoami" ? (
                   <div key={link.href} className="relative group">
                     <Link
                       href={link.href}
@@ -155,7 +155,7 @@ export default function Header() {
                     {/* Dropdown panel (opens on hover or keyboard focus) */}
                     <div className="absolute right-0 top-full pt-2 invisible opacity-0 translate-y-1 group-hover:visible group-hover:opacity-100 group-hover:translate-y-0 group-focus-within:visible group-focus-within:opacity-100 group-focus-within:translate-y-0 transition-all duration-150 ease-out z-50">
                       <div className="min-w-[150px] border border-slate-800/80 bg-slate-950 py-1.5 shadow-lg shadow-black/40">
-                        {ABOUT_CHILDREN.map((child) => (
+                        {WHOAMI_CHILDREN.map((child) => (
                           <Link
                             key={child.href}
                             href={child.href}
@@ -260,16 +260,16 @@ export default function Header() {
                   onClick={() => setIsOpen(false)}
                   className={`block px-4 py-2.5 text-xl font-semibold transition-colors ${
                     isActive(link.href) ||
-                    (link.href === "/about" && pathname.startsWith("/contact"))
+                    (link.href === "/whoami" && pathname.startsWith("/contact"))
                       ? "bg-slate-900/80 text-sky-400 border-l-4 border-sky-400 pl-3"
                       : "text-slate-400 hover:bg-slate-900/40 hover:text-slate-200"
                   }`}
                 >
                   {link.label}
                 </Link>
-                {/* Contact sits under About */}
-                {link.href === "/about" &&
-                  ABOUT_CHILDREN.map((child) => (
+                {/* Contact sits under whoami */}
+                {link.href === "/whoami" &&
+                  WHOAMI_CHILDREN.map((child) => (
                     <Link
                       key={child.href}
                       href={child.href}
