@@ -37,7 +37,11 @@ Markup is solved by answering the lab's eight guided questions, which walk from 
 
 Wappalyzer identifies the stack before any interaction with the application:
 
+<div className="max-w-[280px] mx-auto">
+
 ![Wappalyzer showing Apache 2.4.41, PHP 7.2.28, OpenSSL 1.1.1c and Windows Server](/images/writeups/hackthebox/markup-wappalyzer.png)
+
+</div>
 
 ---
 
@@ -59,7 +63,7 @@ The `Server` response header and Wappalyzer both report `Apache/2.4.41 (Win64) O
 
 The login form at the root of the site accepts the default pair.
 
-![Login form with admin:password](/images/writeups/hackthebox/markup-login.png)
+![Login form with admin:password](/images/writeups/hackthebox/markup-order-form.png)
 
 ---
 
@@ -71,7 +75,7 @@ The login form at the root of the site accepts the default pair.
 
 The authenticated page is `services.php`; its "Order in Bulk" form posts to `process.php`.
 
-![Order in Bulk form on services.php](/images/writeups/hackthebox/markup-order-form.png)
+![Order in Bulk form on services.php](/images/writeups/hackthebox/markup-login.png)
 
 The same form in a full-page browser view:
 
