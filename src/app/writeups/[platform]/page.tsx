@@ -98,7 +98,11 @@ export default async function WriteupPlatformPage({ params }: PageProps) {
               >
                 <div className="flex flex-wrap items-center gap-2 font-mono text-xs mb-2">
                   <span className={`px-1.5 py-0.5 border ${theme.chip}`}>
-                    {mod.belt ? "track" : "dojo"}
+                    {platformSlug === "portswigger"
+                      ? "lab"
+                      : mod.belt
+                      ? "track"
+                      : "dojo"}
                   </span>
                   {mod.belt && (
                     <span className="px-1.5 py-0.5 border border-orange-900/80 bg-orange-950/40 text-orange-400 font-semibold">
