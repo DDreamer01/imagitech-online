@@ -1,6 +1,6 @@
 ---
 title: "MCP server authentication fails open"
-description: "PortSwigger Web Security Academy lab — an MCP server fails open on a tampered API key, letting a non-staff user reach the hidden delete_user tool and delete another account."
+description: "PortSwigger Web Security Academy lab: an MCP server fails open on a tampered API key, letting a non-staff user reach the hidden delete_user tool and delete another account."
 date: "2026-11-25"
 difficulty: "practitioner"
 published: true
@@ -12,15 +12,15 @@ published: true
 
 This is the fourth MCP lab and it builds on everything from the previous three. Start there if you haven't worked through them yet:
 
-- [SQL injection in an MCP server tool](https://portswigger.net/web-security/mcp/lab-sql-injection-in-an-mcp-tool) — [writeup](/writeups/portswigger/mcp-server-vulnerabilities/sql-injection-in-mcp-server-tool)
-- [Broken access control in an MCP server tool](https://portswigger.net/web-security/mcp/lab-broken-access-control-in-an-mcp-tool) — [writeup](/writeups/portswigger/mcp-server-vulnerabilities/broken-access-control-in-an-mcp-server-tool)
-- [MCP server hides tools without restricting them](https://portswigger.net/web-security/mcp/lab-mcp-server-hides-tools-without-restricting-them) — [writeup](/writeups/portswigger/mcp-server-vulnerabilities/mcp-server-hides-tools-without-restricting-them)
+- [SQL injection in an MCP server tool](https://portswigger.net/web-security/mcp/lab-sql-injection-in-an-mcp-tool), [writeup](/writeups/portswigger/mcp-server-vulnerabilities/sql-injection-in-mcp-server-tool)
+- [Broken access control in an MCP server tool](https://portswigger.net/web-security/mcp/lab-broken-access-control-in-an-mcp-tool), [writeup](/writeups/portswigger/mcp-server-vulnerabilities/broken-access-control-in-an-mcp-server-tool)
+- [MCP server hides tools without restricting them](https://portswigger.net/web-security/mcp/lab-mcp-server-hides-tools-without-restricting-them), [writeup](/writeups/portswigger/mcp-server-vulnerabilities/mcp-server-hides-tools-without-restricting-them)
 
 ---
 
 ## Lab overview
 
-The lab is a shop with an MCP endpoint at `/mcp`. Your account page shows an API key, but the server handles tokens in a flawed way. The goal is to delete Carlos's account — even though `delete_user` is not listed for ordinary users.
+The lab is a shop with an MCP endpoint at `/mcp`. Your account page shows an API key, but the server handles tokens in a flawed way. The goal is to delete Carlos's account, even though `delete_user` is not listed for ordinary users.
 
 ![The MCP server authentication fails open lab](/images/writeups/portswigger/mcp-failopen-shop.png)
 
@@ -121,7 +121,7 @@ Add your valid key and the same request succeeds, listing only the ordinary tool
 }
 ```
 
-Unlike the previous lab, `delete_user` is not listed — but this lab still requires us to delete Carlos.
+Unlike the previous lab, `delete_user` is not listed, but this lab still requires us to delete Carlos.
 
 ## Reading the initialize instructions
 
@@ -163,7 +163,7 @@ Following the hint, send an `initialize` call:
 }
 ```
 
-The instructions tell us that the API key from the account page is one accepted token — but not the only one. That detail matters in a moment.
+The instructions tell us that the API key from the account page is one accepted token, but not the only one. That detail matters in a moment.
 
 ## Reaching the hidden tool
 
@@ -232,7 +232,7 @@ This is no longer a valid API key. Send the same `delete_user` call anyway:
 }
 ```
 
-An invalid token has passed the authorization check. The error now describes the tool's schema instead of refusing access — the authentication fails open.
+An invalid token has passed the authorization check. The error now describes the tool's schema instead of refusing access. The authentication fails open.
 
 ## Deleting Carlos
 
@@ -278,4 +278,4 @@ Carlos was successfully deleted and the lab is solved.
 
 ## Key takeaway
 
-The server performed two different checks and disagreed with itself. A missing token was rejected with `401`, but a garbage token was treated as authenticated — changing a single character was enough to reach the privileged tool. The `initialize` instructions even hinted that multiple token formats are accepted, which is exactly what made the malformed value worth trying. Authentication must fail closed: anything that isn't a verified credential belongs in the same bucket as no credential at all.
+The server performed two different checks and disagreed with itself. A missing token was rejected with `401`, but a garbage token was treated as authenticated. Changing a single character was enough to reach the privileged tool. The `initialize` instructions even hinted that multiple token formats are accepted, which is exactly what made the malformed value worth trying. Authentication must fail closed: anything that isn't a verified credential belongs in the same bucket as no credential at all.

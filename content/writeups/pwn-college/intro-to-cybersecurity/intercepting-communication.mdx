@@ -1,6 +1,6 @@
 ---
-title: "Intercepting Communication — TCP Connections, Netcat & Traffic Analysis"
-description: "Writeup for the Intercepting Communication module of pwn.college's Intro to Cybersecurity path — netcat connections, half-close semantics, port scanning and Wireshark traffic analysis."
+title: "Intercepting Communication: TCP Connections, Netcat & Traffic Analysis"
+description: "Writeup for the Intercepting Communication module of pwn.college's Intro to Cybersecurity path: netcat connections, half-close semantics, port scanning and Wireshark traffic analysis."
 date: "2026-11-16"
 module: "Intro to Cybersecurity"
 difficulty: "Intro"
@@ -12,7 +12,7 @@ published: true
 
 # Intercepting Communication
 
-> Module 2 of 7 in [Intro to Cybersecurity](https://pwn.college/intro-to-cybersecurity/) on pwn.college — covering netcat connections, TCP shutdown semantics, local network scanning and Wireshark traffic analysis. Solved on the path to attaining the 🥋 **Orange Belt**.
+> Module 2 of 7 in [Intro to Cybersecurity](https://pwn.college/intro-to-cybersecurity/) on pwn.college, covering netcat connections, TCP shutdown semantics, local network scanning and Wireshark traffic analysis. Solved on the path to attaining the 🥋 **Orange Belt**.
 
 ---
 
@@ -79,7 +79,7 @@ pwn.college{giEc…3EzW}
 
 Note the transcript order: netcat prints the `succeeded!` line and the banner
 only *after* the exchange, because the output is flushed when the session
-tears down. The first invocation appears to hang — that is netcat waiting on
+tears down. The first invocation appears to hang, that is netcat waiting on
 the peer, not a failure.
 
 ---
@@ -109,7 +109,7 @@ root@ip-10-0-0-1:/challenge#
 ```
 
 <Callout type="tip" title="EOF Is a Signal">
-  `Ctrl + D` is not "quit" — it is an explicit end-of-file marker on stdin. A
+  `Ctrl + D` is not "quit", it is an explicit end-of-file marker on stdin. A
   well-behaved service treats it as "I am done talking, please reply", which is
   why the flag only appears after the close rather than before it.
 </Callout>
@@ -118,7 +118,7 @@ root@ip-10-0-0-1:/challenge#
 
 ## Listen
 
-Reversing the roles — `nc -l 31337` binds to port `31337` and waits for someone
+Reversing the roles, `nc -l 31337` binds to port `31337` and waits for someone
 else to connect. The flag is delivered by the connecting client.
 
 ```bash
@@ -133,7 +133,7 @@ root@ip-10-0-0-1:/challenge#
 
 <Callout type="warning" title="Who Is Talking?">
   A listener answers whoever connects first. On a shared network that means an
-  unsolicited peer can be the one that receives your flag — this is the same
+  unsolicited peer can be the one that receives your flag, this is the same
   primitive behind ARP spoofing and rogue DHCP servers.
 </Callout>
 
@@ -199,7 +199,7 @@ pwn.college{4wDL…3EzW}
 ```
 
 <Callout type="info" title="Reading the Nmap States">
-  **filtered** means the port did not answer — packets are being dropped
+  **filtered** means the port did not answer, packets are being dropped
   somewhere on the path. **open** means the port replied, and a service is
   listening. The `-n` flag skips DNS resolution, which is what makes a
   65 000-address sweep finish in a couple of minutes instead of hours.
@@ -212,7 +212,7 @@ pwn.college{4wDL…3EzW}
 The final group of challenges turns the tools around: instead of hunting for a
 service, you watch the traffic that is already flowing.
 
-### Monitor 1 — Packet Capture
+### Monitor 1: Packet Capture
 
 Wireshark is started inside the challenge container and the capture begins on
 the container's interface.
@@ -241,7 +241,7 @@ Clicking **Start capturing packets** brings the interface up:
 
 ---
 
-### Monitor 2 — Raw Packet Sniffing
+### Monitor 2: Raw Packet Sniffing
 
 In **Monitor 2**, network packets are flowing across `eth0` containing pieces of the flag. You can launch Wireshark or use `tcpdump` directly in ASCII mode:
 
@@ -374,8 +374,8 @@ pwn.college{coJv…3EzW}
 ## Lessons Learned
 
 - **`nc` is a complete socket toolkit.** The same binary acts as client, server, and raw byte pump; the flags that matter are `-l` (listen), `-v` (verbose), `-q` (linger before quitting) and `-e` (exec a command on connect).
-- **EOF is a protocol message.** `Ctrl + D` closes stdin only — the socket stays open for reading, which is exactly the half-close semantics the `shutdown` challenge is built around.
+- **EOF is a protocol message.** `Ctrl + D` closes stdin only, the socket stays open for reading, which is exactly the half-close semantics the `shutdown` challenge is built around.
 - **Subnets hide services.** The target lived at `10.0.98.162`, well outside the `/24` that the ping sweep covered. A ping sweep answers "who is alive", never "who is serving"; you need a port scan to get the second half.
 - **Always scan wider than you assume.** A `/24` is a guess about where a service lives; a `/16` is a fact about the address plan. `nmap -n` over `10.0.0.0/16` covered 65 536 addresses in roughly two minutes.
-- **Filtered is not closed.** A silent port (`filtered`) usually means a firewall dropped the SYN rather than the service being down — the difference matters when deciding whether to keep looking.
+- **Filtered is not closed.** A silent port (`filtered`) usually means a firewall dropped the SYN rather than the service being down, the difference matters when deciding whether to keep looking.
 - **Listening is not free of risk.** An open port on a shared network answers whoever connects first, which is the same weakness that traffic-interception techniques exploit.

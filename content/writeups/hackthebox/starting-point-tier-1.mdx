@@ -1,6 +1,6 @@
 ---
 title: "Starting Point: Tier 1 Walkthrough"
-description: "Walkthrough and solutions for HackTheBox Starting Point Tier 1 machines — Funnel (FTP, SSH Port Forwarding, PostgreSQL) and Pennyworth (Jenkins RCE via Groovy Script Console)."
+description: "Walkthrough and solutions for HackTheBox Starting Point Tier 1 machines: Funnel (FTP, SSH Port Forwarding, PostgreSQL) and Pennyworth (Jenkins RCE via Groovy Script Console)."
 date: "2026-11-12"
 difficulty: "Very Easy"
 points: "300"
@@ -198,17 +198,17 @@ SELECT * FROM secrets;
 
 Extract the flag and submit it on HackTheBox!
 
-![Funnel Pwned — 150 XP Earned](/images/writeups/hackthebox/funnel-solved.png)
+![Funnel Pwned, 150 XP Earned](/images/writeups/hackthebox/funnel-solved.png)
 
 ---
 
 ## 2. Pennyworth
 
-Pennyworth is a Linux machine running Jenkins — a popular automation server used by developers to build and deploy software. The machine teaches two things: how default or weak credentials open the door to powerful admin interfaces, and how Jenkins' built-in Script Console can be weaponized to get a shell on the server.
+Pennyworth is a Linux machine running Jenkins, a popular automation server used by developers to build and deploy software. The machine teaches two things: how default or weak credentials open the door to powerful admin interfaces, and how Jenkins' built-in Script Console can be weaponized to get a shell on the server.
 
 This was the most fun machine in Starting Point so far.
 
-- **Target service:** HTTP (`8080/tcp`) — Jenkins 2.289.1 on Jetty 9.4.39
+- **Target service:** HTTP (`8080/tcp`), Jenkins 2.289.1 on Jetty 9.4.39
 - **Key vulnerability & attack chain:**
   1. Jenkins is accessible on port 8080 and accepts the default credentials `root:password`.
   2. Authenticated administrators have access to the **Script Console**, which runs arbitrary Groovy code on the server.
@@ -216,7 +216,7 @@ This was the most fun machine in Starting Point so far.
 
 ---
 
-### Step 1 — Connect to the VPN
+### Step 1: Connect to the VPN
 
 Before anything else, make sure your HackTheBox VPN is active. You can confirm it's working by checking your network interfaces:
 
@@ -224,13 +224,13 @@ Before anything else, make sure your HackTheBox VPN is active. You can confirm i
 ifconfig
 ```
 
-Look for a `tun0` interface with an IP in the `10.10.x.x` range — that confirms you're connected.
+Look for a `tun0` interface with an IP in the `10.10.x.x` range, that confirms you're connected.
 
-![VPN connected — tun0 interface active with 10.10.15.192](/images/writeups/hackthebox/pennyworth-vpn.png)
+![VPN connected, tun0 interface active with 10.10.15.192](/images/writeups/hackthebox/pennyworth-vpn.png)
 
 ---
 
-### Step 2 — Scan the Target
+### Step 2: Scan the Target
 
 Run an nmap scan to discover open ports and what services are running:
 
@@ -245,17 +245,17 @@ PORT     STATE SERVICE VERSION
 8080/tcp open  http    Jetty 9.4.39.v20210325
 ```
 
-Port `8080` is a web server running **Jetty** — a lightweight Java web server commonly used to host applications like Jenkins.
+Port `8080` is a web server running **Jetty**, a lightweight Java web server commonly used to host applications like Jenkins.
 
 ![nmap scan showing port 8080 open with Jetty](/images/writeups/hackthebox/pennyworth-nmap.png)
 
 <Callout type="info" title="What is Jetty?">
-Jetty is a Java-based web server and servlet container. It's often embedded inside Java applications — Jenkins uses it to serve its web interface. Seeing Jetty on port 8080 is a strong hint that Jenkins is running.
+Jetty is a Java-based web server and servlet container. It's often embedded inside Java applications, Jenkins uses it to serve its web interface. Seeing Jetty on port 8080 is a strong hint that Jenkins is running.
 </Callout>
 
 ---
 
-### Step 3 — Identify the Technology
+### Step 3: Identify the Technology
 
 Navigating to `http://<TARGET_IP>:8080` in a browser reveals a Jenkins login page. Using the **Wappalyzer** browser extension confirms the technology stack:
 
@@ -268,7 +268,7 @@ Navigating to `http://<TARGET_IP>:8080` in a browser reveals a Jenkins login pag
 
 ---
 
-### Step 4 — Log In with Default Credentials
+### Step 4: Log In with Default Credentials
 
 The Jenkins login page asks for a username and password. Many Jenkins instances left exposed online never had their default credentials changed. The classic combo to try first is:
 
@@ -279,7 +279,7 @@ Password: password
 
 It works. We're in as **Administrator**.
 
-![Jenkins login page — root:password accepted](/images/writeups/hackthebox/pennyworth-login.png)
+![Jenkins login page, root:password accepted](/images/writeups/hackthebox/pennyworth-login.png)
 
 <Callout type="warning" title="Why Default Credentials Work">
 Jenkins doesn't enforce a strong first-login password by default. Administrators sometimes skip the setup wizard or use simple passwords during initial configuration and never change them. This is one of the most common real-world misconfigurations found in penetration tests.
@@ -287,17 +287,17 @@ Jenkins doesn't enforce a strong first-login password by default. Administrators
 
 ---
 
-### Step 5 — Explore the Jenkins Dashboard
+### Step 5: Explore the Jenkins Dashboard
 
 After logging in, we land on the Jenkins dashboard. It shows a job called **"Groovy Script"** already configured on the server.
 
-![Jenkins dashboard — logged in as Administrator, Groovy Script job visible](/images/writeups/hackthebox/pennyworth-dashboard.png)
+![Jenkins dashboard, logged in as Administrator, Groovy Script job visible](/images/writeups/hackthebox/pennyworth-dashboard.png)
 
-As an administrator, we have access to **Manage Jenkins → Script Console** — a feature that lets you run Groovy code directly on the server. This is our way in.
+As an administrator, we have access to **Manage Jenkins → Script Console**, a feature that lets you run Groovy code directly on the server. This is our way in.
 
 ---
 
-### Step 6 — Research the Attack
+### Step 6: Research the Attack
 
 Before jumping straight to exploitation, it's worth understanding what we're dealing with. Running `searchsploit Jenkins` shows a large list of known Jenkins vulnerabilities:
 
@@ -307,7 +307,7 @@ searchsploit Jenkins
 
 ![searchsploit output listing many Jenkins CVEs including RCE via Script Console](/images/writeups/hackthebox/pennyworth-searchsploit.png)
 
-A quick Google search for **"Jenkins 2.289.1 reverse shell"** gives us exactly what we need — a Groovy script that opens a reverse shell connection back to our machine.
+A quick Google search for **"Jenkins 2.289.1 reverse shell"** gives us exactly what we need, a Groovy script that opens a reverse shell connection back to our machine.
 
 ![Google search confirming the Script Console reverse shell approach for Jenkins](/images/writeups/hackthebox/pennyworth-google-rce.png)
 
@@ -337,12 +337,12 @@ s.close();
 ![Groovy reverse shell payload for Linux targets](/images/writeups/hackthebox/pennyworth-groovy-payload.png)
 
 <Callout type="tip" title="Why Groovy?">
-Groovy is a scripting language that runs on the Java Virtual Machine (JVM). Jenkins' Script Console executes Groovy code with the same permissions as the Jenkins process itself — which in this case is running as `root`. That means any code we run here executes with full system access.
+Groovy is a scripting language that runs on the Java Virtual Machine (JVM). Jenkins' Script Console executes Groovy code with the same permissions as the Jenkins process itself, which in this case is running as `root`. That means any code we run here executes with full system access.
 </Callout>
 
 ---
 
-### Step 7 — Set Up a Netcat Listener
+### Step 7: Set Up a Netcat Listener
 
 Before firing the payload, start a **netcat listener** on your machine. This will catch the incoming connection from the target when the reverse shell runs:
 
@@ -350,16 +350,16 @@ Before firing the payload, start a **netcat listener** on your machine. This wil
 sudo nc -lvnp 443
 ```
 
-- `-l` — listen for incoming connections
-- `-v` — verbose output (shows connection info)
-- `-n` — no DNS resolution
-- `-p 443` — listen on port 443 (using 443 looks like normal HTTPS traffic, less likely to be blocked)
+- `-l`, listen for incoming connections
+- `-v`, verbose output (shows connection info)
+- `-n`, no DNS resolution
+- `-p 443`, listen on port 443 (using 443 looks like normal HTTPS traffic, less likely to be blocked)
 
 Leave this terminal open and waiting.
 
 ---
 
-### Step 8 — Run the Groovy Payload in Jenkins
+### Step 8: Run the Groovy Payload in Jenkins
 
 In Jenkins, go to:
 
@@ -371,7 +371,7 @@ Paste the Groovy reverse shell payload. Replace `ATTACKER_IP` with your `tun0` I
 
 ---
 
-### Step 9 — Catch the Shell
+### Step 9: Catch the Shell
 
 Switch back to your netcat terminal. A connection comes in from the target:
 
@@ -393,7 +393,7 @@ boot
 
 ---
 
-### Step 10 — Get the Flag
+### Step 10: Get the Flag
 
 Look around for the flag file and read it:
 
@@ -405,9 +405,9 @@ snap
 cat flag.txt
 ```
 
-There it is — `flag.txt` sitting right in the current directory. Reading it gives the HTB flag to submit.
+There it is, `flag.txt` sitting right in the current directory. Reading it gives the HTB flag to submit.
 
-![flag.txt found and read — flag value visible in terminal](/images/writeups/hackthebox/pennyworth-flag.png)
+![flag.txt found and read, flag value visible in terminal](/images/writeups/hackthebox/pennyworth-flag.png)
 
 Submit the flag on HackTheBox to claim your XP!
 
@@ -420,8 +420,8 @@ Submit the flag on HackTheBox to claim your XP!
 | **Funnel** | Anonymous FTP can leak credentials. Internal services bound to loopback are reachable via SSH port forwarding. |
 | **Pennyworth** | Default credentials on admin interfaces give attackers full control. Never leave Jenkins (or any admin tool) exposed with weak passwords. |
 
-- **Always test default credentials**: `admin:admin`, `root:password`, `jenkins:jenkins` — these still work on a surprising number of real systems.
+- **Always test default credentials**: `admin:admin`, `root:password`, `jenkins:jenkins`, these still work on a surprising number of real systems.
 - **Admin consoles are high-value targets**: Any interface that lets you run code (Jenkins Script Console, Kubernetes dashboards, database admin panels) is an instant root if accessed by an attacker.
-- **Reverse shells need a listener first**: Always start `nc -lvnp <PORT>` *before* triggering the payload — the connection is only made once.
+- **Reverse shells need a listener first**: Always start `nc -lvnp <PORT>` *before* triggering the payload, the connection is only made once.
 - **Port 8080 means web app**: HTTP services on non-standard ports like 8080 often indicate developer tools or internal applications. Always visit them in a browser.
 - **Groovy on the JVM = code execution**: In any Java-based platform that exposes a scripting console, the scripting language has the same OS-level permissions as the application itself.

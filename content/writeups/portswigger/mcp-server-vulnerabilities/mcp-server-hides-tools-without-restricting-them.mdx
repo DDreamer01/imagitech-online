@@ -1,6 +1,6 @@
 ---
 title: "MCP server hides tools without restricting them"
-description: "PortSwigger Web Security Academy lab — an MCP server leaks staff-only tools through its initialize instructions and never enforces authorization when those tools are actually called."
+description: "PortSwigger Web Security Academy lab: an MCP server leaks staff-only tools through its initialize instructions and never enforces authorization when those tools are actually called."
 date: "2026-11-24"
 difficulty: "apprentice"
 published: true
@@ -12,14 +12,14 @@ published: true
 
 This lab builds directly on the two earlier MCP exercises. If you haven't worked through them yet, start there:
 
-- [SQL injection in an MCP server tool](https://portswigger.net/web-security/mcp/lab-sql-injection-in-an-mcp-tool) — [writeup](/writeups/portswigger/mcp-server-vulnerabilities/sql-injection-in-mcp-server-tool)
-- [Broken access control in an MCP server tool](https://portswigger.net/web-security/mcp/lab-broken-access-control-in-an-mcp-tool) — [writeup](/writeups/portswigger/mcp-server-vulnerabilities/broken-access-control-in-an-mcp-server-tool)
+- [SQL injection in an MCP server tool](https://portswigger.net/web-security/mcp/lab-sql-injection-in-an-mcp-tool), [writeup](/writeups/portswigger/mcp-server-vulnerabilities/sql-injection-in-mcp-server-tool)
+- [Broken access control in an MCP server tool](https://portswigger.net/web-security/mcp/lab-broken-access-control-in-an-mcp-tool), [writeup](/writeups/portswigger/mcp-server-vulnerabilities/broken-access-control-in-an-mcp-server-tool)
 
 ---
 
 ## Lab overview
 
-The lab is a shop with an MCP endpoint at `/mcp`. The account page displays an API key, and — more importantly — the server discloses instructions that were only ever meant to be seen and executed by staff accounts. Hiding a tool from the normal tool list is not the same as restricting access to it.
+The lab is a shop with an MCP endpoint at `/mcp`. The account page displays an API key and, more importantly, the server discloses instructions that were only ever meant to be seen and executed by staff accounts. Hiding a tool from the normal tool list is not the same as restricting access to it.
 
 ## Getting access to the MCP endpoint
 
@@ -79,7 +79,7 @@ The server's answer is where the lab falls apart:
 }
 ```
 
-The `instructions` field names two tools that should only be available to staff: `list_users` and `delete_user`. A normal user should never see them — but the server has already told us they exist. Let's call them.
+The `instructions` field names two tools that should only be available to staff: `list_users` and `delete_user`. A normal user should never see them, but the server has already told us they exist. Let's call them.
 
 ## `list_users`
 
@@ -187,7 +187,7 @@ The error tells us exactly what to add. Supply `username: carlos` to delete the 
 
 </div>
 
-The confirmation is unambiguous — an ordinary user has just deleted another account through a tool that was supposedly restricted to staff.
+The confirmation is unambiguous: an ordinary user has just deleted another account through a tool that was supposedly restricted to staff.
 
 <div className="max-w-[420px] mx-auto">
 

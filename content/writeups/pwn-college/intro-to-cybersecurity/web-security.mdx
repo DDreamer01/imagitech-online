@@ -1,5 +1,5 @@
 ---
-title: "Web Security — Content Injection, XSS & CSRF"
+title: "Web Security: Content Injection, XSS & CSRF"
 description: "Writeup for the Web Security module of pwn.college's Intro to Cybersecurity path, covering content injection, cross-site scripting, and cross-site request forgery."
 date: "2026-11-01"
 module: "Intro to Cybersecurity"
@@ -12,7 +12,7 @@ published: true
 
 # Web Security
 
-> Module 1 of 7 in [Intro to Cybersecurity](https://pwn.college/intro-to-cybersecurity/) on pwn.college — covering content injection, XSS, and CSRF. Solved on the path to attaining the 🥋 **Orange Belt**.
+> Module 1 of 7 in [Intro to Cybersecurity](https://pwn.college/intro-to-cybersecurity/) on pwn.college, covering content injection, XSS, and CSRF. Solved on the path to attaining the 🥋 **Orange Belt**.
 
 ---
 
@@ -96,7 +96,7 @@ pwn.college{...}
 1. Find a parameter reflected in the page source.
 2. Determine the injection context (HTML body / attribute / script block).
 3. Craft a payload that breaks out of the current context.
-4. Escalate — exfiltrate cookies with `document.cookie` or probe session tokens.
+4. Escalate, exfiltrate cookies with `document.cookie` or probe session tokens.
 
 ### DOM XSS
 
@@ -106,7 +106,7 @@ The vulnerability lives entirely in client-side JavaScript; the server never see
 // Vulnerable sink example
 document.getElementById('output').innerHTML = location.hash.slice(1);
 
-// Payload in the URL fragment — never sent to server
+// Payload in the URL fragment, never sent to server
 https://victim.com/page#<img src=x onerror=alert(1)>
 ```
 
@@ -337,7 +337,7 @@ Welcome to pwnpost, now with users!<hr>
 
 | Defence                                             | Bypass                                                          |
 | --------------------------------------------------- | --------------------------------------------------------------- |
-| **CSRF token** (correctly implemented)              | No bypass — must leak the token first (via XSS, CORS, referrer) |
+| **CSRF token** (correctly implemented)              | No bypass, must leak the token first (via XSS, CORS, referrer) |
 | **SameSite=Lax** cookie                             | Still vulnerable to top-level navigation (`GET`) requests       |
 | **Origin / Referer check**                          | Spoof with null origin, or chain via open redirect              |
 | **Custom request header** (e.g. `X-Requested-With`) | Only effective if CORS blocks the preflight                     |
@@ -346,7 +346,7 @@ Welcome to pwnpost, now with users!<hr>
 
 ## Lessons Learned
 
-- **Always check the injection context first.** The shape of a working payload is entirely determined by where the data lands in the DOM — rushing to `<script>alert(1)` without reading the source wastes time.
+- **Always check the injection context first.** The shape of a working payload is entirely determined by where the data lands in the DOM, rushing to `<script>alert(1)` without reading the source wastes time.
 - **XSS is the master key for CSRF.** A stored or reflected XSS that reaches an admin unlocks CSRF token exfiltration, making otherwise CSRF-protected endpoints exploitable.
 - **SameSite cookies are not a complete CSRF defence.** Lax mode still permits top-level GET navigations; only `Strict` or a proper CSRF token scheme closes the gap for sensitive state-changing operations.
 - **Content injection without script execution still has impact.** Defaced pages, injected phishing forms, and exfil via `<img src>` are all achievable with pure HTML injection when `<script>` is blocked.
