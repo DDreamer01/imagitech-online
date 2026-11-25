@@ -54,7 +54,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Laboratory Status Dashboard — Framed Brutalist Telemetry */}
+      {/* Laboratory Status Dashboard: Framed Brutalist Telemetry */}
       <section className="border border-slate-800 bg-slate-950/40 p-6">
         <div className="flex flex-wrap items-center justify-between border-b border-slate-800 pb-3 mb-6 gap-2">
           <div className="flex items-center gap-2.5 font-mono text-xs font-bold text-slate-200 uppercase tracking-wider">
@@ -67,7 +67,7 @@ export default function HomePage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-sm font-mono">
-          {/* Panel 1 — Live public services */}
+          {/* Panel 1: Live public services */}
           <div className="space-y-3">
             <div className="text-[11px] uppercase tracking-[0.2em] text-sky-400 font-bold border-b border-slate-900 pb-1.5 flex items-center justify-between">
               <span>[ 01 ] Services</span>
@@ -97,7 +97,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Panel 2 — Azure cloud regions / VM locations */}
+          {/* Panel 2: Azure cloud regions / VM locations */}
           <div className="space-y-3">
             <div className="text-[11px] uppercase tracking-[0.2em] text-emerald-400 font-bold border-b border-slate-900 pb-1.5 flex items-center justify-between">
               <span>[ 02 ] Networks</span>
@@ -111,7 +111,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Panel 3 — Technology stack */}
+          {/* Panel 3: Technology stack */}
           <div className="space-y-3">
             <div className="text-[11px] uppercase tracking-[0.2em] text-slate-400 font-bold border-b border-slate-900 pb-1.5 flex items-center justify-between">
               <span>[ 03 ] Stack</span>
@@ -127,7 +127,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Recent Writeups — 12-Column Editorial Row Grid with Tactile Hover */}
+      {/* Recent Writeups: 12-Column Editorial Row Grid with Tactile Hover */}
       <section className="space-y-6">
         <div className="flex items-end justify-between border-b border-slate-800 pb-3 gap-4 flex-wrap">
           <div>

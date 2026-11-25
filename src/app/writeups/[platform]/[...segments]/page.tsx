@@ -69,7 +69,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const writeup = getWriteupByModuleAndSlug(platformSlug, moduleSlug, slug);
     if (!writeup) return { title: "Writeup Not Found" };
     return {
-      title: `${writeup.title} — ${platform.name}`,
+      title: `${writeup.title} | ${platform.name}`,
       description: writeup.description || `${platform.name} writeup: ${writeup.title}`,
     };
   }
@@ -81,7 +81,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     if (mod) {
       const modName = mod.name || toTitleCase(moduleOrSlug);
       return {
-        title: `${modName} — ${platform.name}`,
+        title: `${modName} | ${platform.name}`,
         description:
           mod.description || `Writeups and solutions for ${modName} on ${platform.name}.`,
       };
@@ -90,7 +90,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const writeup = getWriteups(platformSlug).find((w) => w.slug === moduleOrSlug);
     if (writeup) {
       return {
-        title: `${writeup.title} — ${platform.name}`,
+        title: `${writeup.title} | ${platform.name}`,
         description: writeup.description || `${platform.name} writeup: ${writeup.title}`,
       };
     }
@@ -186,7 +186,7 @@ function renderWriteupArticle(
           <span className="text-slate-400 truncate">{writeup.title}</span>
         </div>
 
-        {/* Header — Framed Spec Dossier */}
+        {/* Header: Framed Spec Dossier */}
         <header className="mb-10 border border-slate-800 bg-slate-950/40 p-6 sm:p-8 space-y-4">
           <div className="flex flex-wrap items-center justify-between border-b border-slate-800 pb-3 gap-3 font-mono text-xs">
             <div className="flex flex-wrap items-center gap-2">
@@ -342,7 +342,7 @@ export default async function WriteupCatchAllPage({ params }: PageProps) {
               </p>
             )}
 
-            {/* Progress Tracker Card — only rendered for formal belt tracks */}
+            {/* Progress Tracker Card: only rendered for formal belt tracks */}
             {isBeltTrack && (
               <div className="border border-slate-800 bg-slate-950/60 p-4 font-mono text-xs space-y-2">
                 <div className="flex items-center justify-between">

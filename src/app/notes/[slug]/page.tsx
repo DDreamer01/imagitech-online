@@ -59,7 +59,7 @@ export default async function NoteDetailPage({ params }: PageProps) {
           index_notes()
         </Link>
 
-        {/* Note Header — Framed Dossier */}
+        {/* Note Header: Framed Dossier */}
         <header className="mb-10 border border-slate-800 bg-slate-950/40 p-6 sm:p-8 space-y-4">
           <div className="flex flex-wrap items-center justify-between border-b border-slate-800 pb-3 gap-3 font-mono text-xs">
             <div className="flex items-center gap-2 text-emerald-400 uppercase tracking-widest text-[11px] font-bold">

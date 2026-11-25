@@ -55,7 +55,7 @@ export const WriteupFrontmatterSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must follow YYYY-MM-DD format"),
   difficulty: z.string().default(""),
   points: z.string().default(""),
-  /** Human-readable module name — e.g. "Intro to Cybersecurity" (pwn.college only) */
+  /** Human-readable module name: e.g. "Intro to Cybersecurity" (pwn.college only) */
   module: z.string().optional(),
   /** Completion status: "completed" | "in-progress" */
   status: z.string().optional(),
@@ -330,14 +330,14 @@ export const WRITEUP_PLATFORMS: WriteupPlatform[] = [
     slug: "pwn-college",
     name: "pwn.college",
     description:
-      "Cybersecurity writeups from pwn.college — working through modules in Intro to Cybersecurity and beyond.",
+      "Cybersecurity writeups from pwn.college: working through modules in Intro to Cybersecurity and beyond.",
     hasModules: true,
   },
   {
     slug: "hackthebox",
     name: "HackTheBox",
     description:
-      "HTB machine walk-throughs — recon, enumeration, foothold, and privilege escalation notes across retired boxes.",
+      "HTB machine walk-throughs: recon, enumeration, foothold, and privilege escalation notes across retired boxes.",
   },
   {
     slug: "portswigger",
@@ -355,7 +355,7 @@ export function getWriteupPlatform(platformSlug: string): WriteupPlatform | null
 interface ValidatedWriteup {
   slug: string;
   platform: string;
-  /** Module folder slug — only set for platforms with hasModules: true */
+  /** Module folder slug: only set for platforms with hasModules: true */
   moduleSlug?: string;
   validated: {
     title: string;

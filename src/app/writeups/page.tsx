@@ -7,7 +7,7 @@ import { getPlatformTheme } from "@/lib/platform-themes";
 export const metadata: Metadata = {
   title: "Writeups",
   description:
-    "†hε drεαmεr's security writeups — walk-throughs and solutions from pwn.college, HackTheBox, and PortSwigger.",
+    "†hε drεαmεr's security writeups: walk-throughs and solutions from pwn.college, HackTheBox, and PortSwigger.",
 };
 
 export default function WriteupsHubPage() {
@@ -86,7 +86,7 @@ export default function WriteupsHubPage() {
         </div>
       </section>
 
-      {/* All Recent Solves Stream — Editorial 12-Column Rows */}
+      {/* All Recent Solves Stream: Editorial 12-Column Rows */}
       <section className="space-y-6 pt-4">
         <div className="flex items-end justify-between border-b border-slate-800 pb-3 gap-4">
           <div>

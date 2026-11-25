@@ -71,7 +71,7 @@ export default async function BlogPostDetailPage({ params }: PageProps) {
           index_articles()
         </Link>
 
-        {/* Post Header — Framed Technical Dossier */}
+        {/* Post Header: Framed Technical Dossier */}
         <header className="mb-10 border border-slate-800 bg-slate-950/40 p-6 sm:p-8 space-y-6">
           <div className="flex flex-wrap items-center justify-between border-b border-slate-800 pb-3 gap-3 font-mono text-xs">
             <div className="flex items-center gap-2 text-sky-400 uppercase tracking-widest text-[11px] font-bold">
