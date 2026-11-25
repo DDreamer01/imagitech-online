@@ -1,0 +1,83 @@
+---
+title: "Neovim Workflow & Keybindings"
+date: "2026-11-25"
+category: "Neovim"
+tags: ["neovim", "nvim", "keybindings", "workflow"]
+published: true
+---
+
+Quick reference for working in a 3-pane Neovim layout: **File Explorer** on the left, **Code Editor** in the middle, and **Terminal** on the right.
+
+---
+
+### 1. Opening the 3-Pane Layout
+
+| Action | Keys |
+| :--- | :--- |
+| Toggle File Explorer (left) | <kbd>Space</kbd> then <kbd>e</kbd> |
+| Focus File Explorer from anywhere | <kbd>Space</kbd> then <kbd>o</kbd> |
+| Open vertical Terminal (right) | <kbd>Space</kbd> then <kbd>t</kbd> <kbd>v</kbd> |
+| Open horizontal Terminal (bottom) | <kbd>Space</kbd> then <kbd>t</kbd> <kbd>h</kbd> |
+| Toggle Terminal open / hidden | <kbd>Ctrl</kbd> + <kbd>&#92;</kbd> |
+
+---
+
+### 2. Moving Between Panes
+
+```text
++---------------+-------------------+-------------------+
+| File Explorer |   Code Editor     |  Terminal (zsh)   |
+|  (Neo-tree)   |                   |   (toggleterm)    |
++---------------+-------------------+-------------------+
+       |   <--- Ctrl + h ---   |   <--- Ctrl + h ---   |
+       |   --- Ctrl + l --->   |   --- Ctrl + l --->   |
+```
+
+| Action | Keys |
+| :--- | :--- |
+| Move Left (Terminal → Editor → Explorer) | <kbd>Ctrl</kbd> + <kbd>h</kbd> |
+| Move Right (Explorer → Editor → Terminal) | <kbd>Ctrl</kbd> + <kbd>l</kbd> |
+| Move Down / Up (horizontal splits) | <kbd>Ctrl</kbd> + <kbd>j</kbd> / <kbd>Ctrl</kbd> + <kbd>k</kbd> |
+| Resize pane width | <kbd>Ctrl</kbd> + <kbd>Left</kbd> / <kbd>Right</kbd> |
+| Resize pane height | <kbd>Ctrl</kbd> + <kbd>Up</kbd> / <kbd>Down</kbd> |
+| Make all split panes equal size | <kbd>Space</kbd> then <kbd>s</kbd> <kbd>e</kbd> |
+
+> `<C-h>`, `<C-j>`, `<C-k>`, and `<C-l>` work directly from **Terminal Insert mode** as well—no need to exit insert mode first just to jump back to your code.
+
+---
+
+### 3. File Explorer (Neo-Tree)
+
+| Action | Keys |
+| :--- | :--- |
+| Move up / down | <kbd>k</kbd> / <kbd>j</kbd> |
+| Open file / expand folder | <kbd>l</kbd> or <kbd>Enter</kbd> |
+| Collapse folder | <kbd>h</kbd> |
+| Create file or folder (end with `/` for folder) | <kbd>a</kbd> |
+| Rename / Delete | <kbd>r</kbd> / <kbd>d</kbd> |
+| Hide / show explorer for more width | <kbd>Space</kbd> then <kbd>e</kbd> |
+
+---
+
+### 4. Editor, Buffers & Diagnostics
+
+| Action | Keys |
+| :--- | :--- |
+| Exit Insert mode | <kbd>j</kbd><kbd>k</kbd> or <kbd>Esc</kbd> |
+| Save file (auto-formats on save) | <kbd>Space</kbd> then <kbd>w</kbd> |
+| Next / Previous open buffer tab | <kbd>Shift</kbd> + <kbd>l</kbd> / <kbd>Shift</kbd> + <kbd>h</kbd> |
+| Toggle Trouble diagnostics (workspace) | <kbd>Space</kbd> then <kbd>x</kbd> <kbd>x</kbd> |
+| Toggle Trouble diagnostics (current file) | <kbd>Space</kbd> then <kbd>x</kbd> <kbd>X</kbd> |
+
+---
+
+### 5. Terminal Mode Controls
+
+When you are inside the terminal pane:
+
+| Action | Keys |
+| :--- | :--- |
+| Exit Terminal Insert mode (to scroll/copy output) | <kbd>j</kbd><kbd>k</kbd> or <kbd>Esc</kbd> <kbd>Esc</kbd> |
+| Scroll output in Terminal Normal mode | <kbd>j</kbd> / <kbd>k</kbd> or <kbd>Ctrl</kbd> + <kbd>d</kbd> / <kbd>Ctrl</kbd> + <kbd>u</kbd> |
+| Return to Terminal Insert mode (to type commands) | <kbd>i</kbd> |
+| Jump straight back to code | <kbd>Ctrl</kbd> + <kbd>h</kbd> |
