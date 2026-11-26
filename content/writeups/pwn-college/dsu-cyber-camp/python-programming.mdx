@@ -1,7 +1,7 @@
 ---
 title: "Python Programming"
-description: "Dakota State University Dojo of pwn.college"
-date: "2026-11-02"
+description: "Dakota State University Dojo of pwn.college. Complete solutions to all 24 challenges in the Python Programming module."
+date: "2026-11-26"
 module: "DSU Cyber Camps"
 difficulty: "Easy"
 points: "0"
@@ -9,10 +9,9 @@ status: "completed"
 published: true
 ---
 
-
 # Overview
 
-This module walks through the fundamentals of the Python programming language.
+This module walks through the fundamentals of the Python programming language. The 24 challenges cover printing, variables, input and type casting, arithmetic, comparisons, conditionals, and loops. Every solution below is the verified file from the companion repository.
 
 ---
 
@@ -36,14 +35,12 @@ print(age)
 print(gpa)
 ```
 
-### Format Printing - formatprinting.py
+### Format Print - formatprint.py
 
 ```python
 name = "Joseph"
-age = 20
-gpa = 3.43
 
-print(f"My name is {name}, I am {age} years old, and my GPA is {gpa}")
+print("Hello, {}".format(name))
 ```
 
 ### User Input - userinput.py
@@ -74,7 +71,7 @@ print("\nHere is your Mad Lib!")
 print("Hello, {}! Welcome to {}, where we make {}.".format(name, place, noun))
 ```
 
-### Knowledge Check II (Input/Output) - knowledgecheck2
+### Knowledge Check II (Input/Output) - knowledgecheck2.py
 
 ```python
 a = int(input("Enter a number: "))
@@ -110,3 +107,203 @@ floor_div = num_one // num_two
 print("\nThe result of floor division is: {}".format(floor_div))
 ```
 
+### Geometry - geometry.py
+
+```python
+width = float(input("Kindly provide the triangle's width: "))
+height = float(input("Kindly provide the triangle's height: "))
+
+area = (0.5 * width * height)
+print(area)
+```
+
+### Comparison - comparison.py
+
+```python
+num_one = int(input("First number: "))
+num_two = int(input("Second number: "))
+
+print("Checking if first number is less than or equal to the second number: ", num_one <= num_two)
+```
+
+### Knowledge Check I (Math) - knowledgecheck1m.py
+
+```python
+score = 0
+
+ans1 = int(input("5 + 3 = "))
+if ans1 == 8:
+    score = score + 1
+
+ans2 = int(input("12 - 4 = "))
+if ans2 == 8:
+    score = score + 1
+
+ans3 = int(input("6 * 7 = "))
+if ans3 == 42:
+    score = score + 1
+
+ans4 = int(input("15 - 5 = "))
+if ans4 == 10:
+    score = score + 1
+
+ans5 = int(input("9 + 10 = "))
+if ans5 == 19:
+    score = score + 1
+
+percentage = int((score / 5) * 100)
+print(f"{percentage}%")
+```
+
+### Knowledge Check II (Math) - knowledgecheck2m.py
+
+```python
+num1 = int(input("Enter first number: "))
+num2 = int(input("Enter second number: "))
+
+nummod = num1 % num2
+floordiv = num1 // num2
+
+print(f"{num2} goes into {num1} {floordiv} times with a remainder of {nummod}")
+```
+
+### If Statements - ifstatements.py
+
+```python
+num1 = int(input("X: "))
+num2 = int(input("Y: "))
+
+if num1 > num2:
+    print(f"{num1} is greater than {num2}")
+
+if num2 > num1:
+    print(f"{num2} is greater than {num1}")
+```
+
+### If Else Statements - ifelsestatements.py
+
+```python
+num = int(input("Enter a number: "))
+
+if num % 2 == 0:
+    print(f"{num} is even")
+else:
+    print(f"{num} is odd")
+```
+
+### Nested - nested.py
+
+```python
+balance = int(input("Balance: "))
+withdrawal = int(input("Widthdraw: "))
+
+if withdrawal > balance:
+    print("Error: Insufficient funds")
+else:
+    if withdrawal < 0:
+        print("Error: Withdraw amount must be positive")
+    else:
+        if withdrawal % 20 != 0:
+            print("Error: Withdraw amount must be a multiple of 20")
+        else:
+            print("New balance: ", balance - withdrawal)
+```
+
+### Else If Blocks - elseifblocks.py
+
+```python
+num1 = int(input("X: "))
+num2 = int(input("Y: "))
+
+if num1 > num2:
+    print(f"x ({num1}) is greater than y({num2})")
+elif num1 == num2:
+    print(f"x ({num1}) is equal to y({num2})")
+else:
+    print(f"x ({num1} is less than y({num2}))")
+```
+
+### Logical Operators - logicaloperators.py
+
+```python
+score = int(input("Average test score: "))
+attendance = int(input("Attendance: "))
+
+if score >= 85 and attendance >= 90:
+    print("Student is a honors student")
+elif score >= 70 and attendance >= 75:
+    print("Student is a passing student")
+else:
+    print("Student is a failing student")
+```
+
+### Knowledge Check I (Conditionals) - knowledgecheck1c.py
+
+```python
+num1 = int(input("Enter first number: "))
+operator = input("Enter operator (e.g +, -, *, /): ")
+num2 = int(input("Enter second number: "))
+
+if operator == "+":
+    print(num1 + num2)
+elif operator == "*":
+    print(num1 * num2)
+elif operator == "-":
+    print(num1 - num2)
+else:
+    print(num1 / num2)
+```
+
+### While - while.py
+
+```python
+number = int(input("Enter a number: "))
+
+while number > 0:
+    print(number)
+    number -= 1
+
+print("Blast off!")
+```
+
+### Lists - lists.py
+
+```python
+strings = ["pwned", "bug", "exploit"]
+integers = [2026, 26, 11]
+floats = [3.142, 1.5, 10.0]
+```
+
+### Range - range.py
+
+```python
+range(1, 100)
+range(10, 100, 10)
+range(2, 20)
+```
+
+### For - for.py
+
+```python
+value = int(input("Enter a number: "))
+
+for i in range (value + 1):
+    if i % 2 == 0:
+        print(i)
+```
+
+### Knowledge Check I (Loops) - knowledgecheck1l.py
+
+```python
+value = int(input("Enter a number: "))
+count = 1
+
+while value != 1:
+    if value % 2 == 0:
+        value = value // 2
+    else:
+        value = 3 * value + 1
+    count += 1
+
+print(count)
+```
